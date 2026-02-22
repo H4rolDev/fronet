@@ -1,100 +1,135 @@
-<!-- NAVBAR / BANNER -->
-<header class="banner-navbar shadow-sm animate__animated animate__fadeInDown bg-white border-bottom">
-  <div class="container d-flex justify-content-between align-items-center py-3">
+<!-- ===== NAVBAR ===== -->
+<header class="navbar-shell">
+  <div class="navbar-content">
+
     <!-- Logo -->
-    <div class="logo d-flex align-items-center gap-2">
-      <img src="assets/logotienda.png" alt="Logo Tienda" height="60" />
-      <span class="fw-bold fs-4 text-dark">Tortasyani</span>
+    <a class="brand" routerLink="/">
+      <img src="assets/logotienda.png" alt="Tortas Yani" height="50">
+      <span class="brand-name">Tortasyani</span>
+    </a>
+
+    <!-- Búsqueda SIEMPRE visible, igual que en la imagen -->
+    <div class="searchbox" [class.searchbox--focus]="searchFocused">
+      <input
+        class="searchbox__input"
+        type="text"
+        placeholder="Buscar tortas, postres..."
+        [(ngModel)]="terminoBusqueda"
+        (keydown)="onKeyEnter($event)"
+        (focus)="searchFocused = true"
+        (blur)="searchFocused = false"
+        autocomplete="off"
+      />
+      <button class="searchbox__btn" (click)="ejecutarBusqueda()" title="Buscar">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </button>
     </div>
-   
-<div class="flex-grow-1 d-flex justify-content-center align-items-center">
-  <div class="search" [class.active]="activo">
-    <input
-      type="text"
-      class="input"
-      [(ngModel)]="terminoBusqueda"
-      (input)="onBuscar()"
-    />
-    <button class="btn" (click)="toggleBusqueda()">
-      <i class="fa fa-search"></i>
-    </button>
+
+    <!-- Links desktop -->
+    <nav class="nav-links d-none d-lg-flex">
+      <a class="nl" routerLink="/"         routerLinkActive="nl--active" [routerLinkActiveOptions]="{exact:true}">Inicio</a>
+      <a class="nl" routerLink="/about"    routerLinkActive="nl--active">Acerca de</a>
+      <a class="nl" routerLink="/contact"  routerLinkActive="nl--active">Contacto</a>
+      <a class="nl" routerLink="/products" routerLinkActive="nl--active">Productos</a>
+    </nav>
+
+    <!-- Acciones -->
+    <div class="nav-actions">
+      <a *ngIf="!isLoggedIn()" class="btn-session" routerLink="/iniciar">Iniciar Sesión</a>
+
+      <div *ngIf="isLoggedIn()" class="user-menu">
+        <button class="user-btn" (click)="toggleDropdown()">
+          <span class="user-avatar">{{ (user?.nombre || 'U')[0].toUpperCase() }}</span>
+          <span class="user-name">{{ user?.nombre || 'Mi cuenta' }}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        <div class="user-dropdown" *ngIf="dropdownOpen">
+          <a class="ud-item" routerLink="/cuenta"        (click)="dropdownOpen=false">👤 Perfil</a>
+          <a class="ud-item" routerLink="/configuracion" (click)="dropdownOpen=false">⚙️ Configuración</a>
+          <a class="ud-item" routerLink="/pedidos"       (click)="dropdownOpen=false">🧾 Mis pedidos</a>
+          <hr class="ud-divider">
+          <a class="ud-item ud-item--danger" (click)="logout()">🚪 Cerrar sesión</a>
+        </div>
+      </div>
+
+      <!-- Hamburguesa mobile -->
+      <button class="hamburger d-lg-none" (click)="toggleMenu()" [class.hamburger--open]="menuMobileOpen" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+
   </div>
-</div>
 
-    <!-- Menú de navegación -->
-    <nav class="navbar navbar-expand-lg">
-      <div class="navbar-nav d-flex flex-wrap gap-4 align-items-center">
-        <!-- enlaces normales -->
-        <a class="nav-link nav-item-custom text-dark fw-semibold" routerLink="/" routerLinkActive="active">Inicio</a>
-        <a class="nav-link nav-item-custom text-dark fw-semibold" routerLink="/about" routerLinkActive="active">Acerca de</a>
-        <a class="nav-link nav-item-custom text-dark fw-semibold" routerLink="/contact" routerLinkActive="active">Contacto</a>
-        <a class="nav-link nav-item-custom text-dark fw-semibold" routerLink="/products" routerLinkActive="active">Productos</a>
-
-        <!-- Mostrar Iniciar Sesión si NO está logueado -->
-        <a
-          *ngIf="!isLoggedIn()"
-          class="nav-link nav-item-custom text-white fw-semibold bg-pink px-3 py-1 rounded-3 shadow-sm"
-          routerLink="/iniciar"
-          routerLinkActive="active"
-        >
-          Iniciar Sesión
-        </a>
-
-    <!-- Mostrar dropdown si está logueado -->
-    <div *ngIf="isLoggedIn()" class="position-relative">
-      <button (click)="toggleDropdown()" class="btn btn-light ...">
-  <i class="fa fa-user-circle"></i>
-  {{ user?.nombre || 'Mi Cuenta' }}
-  <i class="fas fa-caret-down"></i>
-</button>
-      <!-- Menú desplegable -->
-<div *ngIf="dropdownOpen" class="dropdown-menu show">
-  <a class="dropdown-item" routerLink="/cuenta" (click)="toggleDropdown()">👤 Perfil</a>
-  <a class="dropdown-item" routerLink="/configuracion" (click)="toggleDropdown()">⚙️ Administrar cuenta</a>
-        <a class="dropdown-item" routerLink="/pedidos" (click)="toggleDropdown()">🧾 Mis pedidos</a>
-        <div class="dropdown-divider"></div>
-        <a class="dropdown-item text-danger" (click)="logout()" style="cursor: pointer;">🚪 Cerrar sesión</a>
+  <!-- Menú mobile -->
+  <nav class="mobile-nav" [class.mobile-nav--open]="menuMobileOpen">
+    <!-- Búsqueda en mobile dentro del menú -->
+    <div class="mobile-search">
+      <div class="searchbox searchbox--mobile" [class.searchbox--focus]="searchFocused">
+        <input
+          class="searchbox__input"
+          type="text"
+          placeholder="Buscar productos..."
+          [(ngModel)]="terminoBusqueda"
+          (keydown)="onKeyEnter($event)"
+          (focus)="searchFocused = true"
+          (blur)="searchFocused = false"
+          autocomplete="off"
+        />
+        <button class="searchbox__btn" (click)="ejecutarBusqueda()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </button>
       </div>
     </div>
-  </div>
-</nav>
-  </div>
+
+    <a class="mn-link" routerLink="/"         routerLinkActive="mn-link--active" [routerLinkActiveOptions]="{exact:true}" (click)="menuMobileOpen=false">🏠 Inicio</a>
+    <a class="mn-link" routerLink="/products" routerLinkActive="mn-link--active" (click)="menuMobileOpen=false">🎂 Productos</a>
+    <a class="mn-link" routerLink="/about"    routerLinkActive="mn-link--active" (click)="menuMobileOpen=false">ℹ️ Acerca de</a>
+    <a class="mn-link" routerLink="/contact"  routerLinkActive="mn-link--active" (click)="menuMobileOpen=false">📞 Contacto</a>
+    <div class="mn-divider"></div>
+    <a *ngIf="!isLoggedIn()" class="mn-link mn-link--cta" routerLink="/iniciar" (click)="menuMobileOpen=false">🔑 Iniciar Sesión</a>
+    <ng-container *ngIf="isLoggedIn()">
+      <a class="mn-link" routerLink="/cuenta"  (click)="menuMobileOpen=false">👤 Perfil</a>
+      <a class="mn-link" routerLink="/pedidos" (click)="menuMobileOpen=false">🧾 Mis pedidos</a>
+      <a class="mn-link mn-link--danger" (click)="logout(); menuMobileOpen=false">🚪 Cerrar sesión</a>
+    </ng-container>
+  </nav>
 </header>
 
-<!-- Resto del contenido -->
-<main class="min-vh-100">
+<!-- Contenido -->
+<main class="app-main">
   <router-outlet></router-outlet>
 </main>
 
-
-
-
-
-<!-- FOOTER -->
-<footer class="bg-light text-dark pt-4 border-top mt-auto">
-  <div class="container">
-    <div class="row align-items-center">
-      <!-- Dirección y teléfono -->
-      <div class="col-md-6 mb-3">
-        <h5 class="fw-bold">📍 Contáctanos</h5>
-        <p class="mb-1">San Borja G - 21</p>
-        <p class="mb-0">📞 084-234536</p>
-      </div>
-
-      <!-- Redes sociales -->
-      <div class="col-md-6 text-md-end mb-3">
-        <h5 class="fw-bold">🌐 Síguenos</h5>
-        <div class="d-flex justify-content-md-end justify-content-center gap-3 mt-2">
-          <a href="#" class="text-dark fs-5"><i class="fab fa-facebook-f"></i></a>
-          <a href="#" class="text-dark fs-5"><i class="fab fa-instagram"></i></a>
-          <a href="#" class="text-dark fs-5"><i class="fab fa-tiktok"></i></a>
-          <a href="#" class="text-dark fs-5"><i class="fab fa-x-twitter"></i></a>
-          <a href="#" class="text-dark fs-5"><i class="fab fa-whatsapp"></i></a>
-        </div>
-      </div>
+<!-- ===== FOOTER ===== -->
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <img src="assets/logotienda.png" alt="Logo" height="46">
+      <p class="footer-brand-name">Tortas Yani</p>
+      <p class="footer-tagline">Endulzamos tus momentos especiales con amor y dedicación. 🎂</p>
     </div>
-    <div class="text-center py-3 small text-muted border-top mt-3">
-      © 2026 TortasDeliciosas. Todos los derechos reservados.
+    <div class="footer-info">
+      <p class="footer-section-title">📍 Encuéntranos</p>
+      <p>San Borja G - 21</p>
+      <p>📞 084-234536</p>
+      <p>✉️ tortas&#64;yani.pe</p>
+    </div>
+    <div class="footer-social">
+      <p class="footer-section-title">🌐 Síguenos</p>
+      <div class="social-row">
+        <a href="#" class="soc soc--fb" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="#" class="soc soc--ig" title="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="#" class="soc soc--tk" title="TikTok"><i class="fab fa-tiktok"></i></a>
+        <a href="#" class="soc soc--tw" title="X"><i class="fab fa-x-twitter"></i></a>
+        <a href="#" class="soc soc--wa" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+      </div>
     </div>
   </div>
+  <div class="footer-copy">© 2026 Tortas Yani · Todos los derechos reservados</div>
 </footer>

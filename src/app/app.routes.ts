@@ -15,6 +15,7 @@ import { PagoyapeComponent } from '../pages/pagoyape/pagoyape.component';
 import { BienvenidaComponent } from '../bienvenida/bienvenida.component';
 import { TortasespecialesComponent } from '../pages/tortasespeciales/tortasespeciales.component';
 import { TortamatrimonioComponent } from '../pages/tortasmatrimonio/tortamatrimonio';
+import { adminGuard } from '../guards/auth.guard';
 
 export const routes: Routes = [
 
@@ -35,15 +36,59 @@ export const routes: Routes = [
   { path: 'password', component: PasswordComponent },
   { path: 'widget-listarpersonal', component: ListarpersonalComponent },
 
-  // 🔥 CORREGIDO AQUÍ
   { path: 'pagoyape', component: PagoyapeComponent },
 
   { path: 'app-tortasespeciales', component: TortasespecialesComponent },
   { path: 'app-tortamatrimonio', component: TortamatrimonioComponent },
 
   { path: 'cuenta',
-    loadComponent: () => import('../pages/cuenta/cuenta.component')
+    loadComponent: () => import('../pages/modulo-administrativo/cuenta/cuenta.component')
       .then(m => m.CuentaComponent)
-  }
+  },
+
+  {
+    path: 'admin',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('../pages/modulo-administrativo/admin-layout/admin-layout.component')
+        .then(m => m.AdminLayoutComponent),
+    children: [
+      {
+        path: '',
+        redirectTo: 'dashboard',
+        pathMatch: 'full',
+      },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('../pages/modulo-administrativo/admin-dashboard/admin-dashboard.component')
+            .then(m => m.AdminDashboardComponent),
+      },
+      /* {
+        path: 'tortas',
+        loadComponent: () =>
+          import('../pages/modulo-administrativo/admin-tortas/admin-tortas.component')
+            .then(m => m.AdminTortasComponent),
+      },
+      {
+        path: 'recetas',
+        loadComponent: () =>
+          import('../pages/modulo-administrativo/admin-recetas/admin-recetas.component')
+            .then(m => m.AdminRecetasComponent),
+      },
+      {
+        path: 'produccion',
+        loadComponent: () =>
+          import('../pages/modulo-administrativo/admin-produccion/admin-produccion.component')
+            .then(m => m.AdminProduccionComponent),
+      },
+      {
+        path: 'insumos',
+        loadComponent: () =>
+          import('../pages/modulo-administrativo/admin-insumos/admin-insumos.component')
+            .then(m => m.AdminInsumosComponent),
+      }, */
+    ],
+  },
 
 ];

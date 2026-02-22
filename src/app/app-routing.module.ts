@@ -5,7 +5,7 @@ import { HomeComponent } from '../pages/home/home.component';
 import { AboutComponent } from '../pages/about/about.component';
 import { ContactComponent } from '../pages/contact/contact.component';
 import { ProductsComponent } from '../pages/products/products.component';
-import { CuentaComponent } from '../pages/cuenta/cuenta.component';
+import { CuentaComponent } from '../pages/modulo-administrativo/cuenta/cuenta.component';
 import { IniciarComponent } from '../pages/iniciar/iniciar.component'; // Aquí es "IniciarComponent"
 import { AuthGuard } from '../guards/auth.guard';
 import { ConfiguracionComponent } from '../pages/configuracion/configuracion.component';
@@ -20,7 +20,7 @@ const routes: Routes = [
   { path: 'cuenta', component: CuentaComponent },
    { path: 'configuracion', component: ConfiguracionComponent },
   { path: 'pedidos', component: PedidosComponent },
-  
+
   //{ path: '', redirectTo: '/iniciar', pathMatch: 'full' }
   // puedes agregar más rutas si creas más componentes
 ];

@@ -1,18 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
-
-interface ProductoModel {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  precio: number;
-  categoria: string;
-  imagen: string;
-  stock: boolean;
-  porciones: string;
-}
+import { ProductoService } from '../../services/producto.service';
+import { ListadoTortaDTO } from '../../dtos/listado-torta.dto';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-productos',
@@ -21,101 +14,85 @@ interface ProductoModel {
   templateUrl: './products.component.html',
   styleUrls: ['./products.component.css']
 })
-export class ProductsComponent implements OnInit {
-
-  // ========================
-  // FILTROS
-  // ========================
+export class ProductsComponent implements OnInit, OnDestroy {
   textoBusqueda: string = '';
   precioMin: number = 0;
   precioMax: number = 500;
   disponibilidad: '' | 'con' | 'sin' = '';
-  porcionesSeleccionadas: string = '';
-  categoriaSeleccionada: string = '';
   mensajeNoResultados: boolean = false;
-
-  // ========================
-  // UI
-  // ========================
   mostrarAlerta: boolean = false;
   mostrarCarrito: boolean = false;
+  sidebarVisible: boolean = false;
+  cargando: boolean = true;
 
-  // ========================
-  // DATA
-  // ========================
-  productos: ProductoModel[] = [
-    { id: 1, nombre: 'Torta Arcoiris', descripcion: 'Capas de colores vibrantes', precio: 70, categoria: 'Tortas especiales', imagen: 'arcoiris.jpg', stock: true, porciones: '12' },
-    { id: 2, nombre: 'Torta Oreo', descripcion: 'Con galletas Oreo', precio: 65, categoria: 'Tortas especiales', imagen: 'oreo.jpeg', stock: false, porciones: '16' },
-    { id: 3, nombre: 'Torta Rosada', descripcion: 'Perfecta para quinceañera', precio: 180, categoria: 'Tortas quinceañeras', imagen: 'rosa.jpeg', stock: true, porciones: '24' },
-    { id: 4, nombre: 'Torta con Brillos', descripcion: 'Decoración elegante', precio: 190, categoria: 'Tortas quinceañeras', imagen: 'roja.jpg', stock: false, porciones: '24' },
-    { id: 5, nombre: 'Torta Blanca', descripcion: 'Ideal para bodas', precio: 220, categoria: 'Tortas matrimonio', imagen: 'blanca.jpeg', stock: true, porciones: '24' },
-    { id: 6, nombre: 'Torta Floral', descripcion: 'Flores naturales', precio: 240, categoria: 'Tortas matrimonio', imagen: 'floral.jpeg', stock: true, porciones: '24' },
-    { id: 7, nombre: 'Empanaditas dulces', descripcion: 'Relleno de manjar', precio: 25, categoria: 'Bocatitos', imagen: 'empanadas.jpeg', stock: true, porciones: '4-5' },
-    { id: 8, nombre: 'Mini Sándwich', descripcion: 'Salados', precio: 28, categoria: 'Bocatitos', imagen: 'sandwich.jpeg', stock: false, porciones: '4-5' },
-    { id: 9, nombre: 'Cheesecake', descripcion: 'Pastel de queso', precio: 38, categoria: 'Postres', imagen: 'cheesecake.jpeg', stock: true, porciones: '12' },
-    { id: 10, nombre: 'Brownies', descripcion: 'Chocolate intenso', precio: 28, categoria: 'Postres', imagen: 'brownies.jpeg', stock: true, porciones: '8' }
-  ];
+  listadoTortas: ListadoTortaDTO[] = [];
+  productosFiltrados: ListadoTortaDTO[] = [];
+  carrito: ListadoTortaDTO[] = [];
 
-  categorias: string[] = [
-    'Tortas especiales',
-    'Tortas quinceañeras',
-    'Tortas matrimonio',
-    'Bocatitos',
-    'Postres'
-  ];
-
-  productosFiltrados: ProductoModel[] = [];
-  carrito: ProductoModel[] = [];
+  private destroy$ = new Subject<void>();
 
   constructor(
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private productosService: ProductoService
   ) {}
 
-  // ========================
-  // INIT (CORREGIDO)
-  // ========================
   ngOnInit(): void {
-
     this.cargarCarrito();
 
-    // 🔥 ESCUCHAR CAMBIOS EN LA URL
-    this.route.queryParams.subscribe(params => {
-      this.textoBusqueda = params['search'] || '';
-      this.filtrarProductos();
-    });
+    // ─── Suscripción 1: queryParams (siempre activa durante la vida del componente)
+    // Cada vez que el navbar cambie ?search=..., esto se dispara
+    this.route.queryParams
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(params => {
+        this.textoBusqueda = params['search'] || '';
+        // Si los datos ya están cargados, filtrar de inmediato
+        // Si no, el next() del servicio llamará filtrarProductos() cuando terminen de llegar
+        if (this.listadoTortas.length > 0) {
+          this.filtrarProductos();
+        }
+      });
 
+    // ─── Suscripción 2: servicio (se llama una sola vez para cargar los datos)
+    this.productosService.traerProductos()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.listadoTortas = Array.isArray(data) ? data : [];
+          this.cargando = false;
+          // Aplicar filtro ahora que los datos llegaron
+          // textoBusqueda ya fue asignado por el queryParams.subscribe arriba
+          this.filtrarProductos();
+        },
+        error: (err) => {
+          console.error('Error al obtener productos:', err);
+          this.cargando = false;
+        }
+      });
   }
 
-  // ========================
-  // FILTRADO
-  // ========================
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   filtrarProductos(): void {
-
     const texto = this.textoBusqueda.toLowerCase().trim();
-
-    this.productosFiltrados = this.productos.filter(p =>
-      (this.categoriaSeleccionada === '' || p.categoria === this.categoriaSeleccionada) &&
+    this.productosFiltrados = this.listadoTortas.filter(p =>
       (texto === '' ||
         p.nombre.toLowerCase().includes(texto) ||
-        p.descripcion.toLowerCase().includes(texto)
-      ) &&
-      (p.precio >= this.precioMin) &&
-      (p.precio <= this.precioMax) &&
-      (
-        this.disponibilidad === '' ||
-        (this.disponibilidad === 'con' && p.stock) ||
-        (this.disponibilidad === 'sin' && !p.stock)
-      ) &&
-      (this.porcionesSeleccionadas === '' || p.porciones === this.porcionesSeleccionadas)
+        p.descripcion.toLowerCase().includes(texto)) &&
+      p.precioVenta >= this.precioMin &&
+      p.precioVenta <= this.precioMax &&
+      (this.disponibilidad === '' ||
+        (this.disponibilidad === 'con' && p.stockDisponible > 0) ||
+        (this.disponibilidad === 'sin' && p.stockDisponible === 0))
     );
-
     this.mensajeNoResultados = this.productosFiltrados.length === 0;
   }
 
-  seleccionarCategoria(categoria: string): void {
-    this.categoriaSeleccionada = categoria;
-    this.filtrarProductos();
+  hayFiltrosActivos(): boolean {
+    return !!(this.textoBusqueda || this.precioMin > 0 || this.precioMax < 500 || this.disponibilidad);
   }
 
   limpiarFiltros(): void {
@@ -123,20 +100,15 @@ export class ProductsComponent implements OnInit {
     this.precioMin = 0;
     this.precioMax = 500;
     this.disponibilidad = '';
-    this.porcionesSeleccionadas = '';
-    this.categoriaSeleccionada = '';
+    this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
     this.filtrarProductos();
   }
 
-  // ========================
-  // CARRITO
-  // ========================
-  agregarAlCarrito(producto: ProductoModel): void {
+  agregarAlCarrito(producto: ListadoTortaDTO): void {
     this.carrito.push(producto);
     this.guardarCarrito();
-
     this.mostrarAlerta = true;
-    setTimeout(() => this.mostrarAlerta = false, 2000);
+    setTimeout(() => this.mostrarAlerta = false, 2500);
   }
 
   eliminarDelCarrito(index: number): void {
@@ -145,7 +117,7 @@ export class ProductsComponent implements OnInit {
   }
 
   get totalCarrito(): number {
-    return this.carrito.reduce((total, producto) => total + producto.precio, 0);
+    return this.carrito.reduce((total, p) => total + p.precioVenta, 0);
   }
 
   irAlCarrito(): void {
@@ -153,17 +125,12 @@ export class ProductsComponent implements OnInit {
     this.router.navigate(['/carrito']);
   }
 
-  // ========================
-  // STORAGE SOLO CARRITO
-  // ========================
   private guardarCarrito(): void {
     localStorage.setItem('carrito', JSON.stringify(this.carrito));
   }
 
   private cargarCarrito(): void {
-    const carritoGuardado = localStorage.getItem('carrito');
-    if (carritoGuardado) {
-      this.carrito = JSON.parse(carritoGuardado);
-    }
+    const saved = localStorage.getItem('carrito');
+    if (saved) this.carrito = JSON.parse(saved);
   }
 }

@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500&display=swap');
+
+    .dashboard { font-family: 'DM Sans', sans-serif; }
+
+    .welcome-banner {
+      background: linear-gradient(135deg, #7D1F3E 0%, #B8325A 100%);
+      border-radius: 20px;
+      padding: 36px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      box-shadow: 0 8px 32px rgba(125, 31, 62, 0.25);
+    }
+
+    .welcome-text h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      color: white;
+      margin: 0 0 8px;
+    }
+
+    .welcome-text h1 span { color: #F9C8D8; }
+
+    .welcome-text p {
+      color: rgba(255,255,255,0.7);
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .welcome-deco { font-size: 60px; opacity: 0.4; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .stat-card {
+      background: white;
+      border: 1px solid #FFE4EC;
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      box-shadow: 0 2px 12px rgba(180,60,90,0.06);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 28px rgba(180,60,90,0.14);
+      border-color: #F4A0BC;
+    }
+
+    .stat-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+
+    .stat-icon.pink    { background: #FFF0F4; }
+    .stat-icon.rose    { background: #FFF5F7; }
+    .stat-icon.caramel { background: #FFF8F0; }
+    .stat-icon.choco   { background: #F8F4F0; }
+
+    .stat-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px;
+      font-weight: 600;
+      color: #7D1F3E;
+    }
+
+    .stat-hint {
+      font-size: 12px;
+      color: #b08090;
+      margin-top: 2px;
+    }
+
+    .stat-arrow {
+      color: #D4476E;
+      font-size: 18px;
+      font-weight: 500;
+      transition: transform 0.2s;
+    }
+
+    .stat-card:hover .stat-arrow { transform: translateX(4px); }

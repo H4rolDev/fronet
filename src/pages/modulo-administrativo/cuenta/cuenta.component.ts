@@ -3,9 +3,9 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
 interface User {
-direccion: any;
-celular: any;
-nombre: any;
+  direccion: any;
+  celular: any;
+  nombre: any;
   // Define aquí las propiedades que esperas del user para tipado fuerte
   id: number;
   name: string;
@@ -17,15 +17,15 @@ nombre: any;
   selector: 'app-cuenta',
   templateUrl: './cuenta.component.html',
   styleUrls: ['./cuenta.component.css'],
-  imports: [CommonModule]
+  imports: [CommonModule],
 })
 export class CuentaComponent implements OnInit {
-changePhoto() {
-throw new Error('Method not implemented.');
-}
-editField(arg0: string) {
-throw new Error('Method not implemented.');
-}
+  changePhoto() {
+    throw new Error('Method not implemented.');
+  }
+  editField(arg0: string) {
+    throw new Error('Method not implemented.');
+  }
   user: User | null = null;
 
   constructor(public router: Router) {}

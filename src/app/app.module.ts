@@ -14,15 +14,14 @@ import { FormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [
-    // aquí sólo componentes NO standalone
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
-    ConfiguracionComponent,  // porque es standalone
+    ConfiguracionComponent,
     FormsModule
   ],
- 
+
 })
 export class AppModule { }
