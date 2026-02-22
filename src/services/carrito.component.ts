@@ -8,7 +8,7 @@ import { Producto } from '../models/producto';
 })
 export class CarritoComponent implements OnInit {
   carrito: Producto[] = [];
-  total: number = 0;
+  total = 0;
 
   constructor(private carritoService: CarritoService) {}
 

@@ -1,10 +1,10 @@
 // producto.model.ts
 export class ProductoModel {
-  id: number = 0;
-  nombre: string = '';
-  descripcion: string = '';
-  precio: number = 0;
-  categoria: string = '';
+  id = 0;
+  nombre = '';
+  descripcion = '';
+  precio = 0;
+  categoria = '';
   imagen?: string;
 
   constructor(data: Partial<ProductoModel>) {

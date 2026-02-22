@@ -15,8 +15,8 @@ import { Subscription } from "rxjs";
 export class PagoyapeComponent implements OnInit, OnDestroy {
 
   carrito: ProductoModel[] = [];
-  total: number = 0;
-  mensajeExito: string = '';
+  total = 0;
+  mensajeExito = '';
   private carritoSubscription!: Subscription;
 
   constructor(

@@ -27,9 +27,9 @@ export class ProductosComponent implements OnInit {
   ];
 
   // 🔹 Filtros
-  categoriaSeleccionada: string = '';
-  terminoBusqueda: string = '';
-  precioMax: number = 999;
+  categoriaSeleccionada = '';
+  terminoBusqueda = '';
+  precioMax = 999;
 
   // 🔹 Productos y carrito
   productos: ProductoModel[] = [];

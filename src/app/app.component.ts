@@ -25,7 +25,16 @@ export class AppComponent implements OnInit {
   title = 'cakes';
 
   // 🔎 BUSCADOR
-  terminoBusqueda: string = '';
+  terminoBusqueda = '';
+  // 🔎 BUSCADOR
+
+
+// 🔍 CONTROL VISUAL DEL BUSCADOR
+   activo = false;
+
+  toggleBusqueda() {
+  this.activo = !this.activo;
+}
 
   // 👤 USUARIO
   user: any = null;

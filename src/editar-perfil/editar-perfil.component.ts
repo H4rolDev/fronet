@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -9,7 +9,7 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './editar-perfil.component.html',
   styleUrls: ['./editar-perfil.component.css']
 })
-export class EditarPerfilComponent {
+export class EditarPerfilComponent implements OnInit {
   @Input() campo: 'nombre' | 'email' | 'celular' | 'direccion' | 'foto' = 'nombre';
   @Input() valor: any = '';
   @Output() guardar = new EventEmitter<{ campo: 'nombre' | 'email' | 'celular' | 'direccion' | 'foto', valor: any }>();

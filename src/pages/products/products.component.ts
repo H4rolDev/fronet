@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 
 interface ProductoModel {
   id: number;
@@ -23,20 +23,26 @@ interface ProductoModel {
 })
 export class ProductsComponent implements OnInit {
 
-  // ===== FILTROS =====
+  // ========================
+  // FILTROS
+  // ========================
   textoBusqueda: string = '';
-  precioMin: number | null = 25;
-  precioMax: number | null = 240;
+  precioMin: number = 0;
+  precioMax: number = 500;
   disponibilidad: '' | 'con' | 'sin' = '';
   porcionesSeleccionadas: string = '';
+  categoriaSeleccionada: string = '';
   mensajeNoResultados: boolean = false;
 
-  // ===== ESTADO =====
-  categoriaSeleccionada: string = '';
-  mostrarCarrito: boolean = false;
+  // ========================
+  // UI
+  // ========================
   mostrarAlerta: boolean = false;
+  mostrarCarrito: boolean = false;
 
-  // ===== DATA =====
+  // ========================
+  // DATA
+  // ========================
   productos: ProductoModel[] = [
     { id: 1, nombre: 'Torta Arcoiris', descripcion: 'Capas de colores vibrantes', precio: 70, categoria: 'Tortas especiales', imagen: 'arcoiris.jpg', stock: true, porciones: '12' },
     { id: 2, nombre: 'Torta Oreo', descripcion: 'Con galletas Oreo', precio: 65, categoria: 'Tortas especiales', imagen: 'oreo.jpeg', stock: false, porciones: '16' },
@@ -61,29 +67,41 @@ export class ProductsComponent implements OnInit {
   productosFiltrados: ProductoModel[] = [];
   carrito: ProductoModel[] = [];
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute
+  ) {}
 
+  // ========================
+  // INIT (CORREGIDO)
+  // ========================
   ngOnInit(): void {
-    this.cargarLocalStorage();
-    this.filtrarProductos();
+
+    this.cargarCarrito();
+
+    // 🔥 ESCUCHAR CAMBIOS EN LA URL
+    this.route.queryParams.subscribe(params => {
+      this.textoBusqueda = params['search'] || '';
+      this.filtrarProductos();
+    });
+
   }
 
-  // ===== CATEGORÍAS =====
-  seleccionarCategoria(cat: string): void {
-    this.categoriaSeleccionada = cat;
-    this.filtrarProductos();
-    this.guardarLocalStorage();
-  }
-
-  // ===== FILTROS =====
+  // ========================
+  // FILTRADO
+  // ========================
   filtrarProductos(): void {
+
     const texto = this.textoBusqueda.toLowerCase().trim();
 
     this.productosFiltrados = this.productos.filter(p =>
       (this.categoriaSeleccionada === '' || p.categoria === this.categoriaSeleccionada) &&
-      (texto === '' || p.nombre.toLowerCase().includes(texto) || p.descripcion.toLowerCase().includes(texto)) &&
-      (this.precioMin === null || p.precio >= this.precioMin) &&
-      (this.precioMax === null || p.precio <= this.precioMax) &&
+      (texto === '' ||
+        p.nombre.toLowerCase().includes(texto) ||
+        p.descripcion.toLowerCase().includes(texto)
+      ) &&
+      (p.precio >= this.precioMin) &&
+      (p.precio <= this.precioMax) &&
       (
         this.disponibilidad === '' ||
         (this.disponibilidad === 'con' && p.stock) ||
@@ -93,58 +111,59 @@ export class ProductsComponent implements OnInit {
     );
 
     this.mensajeNoResultados = this.productosFiltrados.length === 0;
-    this.guardarLocalStorage();
+  }
+
+  seleccionarCategoria(categoria: string): void {
+    this.categoriaSeleccionada = categoria;
+    this.filtrarProductos();
   }
 
   limpiarFiltros(): void {
     this.textoBusqueda = '';
-    this.precioMin = 25;
-    this.precioMax = 240;
+    this.precioMin = 0;
+    this.precioMax = 500;
     this.disponibilidad = '';
     this.porcionesSeleccionadas = '';
     this.categoriaSeleccionada = '';
     this.filtrarProductos();
   }
 
-  // ===== CARRITO =====
-  agregarAlCarrito(p: ProductoModel): void {
-    this.carrito.push(p);
-    this.guardarLocalStorage();
+  // ========================
+  // CARRITO
+  // ========================
+  agregarAlCarrito(producto: ProductoModel): void {
+    this.carrito.push(producto);
+    this.guardarCarrito();
+
     this.mostrarAlerta = true;
     setTimeout(() => this.mostrarAlerta = false, 2000);
   }
 
-  eliminarDelCarrito(i: number): void {
-    this.carrito.splice(i, 1);
-    this.guardarLocalStorage();
+  eliminarDelCarrito(index: number): void {
+    this.carrito.splice(index, 1);
+    this.guardarCarrito();
   }
 
   get totalCarrito(): number {
-    return this.carrito.reduce((total, p) => total + p.precio, 0);
+    return this.carrito.reduce((total, producto) => total + producto.precio, 0);
   }
 
   irAlCarrito(): void {
+    this.mostrarCarrito = false;
     this.router.navigate(['/carrito']);
   }
 
-  // ===== STORAGE =====
-  guardarLocalStorage(): void {
+  // ========================
+  // STORAGE SOLO CARRITO
+  // ========================
+  private guardarCarrito(): void {
     localStorage.setItem('carrito', JSON.stringify(this.carrito));
-    localStorage.setItem('filtros', JSON.stringify({
-      textoBusqueda: this.textoBusqueda,
-      precioMin: this.precioMin,
-      precioMax: this.precioMax,
-      disponibilidad: this.disponibilidad,
-      porcionesSeleccionadas: this.porcionesSeleccionadas,
-      categoriaSeleccionada: this.categoriaSeleccionada
-    }));
   }
 
-  cargarLocalStorage(): void {
-    const carrito = localStorage.getItem('carrito');
-    const filtros = localStorage.getItem('filtros');
-
-    if (carrito) this.carrito = JSON.parse(carrito);
-    if (filtros) Object.assign(this, JSON.parse(filtros));
+  private cargarCarrito(): void {
+    const carritoGuardado = localStorage.getItem('carrito');
+    if (carritoGuardado) {
+      this.carrito = JSON.parse(carritoGuardado);
+    }
   }
 }

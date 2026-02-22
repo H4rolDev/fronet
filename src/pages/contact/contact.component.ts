@@ -19,7 +19,7 @@ export class ContactComponent {
     email: '',
     mensaje: ''
   };
-   mensajeConfirmacion: string = ''; // <-- Aquí guardaremos el mensaje para mostrar
+   mensajeConfirmacion = ''; // <-- Aquí guardaremos el mensaje para mostrar
   esError: boolean | undefined;
 mensajeExito: any;
 mensajeError: any;

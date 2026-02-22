@@ -16,8 +16,8 @@ export class TarjetaComponent{
 @Input() producto: ProductoModel = new ProductoModel({});
 
 
-texto: string = 'comprar';
-fondo: string = 'btn primary'
+texto = 'comprar';
+fondo = 'btn primary'
 comprar() {
   this.texto = 'pagar';
   this.fondo = 'btn btn-success';

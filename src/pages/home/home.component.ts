@@ -27,7 +27,7 @@ export class HomeComponent{
   quintoprod: ProductoModel;
   sextoprod: ProductoModel;
 
-  totales: number = 0;
+  totales = 0;
   productos: ProductoModel[] = [];
 
   constructor(_productoServise: ProductoService) {
@@ -97,7 +97,7 @@ export class HomeComponent{
   incrementar(){
     this.totales = this.totales + 1;
   }
-  categoriaSeleccionada: string = '';
+  categoriaSeleccionada = '';
 
   filtrarPorCategoria(categoria: string) {
     this.categoriaSeleccionada = categoria;

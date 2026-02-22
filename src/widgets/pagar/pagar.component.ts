@@ -1,4 +1,4 @@
-import { Component, input, Input } from "@angular/core";
+import { Component, input, Input, OnInit } from "@angular/core";
 import {ReactiveFormsModule, FormBuilder, FormGroup, Validators} from "@angular/forms";
 import { CommonModule } from "@angular/common";
 import { ContabilidadService } from "../../services/contabilidad.service";
@@ -10,11 +10,11 @@ import { UsuarioService } from "../../services/usuario.service";
   imports: [CommonModule, ReactiveFormsModule]
 })
 
-export class PagarComponent{
+export class PagarComponent implements OnInit{
   [x: string]: any;
   //logica de negocio
   miFormulario: FormGroup;
-  estadoPeticion: string = "nothing";
+  estadoPeticion = "nothing";
 
   //consumir el servicio
   constructor(private _usuarioService: UsuarioService, private forBuilder: FormBuilder, private contabilidadService: ContabilidadService) {
