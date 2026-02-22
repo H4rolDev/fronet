@@ -1,0 +1,57 @@
+<div class="text-center" *ngIf="productoSeleccionado">
+  <h1 class="text-center">Área de Carrito</h1>
+  <div class="d-flex justify-content-center">
+    <div class="card w-50">
+      <div class="card-body text-center">
+        <!-- Puedes poner algo si deseas aquí -->
+      </div>
+
+      <div class="d-flex flex-horizontal p-2">
+        <div class="col-md-5 ms-0.5">
+          <img [src]="productoSeleccionado.imagen" width="250" height="250">
+        </div>
+
+        <div class="row justify-content-between col-md-7 ms-1">
+          <h3>Descripción del producto</h3>
+          <h5>{{ productoSeleccionado.nombre }}</h5>
+          <h3 style="color: rgb(191, 11, 236);">S/. {{ productoSeleccionado.precio }}</h3>
+
+          <p>
+            <strong>Composición:</strong> {{ productoSeleccionado.descripcion }}
+          </p>
+          <p><strong>Porciones: </strong>{{ productoSeleccionado.porciones }} unidades</p>
+          <div class="form-group">
+            <label><strong>Cantidad:</strong> </label>
+            <input type="number" value="1" class="form-group">
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex flex-horizontal p-4">
+        <div class="col-md-5 ms-2 card">
+          <h5 class="text-center">Elige tipo de pago</h5>
+          <div class="text-center">
+            <input type="checkbox">
+            <a href="/pagar"><img src="/visa.jpg" width="50" height="50"></a>
+            <input type="checkbox">
+            <a href="/app-pagoyape"><img class="ms-1" src="/yape.jpg" width="50" height="50"></a>
+            <input type="checkbox">
+            <a href=""><img class="ms-1" src="/plin.png" width="50" height="50"></a>
+          </div>
+        </div>
+
+        <div class="card row justify-content-between col-md-6 ms-1">
+          <h5>Resumen Compra</h5>
+          <p><strong>Total:</strong> S/. {{ productoSeleccionado.precio }}</p>
+          <p><strong>Adicional:</strong> S/. 00.00</p>
+          <p><strong>Total pagar: </strong> S/. {{ productoSeleccionado.precio }}</p>
+        </div>
+      </div>
+
+      <div class="col-md-12 ms-1 card-footer">
+        <button type="submit" class="btn btn-primary mb-2 col-md-5 justify-content-center">Realizar el pago</button><br>
+      </div>
+    </div>
+  </div>
+</div>
+

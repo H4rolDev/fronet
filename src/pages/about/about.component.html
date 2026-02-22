@@ -1,0 +1,78 @@
+<section id="acerca-de" class="py-5 bg-light">
+  <div class="container text-center">
+
+    <!-- Título con decorado -->
+    <h1 class="mb-3 display-4 fw-bold text-primary position-relative" style="text-shadow: 1px 1px 4px rgba(0,0,0,0.15);">
+      ¿Quiénes somos?
+      <span class="position-absolute start-50 translate-middle-x" style="bottom: -10px; height: 4px; width: 80px; background: #ffc107; border-radius: 2px;"></span>
+    </h1>
+
+    <!-- Frase destacada -->
+    <p class="text-muted fs-5 fst-italic mb-4" style="max-width: 750px; margin: 0 auto;">
+      “Transformamos momentos dulces en recuerdos inolvidables”
+    </p>
+
+    <!-- Logo -->
+    <figure class="mb-4">
+      <img src="assets/logotienda.png" alt="Logo Tortas Yani"
+           class="img-fluid rounded-circle shadow-sm"
+           style="width: 160px; height: 160px; object-fit: cover;">
+    </figure>
+
+    <!-- Descripción -->
+    <div class="mx-auto mb-4" style="max-width: 780px;">
+      <p class="fs-5 text-secondary" style="line-height: 1.9;">
+        En <strong>Tortas Yani</strong>, no solo hacemos tortas: damos vida a ideas y celebraciones. Nuestra pasión por la repostería artesanal nos ha convertido en el lugar ideal para quienes buscan calidad, sabor y creatividad en cada pastel.
+      </p>
+
+      <p class="fs-5 text-secondary" style="line-height: 1.9;">
+        Ofrecemos tortas personalizadas, recetas exclusivas, <strong>workshops para todos los niveles</strong>, y una comunidad pastelera comprometida con el arte en azúcar. Cada diseño nace de la imaginación, la técnica y el cariño con que trabajamos.
+      </p>
+
+      <p class="fs-5 text-secondary mb-4" style="line-height: 1.9;">
+        ¿Buscas la torta ideal para un evento? ¿Quieres aprender y crecer en este mundo delicioso? ¡Estás en el lugar correcto!
+      </p>
+    </div>
+
+    <!-- Botón de contacto -->
+    <a routerLink="/contact" class="btn btn-warning btn-lg shadow px-5 mb-5">
+      Contáctanos
+    </a>
+
+    <!-- Carrusel visual -->
+    <div class="mx-auto my-5" style="max-width: 850px;">
+      <c-carousel (itemChange)="onItemChange($event)" [interval]="5000" transition="slide">
+        <c-carousel-inner>
+          <c-carousel-item *ngFor="let slide of slides">
+            <div class="position-relative">
+              <img
+                [src]="slide.src"
+                alt="{{slide.title}}"
+                class="d-block w-100 rounded shadow-sm"
+                loading="lazy"
+                style="height: 500px; object-fit: cover; transition: transform 0.6s ease-in-out;"
+              />
+
+              <!-- Superposición de texto -->
+              <div
+                class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-end align-items-start p-4"
+                style="background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent); border-radius: 0.5rem;"
+              >
+                <h4 class="text-light fw-bold mb-1" style="text-shadow: 0 0 6px rgba(0,0,0,0.9); font-size: 1.8rem;">
+                  {{slide.title}}
+                </h4>
+                <p class="text-light" style="font-size: 1rem; max-width: 80%; text-shadow: 0 0 3px rgba(0,0,0,0.6);">
+                  {{slide.subtitle}}
+                </p>
+              </div>
+            </div>
+          </c-carousel-item>
+        </c-carousel-inner>
+
+        <!-- Controles -->
+        <c-carousel-control direction="prev"></c-carousel-control>
+        <c-carousel-control direction="next"></c-carousel-control>
+      </c-carousel>
+    </div>
+  </div>
+</section>

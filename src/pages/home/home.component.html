@@ -1,0 +1,93 @@
+<section class="text-center" id="lista-productos">
+  <h2 class="text-success">Lista de Productos</h2>
+ <app-productos></app-productos>
+</section>
+<a class="btn btn-success" href="#lista-productos">Ver Productos</a>
+
+
+
+<!-- 🧁 Bienvenida -->
+<section class="text-center py-5 bg-white">
+  <div class="container">
+    <h1 class="fw-bold text-pink">¡Cada torta es única como tú!</h1>
+    <h4 class="fst-italic mb-4">Por eso en Tortas Yani personalizamos tu pedido</h4>
+    <p class="col-md-6 mx-auto fst-italic">
+      ¿Estás próxima a casarte, celebrar un bautizo o tener una fiesta temática?
+      Cuéntanos cómo imaginas tu celebración soñada y nosotras hacemos la torta adecuada.
+    </p>
+  </div>
+</section>
+
+<!-- 🧭 Navegación de Categorías -->
+<section class="bg-light py-5">
+  <div class="container d-md-flex gap-4">
+    <!-- Sidebar Categorías -->
+    <div class="card p-3 shadow-sm mb-4 col-md-3">
+      <h5 class="text-center text-primary fw-bold">Categorías</h5>
+      <ul class="nav flex-column nav-pills">
+        <li class="nav-item">
+          <a class="nav-link" (click)="filtrarPorCategoria('Especiales')">🎂 Especiales</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" (click)="filtrarPorCategoria('Quinceañeros')">👸 Quinceañeros</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" (click)="filtrarPorCategoria('Matrimonio')">💍 Matrimonio</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" (click)="filtrarPorCategoria('Vocaditos')">🍬 Vocaditos</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" (click)="filtrarPorCategoria('Cumpleaños')">🎉 Cumpleaños</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" (click)="filtrarPorCategoria('Festivos')">🎊 Festivos</a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Productos Destacados -->
+    <div class="col-md-9">
+      <div class="row g-4">
+        <!-- Productos fijos -->
+        <div class="col-md-4" *ngIf="myproducto">
+          <widget-tarjeta [producto]="myproducto"></widget-tarjeta>
+        </div>
+        <div class="col-md-4" *ngIf="segundoprod">
+          <widget-tarjeta [producto]="segundoprod"></widget-tarjeta>
+        </div>
+        <div class="col-md-4" *ngIf="tercerprod">
+          <widget-tarjeta [producto]="tercerprod"></widget-tarjeta>
+        </div>
+        <div class="col-md-4" *ngIf="cuartoprod">
+          <widget-tarjeta [producto]="cuartoprod"></widget-tarjeta>
+        </div>
+        <div class="col-md-4" *ngIf="quintoprod">
+          <widget-tarjeta [producto]="quintoprod"></widget-tarjeta>
+        </div>
+        <div class="col-md-4" *ngIf="sextoprod">
+          <widget-tarjeta [producto]="sextoprod"></widget-tarjeta>
+        </div>
+
+        <!-- Productos dinámicos -->
+        <div class="col-md-4" *ngFor="let prod of productos">
+          <widget-tarjeta [producto]="prod"></widget-tarjeta>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 💳 Área de Pago (a futuro) -->
+<hr class="mt-5">
+<section class="text-center">
+  <h2 class="text-success">Área de Pago</h2>
+  <widget-pagar></widget-pagar>
+</section>
+
+<!-- 📦 Lista de Productos -->
+<hr class="mt-5">
+<section class="text-center">
+  <h2 class="text-success">Lista de Productos</h2>
+ <app-productos></app-productos>
+</section>

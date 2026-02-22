@@ -1,0 +1,107 @@
+<h5 class="text-center">DETALLE FACTURACION</h5>
+<p class="text-center"><strong>Ojo</strong> La entrega a domicilio solo funciona dentro de ciudad del Cusco</p>
+<div class="card-body col-md-4 mx-auto">
+  <div class="card w-80 alert alert-success">
+    <div *ngIf="isLoading" class="d-flex justify-content-center">
+      <div class="spinner-dorder text-primary" role="status">
+        <span class="visually-hiddesn">Loading...</span>
+      </div>
+    </div>
+    <div class="d-flex justify-content-center">
+    <form *ngIf="!isLoading" class="d-flex flex-column text-center" [formGroup]="miFormulario" (ngSubmit)="onSubmit()">
+
+      <div class="d-flex flex-column">
+        <div *ngIf="isError" class="alert alert-danger py-1">Lo sentimos la transaccion no se realizo</div>
+        <div *ngIf="isSuccess" class="alert alert-success py-1">La transaccion se completo</div>
+      </div>
+
+      <div class = "form-group d-flex flex-column">
+         <label for = "credit">Ingrese su tarjeta credito</label>
+         <input type = "text" id="credit" formControlName="tarjeta" class = "form-control" placeholder = "Ingrese Numero">
+         <div *ngIf="tarjeta?.invalid" class="text-danger">
+          <span *ngIf="tarjeta?.errors?.['required']">Numero de tarjeta es requerido</span>
+          <span *ngIf="tarjeta?.errors?.['minlength']">minimo 5 digitos</span>
+         </div>
+      </div>
+      <div class = "form-group d-flex flex-horizontal">
+        <div>
+          <label for = "exp">Ingrese expiracion</label>
+          <input type = "text" id="exp" formControlName="expiracion" class = "form-control" placeholder = "Ingrese fecha">
+          <div *ngIf="expiracion?.invalid" class="text-danger">
+            <span *ngIf="expiracion?.errors?.['required']">la expiracion es requerido</span>
+            <span *ngIf="expiracion?.errors?.['minlength']">formato mm/yy</span>
+           </div>
+        </div>
+        <div class = "form-group">
+          <label for = "cvv">Ingrese CVV</label>
+          <input type = "text" id="cvv" formControlName="cvv" class = "form-control ms-3" placeholder = "Ingrese cvv">
+          <div *ngIf="cvv?.invalid" class="text-danger">
+            <span *ngIf="cvv?.errors?.['required']">cvv es requerido</span>
+            <span *ngIf="cvv?.errors?.['maxlength']">solo 3 digitos</span>
+          </div>
+        </div>
+     </div>
+    <div class = "form-group">
+      <label for = "name">Monto a pagar</label>
+      <input type = "number" formControlName="monto" class = "form-control" placeholder = "Ingrese monto">
+      <div *ngIf="monto?.invalid" class="text-danger">
+        <span *ngIf="monto?.errors?.['required']">monto es requerido</span>
+       </div>
+    </div>
+
+    <div class = "form-group">
+      <label for = "nom">Ingrese Nombre Completo</label>
+      <input type = "text" id="nom" formControlName="nombre" class = "form-control" placeholder = "Ingrese Nombre">
+      <div *ngIf="nombre?.invalid" class="text-danger">
+        <span *ngIf="nombre?.errors?.['required']">nombre es requerido</span>
+      </div>
+   </div>
+   <div class = "form-group d-flex flex-horizontal">
+    <div>
+      <label for = "dir">Ingrese direccion</label>
+      <input type = "text" id="dir" formControlName="direccion" class = "form-control" placeholder = "Ingrese direccion">
+      <div *ngIf="direccion?.invalid" class="text-danger">
+        <span *ngIf="direccion?.errors?.['required']">direccion es requerido</span>
+      </div>
+    </div>
+    <div class = "form-group">
+      <label for = "tel">Ingrese telefono</label>
+      <input type = "text" id="tel" formControlName="telefono" class = "form-control ms-3" placeholder = "Ingrese telefono">
+      <div *ngIf="telefono?.invalid" class="text-danger">
+        <span *ngIf="telefono?.errors?.['required']">telefono es requerido</span>
+      </div>
+    </div>
+    </div>
+    <div class = "form-group">
+      <label for = "cor">Ingrese Correo</label>
+      <input type = "text" id="cor" formControlName="correo" class = "form-control" placeholder = "Ingrese correo">
+      <div *ngIf="correo?.invalid" class="text-danger">
+        <span *ngIf="correo?.errors?.['required']">correo es requerido</span>
+      </div>
+    </div>
+
+    <div class = "form-group">
+      <label for = "met">Seleccione metodo de envio</label>
+      <select formControlName="metodo" class = "form-control">
+        <option></option>
+        <option>Entrega en tienda</option>
+        <option>Envio domicilio</option>
+      </select>
+      <div *ngIf="metodo?.invalid" class="text-danger">
+        <span *ngIf="metodo?.errors?.['required']">Metodo envio es requerido</span>
+        <span *ngIf="metodo?.errors?.['minlength']">minimo 5 digitos</span>
+      </div>
+    </div>
+
+    <div class = "">
+      <button type="submit" class="btn btn-primary col-md-4">Pagar</button>
+    </div>
+    <div>
+      <p class="text-center"><strong>Entrega en tienda</strong> Puede recogerlo en San Borja G-21 - Wanchaq - Cusco</p>
+      <p class="text-center"><strong>Entrega a domicilio</strong> La entrega a domicilio se realizara dentro de las 24 horas</p>
+    </div>
+    </form>
+</div>
+</div>
+
+

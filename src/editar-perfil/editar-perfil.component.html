@@ -1,0 +1,12 @@
+<div class="modal-backdrop">
+  <div class="modal-content">
+    <h3>Editar {{ campo }}</h3>
+    
+    <input [(ngModel)]="nuevoValor" [type]="campo === 'foto' ? 'url' : 'text'" />
+
+    <div class="modal-actions">
+      <button (click)="guardarCambios()">Guardar</button>
+      <button (click)="cerrarModal()">Cancelar</button>
+    </div>
+  </div>
+</div>

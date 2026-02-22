@@ -1,0 +1,48 @@
+<div class="profile-container" *ngIf="user">
+
+  <div class="profile-card">
+
+    <!-- Encabezado de perfil -->
+    <div class="profile-header">
+      <div class="avatar-wrapper">
+        <img [src]="user.foto || defaultFoto" alt="Foto de {{ user.nombre }}" />
+        <button class="btn-change-photo" (click)="openEdit('foto')" title="Cambiar foto">
+          <i class="fa fa-camera"></i>
+        </button>
+      </div>
+
+      <div class="profile-name">
+        <h2>¡Hola, {{ user.nombre }}!</h2>
+        <p>{{ user.email }}</p>
+      </div>
+    </div>
+
+    <!-- Detalles de perfil -->
+<div class="profile-details">
+  <div class="detail-item">
+    <label>Celular:</label>
+    <span>{{ user.celular || 'No agregado' }}</span>
+    <button class="btn-link" (click)="openEdit('celular')">Editar</button>
+
+  </div>
+
+  <div class="detail-item">
+    <label>Dirección:</label>
+    <span>{{ user.direccion || 'No agregada' }}</span>
+    <button class="btn-link" (click)="openEdit('direccion')">Editar</button>
+
+  </div>
+</div>
+
+<!-- Modal -->
+<app-editar-perfil
+  *ngIf="editField"
+  [campo]="editField"
+  [valor]="user[editField]"
+  (guardar)="actualizarCampo($event)"
+  (cerrar)="editField = null">
+</app-editar-perfil>
+
+
+
+</div>

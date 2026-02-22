@@ -1,0 +1,25 @@
+<div class="container my-5">
+    <h2 class="text-center mb-4">Gestión de Usuarios 👤</h2>
+  
+    <table class="table table-hover table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of usuarios">
+          <td>{{ user.id }}</td>
+          <td>{{ user.nombre }}</td>
+          <td>{{ user.estado }}</td>
+          <td>
+            <button class="btn btn-warning btn-sm">Activar/Desactivar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  

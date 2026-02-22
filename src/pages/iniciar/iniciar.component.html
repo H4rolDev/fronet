@@ -1,0 +1,42 @@
+<div class="auth-container">
+  <div class="auth-box">
+    <h2 class="auth-title">
+      {{ isRegisterMode ? 'Crear cuenta' : 'Bienvenido de nuevo' }}
+    </h2>
+
+    <form [formGroup]="isRegisterMode ? registerForm : loginForm" (ngSubmit)="isRegisterMode ? register() : login()" class="auth-form">
+
+      <div *ngIf="isRegisterMode" class="form-group">
+        <label for="nombre">Nombre</label>
+        <input type="text" id="nombre" formControlName="nombre" placeholder="Tu nombre completo" />
+      </div>
+
+      <div class="form-group">
+        <label for="username">Usuario</label>
+        <input type="text" id="username" formControlName="username" placeholder="correo@ejemplo.com" />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" formControlName="password" placeholder="••••••••" />
+        <div class="forgot-password" *ngIf="!isRegisterMode" (click)="recoverPassword()">
+          ¿Olvidaste tu contraseña?
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn">
+        {{ isRegisterMode ? 'Registrarse' : 'Ingresar' }}
+      </button>
+    </form>
+
+    <div class="toggle-mode">
+      <span (click)="toggleMode()">
+        {{ isRegisterMode ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate' }}
+      </span>
+    </div>
+
+    <div *ngIf="message" class="auth-message">
+      {{ message }}
+    </div>
+  </div>
+</div>

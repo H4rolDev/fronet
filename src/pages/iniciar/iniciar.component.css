@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #ecf0ff, #e4f3ff);
+  font-family: 'Inter', sans-serif;
+}
+
+.auth-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.auth-box {
+  background: #fff;
+  padding: 2.5rem;
+  border-radius: 1.5rem;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 430px;
+  animation: fadeInUp 0.8s ease;
+}
+
+.auth-title {
+  font-size: 1.9rem;
+  font-weight: 600;
+  color: #292929;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.auth-form .form-group {
+  margin-bottom: 1.3rem;
+  position: relative;
+}
+
+.auth-form label {
+  font-weight: 500;
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #444;
+}
+
+.auth-form input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  font-size: 15px;
+  transition: all 0.3s ease;
+}
+
+.auth-form input:focus {
+  outline: none;
+  border-color: #7b61ff;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(123, 97, 255, 0.2);
+}
+
+.forgot-password {
+  font-size: 0.85rem;
+  color: #6b6b6b;
+  margin-top: 0.5rem;
+  text-align: right;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.forgot-password:hover {
+  color: #7b61ff;
+  text-decoration: underline;
+}
+
+.submit-btn {
+  background: #7b61ff;
+  color: white;
+  border: none;
+  padding: 0.8rem;
+  width: 100%;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.submit-btn:hover {
+  background: #684de0;
+  transform: translateY(-1px);
+}
+
+.toggle-mode {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+  color: #555;
+  cursor: pointer;
+}
+
+.toggle-mode span:hover {
+  color: #7b61ff;
+  text-decoration: underline;
+}
+
+.auth-message {
+  margin-top: 1.5rem;
+  background: #dff7df;
+  color: #2e7d32;
+  border: 1px solid #b2e2b2;
+  padding: 0.8rem;
+  border-radius: 1rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+@keyframes fadeInUp {
+  from {
+    transform: translateY(25px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

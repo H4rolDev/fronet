@@ -1,0 +1,57 @@
+<div class="profile-container" *ngIf="user; else noUser">
+
+  <div class="profile-card">
+
+    <!-- FOTO Y NOMBRE -->
+    <div class="profile-header">
+      <div class="avatar-wrapper">
+        <img [src]="'https://i.pravatar.cc/150?u=' + user.email" alt="Avatar de {{ user.nombre }}" />
+        <button class="btn-change-photo" (click)="changePhoto()">
+          <i class="fa fa-camera"></i>
+        </button>
+      </div>
+
+      <div class="profile-name">
+        <h2>¡Hola, {{ user.nombre }}!</h2>
+        <p class="email-text">{{ user.email }}</p>
+      </div>
+    </div>
+
+    <!-- INFO DETALLADA -->
+    <div class="profile-details">
+      <div class="detail-item">
+        <label>Celular:</label>
+        <span>{{ user.celular || 'No agregado' }}</span>
+        <button class="btn-link" (click)="editField('celular')">Editar</button>
+      </div>
+
+      <div class="detail-item">
+        <label>Dirección:</label>
+        <span>{{ user.direccion || 'No agregada' }}</span>
+        <button class="btn-link" (click)="editField('direccion')">Editar</button>
+      </div>
+    </div>
+
+    <!-- ACCIONES -->
+    <div class="profile-actions">
+      <button class="btn-primary" (click)="router.navigate(['/productos'])">
+        Ver Productos
+      </button>
+      <button class="btn-outline" (click)="router.navigate(['/pedidos'])">
+        Historial de Pedidos
+      </button>
+      <button class="btn-outline" (click)="router.navigate(['/editar-cuenta'])">
+        Administrar Cuenta
+      </button>
+    </div>
+
+    <!-- LOGOUT -->
+    <!--<button class="btn-logout" (click)="logout()">Cerrar Sesión</button>-->
+
+  </div>
+
+</div>
+
+<ng-template #noUser>
+  <p class="no-user-msg">No hay sesión iniciada. Redirigiendo...</p>
+</ng-template>

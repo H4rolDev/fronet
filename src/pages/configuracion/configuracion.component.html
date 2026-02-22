@@ -1,0 +1,20 @@
+<div class="container mt-4">
+  <h2>Administrar Cuenta</h2>
+  <form (ngSubmit)="guardarCambios()">
+    <div class="mb-3">
+      <label for="nombre" class="form-label">Nombre</label>
+      <input [(ngModel)]="user.nombre" name="nombre" type="text" class="form-control" required />
+    </div>
+    <div class="mb-3">
+      <label for="email" class="form-label">Correo electrónico</label>
+      <input [(ngModel)]="user.email" name="email" type="email" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+      <label for="foto" class="form-label">Foto URL</label>
+      <input [(ngModel)]="user.foto" name="foto" type="text" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+  </form>
+</div>

@@ -1,0 +1,18 @@
+.text-pink {
+  color: #ff6fa1;
+}
+
+.fst-italic {
+  font-style: italic;
+}
+
+.card {
+  border-radius: 16px;
+}
+
+.nav-link.active,
+.nav-link:hover {
+  background-color: #ff6fa1;
+  color: white !important;
+  border-radius: 8px;
+}

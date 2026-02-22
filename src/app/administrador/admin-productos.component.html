@@ -1,0 +1,28 @@
+<div class="container my-5">
+    <h2 class="text-center mb-4">Gestión de Productos 🍰</h2>
+  
+    <button class="btn btn-success mb-3">Agregar Producto</button>
+  
+    <table class="table table-hover table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Precio (S/)</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let prod of productos">
+          <td>{{ prod.id }}</td>
+          <td>{{ prod.nombre }}</td>
+          <td>{{ prod.precio }}</td>
+          <td>
+            <button class="btn btn-primary btn-sm">Editar</button>
+            <button class="btn btn-danger btn-sm">Eliminar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  

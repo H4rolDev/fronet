@@ -1,0 +1,107 @@
+.yape-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #6f42c1, #d63384);
+  padding: 40px;
+  color: white;
+  text-align: center;
+}
+
+.titulo {
+  font-weight: bold;
+  margin-bottom: 30px;
+}
+
+.card-yape {
+  background: white;
+  color: #333;
+  border-radius: 15px;
+  padding: 30px;
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  flex-wrap: wrap;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.info-yape {
+  flex: 1;
+  min-width: 280px;
+}
+
+.numero {
+  font-size: 22px;
+  font-weight: bold;
+  color: #6f42c1;
+}
+
+.descripcion {
+  margin: 15px 0;
+}
+
+.qr-img {
+  width: 220px;
+  margin-top: 15px;
+}
+
+.detalle-carrito {
+  flex: 1;
+  min-width: 280px;
+  text-align: left;
+}
+
+.producto-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.total {
+  margin-top: 15px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #d63384;
+}
+
+.btn-confirmar {
+  width: 100%;
+  padding: 10px;
+  background: #6f42c1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  margin-top: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-confirmar:hover {
+  background: #5a32a3;
+}
+
+.btn-volver {
+  width: 100%;
+  padding: 10px;
+  background: #adb5bd;
+  border: none;
+  border-radius: 8px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.mensaje-exito {
+  margin-top: 15px;
+  padding: 10px;
+  background: #d4edda;
+  color: #155724;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.vacio {
+  padding: 10px;
+  background: #f8d7da;
+  color: #721c24;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}

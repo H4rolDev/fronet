@@ -1,0 +1,11 @@
+<div class="card">
+  <img src="{{producto.imagen}}" width="200" height="180">
+  <div class="card-body">
+
+    <h5 id="nombres" class="card-title">{{producto.nombre}}</h5>
+    <p class="card-text">{{producto.descripcion}}</p>
+    <p class="card-text"><strong>S/{{producto.precio}}</strong></p>
+    <a class="btn btn-primary" href="/pago/{{producto.id}}" (click)="comprar()" class="{{fondo}}">Agregary</a>
+
+  </div>
+</div>

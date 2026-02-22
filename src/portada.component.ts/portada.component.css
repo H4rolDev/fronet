@@ -1,0 +1,8 @@
+.portada {
+    height: 100vh;
+    background-image: url('/mi-fondo-portada.jpg'); /* Usa tu imagen */
+    background-size: cover;
+    background-position: center;
+    color: white;
+    text-shadow: 2px 2px 4px black;
+  }

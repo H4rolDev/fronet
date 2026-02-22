@@ -1,0 +1,62 @@
+<div class="card-body col-md-6 mx-auto text-center">
+<div class="card card-primary card-outline mb-4">
+  <!--begin::Header-->
+  <div class="card-header"><div class="card-title"><h5>Ingrese sus datos para registrar</h5></div></div>
+  <!--end::Header-->
+  <!--begin::Form-->
+  <form [formGroup]="miFormulario1">
+    <!--begin::Body-->
+    <div class="card-body">
+      <div class="mb-1">
+        <label for="exampleInputEmail1" class="form-label">Ingrese su nombre</label>
+        <input type="text" formControlName="nombres" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+        <div *ngIf="nombres?.invalid" class="text-danger">
+          <span *ngIf="nombres?.errors?.['required']">el nombre es requerido</span>
+         </div>
+      </div>
+      <div class="mb-1">
+        <label for="exampleInputEmail1" class="form-label">Ingrese su nombre</label>
+        <input type="text" formControlName="apellidos" formControlName="nombres" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+        <div *ngIf="apellidos?.invalid" class="text-danger">
+          <span *ngIf="apellidos?.errors?.['required']">el apellido es requerido</span>
+         </div>
+      </div>
+      <div class="mb-1">
+        <label for="exampleInputEmail1" class="form-label">Ingrese su nombre</label>
+        <input type="text" formControlName="direccion" formControlName="nombres" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+        <div *ngIf="direccion?.invalid" class="text-danger">
+          <span *ngIf="direccion?.errors?.['required']">la direccion es requerido</span>
+         </div>
+      </div>
+      <div class="mb-1">
+        <label for="exampleInputEmail1" class="form-label">Ingrese su nombre</label>
+        <input type="text" formControlName="telefono" formControlName="nombres" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+        <div *ngIf="telefono?.invalid" class="text-danger">
+          <span *ngIf="telefono?.errors?.['required']">el telefono es requerido</span>
+         </div>
+      </div>
+      <div class="mb-1">
+        <label for="exampleInputEmail1" class="form-label">Ingrese su nombre</label>
+        <input type="text" formControlName="correo" formControlName="nombres" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+        <div *ngIf="correo?.invalid" class="text-danger">
+          <span *ngIf="correo?.errors?.['required']">el correo es requerido</span>
+         </div>
+      </div>
+      <div class="mb-1">
+        <label for="exampleInputEmail1" class="form-label">Ingrese su nombre</label>
+        <input type="text" formControlName="contrasena" formControlName="nombres" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+        <div *ngIf="contrasena?.invalid" class="text-danger">
+          <span *ngIf="contrasena?.errors?.['required']">la contrasena es requerido</span>
+         </div>
+      </div>
+    </div>
+    <!--end::Body-->
+    <!--begin::Footer-->
+    <div class="card-footer">
+      <button type="submit" class="btn btn-primary">Guardar</button>
+    </div>
+    <!--end::Footer-->
+  </form>
+  <!--end::Form-->
+</div>
+</div>

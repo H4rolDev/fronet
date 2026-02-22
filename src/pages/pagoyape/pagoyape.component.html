@@ -1,0 +1,60 @@
+<div class="yape-container">
+
+  <h1 class="titulo">💜 Pago con Yape</h1>
+
+  <div class="card-yape">
+
+    <!-- LADO IZQUIERDO -->
+    <div class="info-yape">
+      <h3>Número de Yape</h3>
+      <p class="numero">919 576 034</p>
+
+      <p class="descripcion">
+        Escanea el código QR o realiza el pago al número indicado.
+        Luego presiona confirmar pedido.
+      </p>
+
+      <img src="assets/qr.jpg" class="qr-img">
+    </div>
+
+    <!-- LADO DERECHO -->
+    <div class="detalle-carrito">
+
+      <h3>🛒 Productos seleccionados</h3>
+
+      <div *ngIf="carrito.length === 0" class="vacio">
+        No hay productos en el carrito.
+      </div>
+
+      <div *ngFor="let producto of carrito; let i = index" class="producto-item">
+        <span>{{ i + 1 }}. {{ producto.nombre }}</span>
+        <strong>S/. {{ producto.precio }}</strong>
+      </div>
+
+      <div class="total">
+        TOTAL: S/. {{ total }}
+      </div>
+
+      <button
+        class="btn-confirmar"
+        (click)="confirmarPedido()"
+        [disabled]="carrito.length === 0">
+        Confirmar Pedido
+      </button>
+
+      <!-- 🔥 SIN click, SOLO routerLink -->
+      <button
+        class="btn-volver"
+        routerLink="/">
+        Volver al inicio
+      </button>
+
+      <div *ngIf="mensajeExito" class="mensaje-exito">
+        {{ mensajeExito }}
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

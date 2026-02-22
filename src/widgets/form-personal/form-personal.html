@@ -1,0 +1,36 @@
+<div class="card-body col-md-4 mx-auto">
+  <div class="card w-70">
+  <form class="d-flex flex-column text-center" [formGroup]="miFormulario" (ngSubmit)="onSubmit()">
+    <h5>Registrar usuario</h5>
+    <div class = "form-group d-flex flex-column">
+       <label>Nombres</label>
+       <input type = "text" formControlName="nombre" class = "form-control" placeholder = "Ingrese nombre">
+       <div *ngIf="nombre?.invalid" class="text-danger">
+        <span *ngIf="nombre?.errors?.['required']">el nombre es requerido</span>
+       </div>
+    </div>
+
+    <div class = "form-group d-flex flex-column">
+      <div>
+        <label for = "exp">Apellido su Contraseña</label>
+        <input type = "text" formControlName="apellido" class = "form-control" placeholder = "Ingrese apellido">
+        <div *ngIf="apellido?.invalid" class="text-danger">
+          <span *ngIf="apellido?.errors?.['required']">el apellido es requerido</span>
+         </div>
+      </div>
+   </div>
+   <div class = "form-group d-flex flex-column">
+    <div>
+      <label for = "exp">Direccion</label>
+      <input type = "text" formControlName="direccion" class = "form-control" placeholder = "Ingrese direccion">
+      <div *ngIf="direccion?.invalid" class="text-danger">
+        <span *ngIf="direccion?.errors?.['required']">la direccion es requerido</span>
+       </div>
+    </div>
+ </div>
+  <div class = "">
+    <button type="submit" class="btn btn-primary">Guardar</button><br>
+  </div>
+  </form>
+</div>
+</div>
