@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { ProductoService } from '../../services/producto.service';
@@ -10,7 +10,7 @@ import { takeUntil } from 'rxjs/operators';
 @Component({
   selector: 'app-productos',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, NgIf],
   templateUrl: './products.component.html',
   styleUrls: ['./products.component.css']
 })
@@ -40,28 +40,21 @@ export class ProductsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.cargarCarrito();
 
-    // ─── Suscripción 1: queryParams (siempre activa durante la vida del componente)
-    // Cada vez que el navbar cambie ?search=..., esto se dispara
     this.route.queryParams
       .pipe(takeUntil(this.destroy$))
       .subscribe(params => {
         this.textoBusqueda = params['search'] || '';
-        // Si los datos ya están cargados, filtrar de inmediato
-        // Si no, el next() del servicio llamará filtrarProductos() cuando terminen de llegar
         if (this.listadoTortas.length > 0) {
           this.filtrarProductos();
         }
       });
 
-    // ─── Suscripción 2: servicio (se llama una sola vez para cargar los datos)
     this.productosService.traerProductos()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
           this.listadoTortas = Array.isArray(data) ? data : [];
           this.cargando = false;
-          // Aplicar filtro ahora que los datos llegaron
-          // textoBusqueda ya fue asignado por el queryParams.subscribe arriba
           this.filtrarProductos();
         },
         error: (err) => {

@@ -52,7 +52,12 @@ export class IniciarComponent implements OnInit {
   }
 
   login() {
-    if (this.loginForm.invalid) {
+    // var ruta = '/admin/dashboard';
+    this.router.navigate(['/admin/dashboard']);
+    // this.router.navigate([ruta]).then(() => {
+    //   window.location.reload();
+    // });
+    /* if (this.loginForm.invalid) {
       this.message = 'Completa todos los campos';
       return;
     }
@@ -71,10 +76,10 @@ export class IniciarComponent implements OnInit {
         this.isLoading = false;
         this.message = 'Credenciales inválidas o error de conexión';
       },
-    });
+    }); */
   }
 
-  private redirectByRole(userData: any) {
+  redirectByRole(userData: any) {
     const roles: string[] = userData.roles ?? [];
 
     let ruta = '/cuenta';

@@ -1,0 +1,55 @@
+<div class="modal-overlay" (click)="onOverlayClick($event)">
+  <div class="modal-panel">
+
+    <div class="delete-icon-wrap">
+      <div class="delete-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6"/>
+          <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+        </svg>
+      </div>
+    </div>
+
+    <h2 class="delete-title">¿Eliminar torta?</h2>
+    <p class="delete-message">
+      Estás a punto de eliminar
+      <strong>{{ torta?.nombre }}</strong>.
+      Esta acción no se puede deshacer.
+    </p>
+
+    <div class="alert-error" *ngIf="error">
+      {{ error }}
+    </div>
+
+    <div class="torta-preview" *ngIf="torta">
+      <div class="preview-image">
+        <img *ngIf="torta.imagenUrl" [src]="torta.imagenUrl" [alt]="torta.nombre" />
+        <div class="preview-placeholder" *ngIf="!torta.imagenUrl">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M3 19h18M5 19V12M19 19V12M3 12c0-1 .8-2 2-2h14c1.2 0 2 1 2 2"/>
+          </svg>
+        </div>
+      </div>
+      <div class="preview-info">
+        <span class="preview-name">{{ torta.nombre }}</span>
+        <span class="preview-price">S/ {{ torta.precioVenta | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" (click)="close()" [disabled]="loading">
+        Cancelar
+      </button>
+      <button class="btn-delete" (click)="confirm()" [disabled]="loading">
+        <span class="btn-spinner" *ngIf="loading"></span>
+        <svg *ngIf="!loading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+        </svg>
+        {{ loading ? 'Eliminando...' : 'Sí, eliminar' }}
+      </button>
+    </div>
+  </div>
+</div>

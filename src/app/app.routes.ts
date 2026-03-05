@@ -9,7 +9,6 @@ import { IniciarComponent } from '../pages/iniciar/iniciar.component';
 import { RegistrarseComponent } from '../pages/registrarse/registrarse.component';
 import { PagarComponent } from '../widgets/pagar/pagar.component';
 import { PasswordComponent } from '../widgets/form-password/form-password';
-import { PersonalComponent } from '../widgets/form-personal/form-personal';
 import { ListarpersonalComponent } from '../widgets/listar-personal/listar-personal';
 import { PagoyapeComponent } from '../pages/pagoyape/pagoyape.component';
 import { BienvenidaComponent } from '../bienvenida/bienvenida.component';
@@ -48,7 +47,7 @@ export const routes: Routes = [
 
   {
     path: 'admin',
-    canActivate: [adminGuard],
+    // canActivate: [adminGuard],
     loadComponent: () =>
       import('../pages/modulo-administrativo/admin-layout/admin-layout.component')
         .then(m => m.AdminLayoutComponent),
@@ -64,13 +63,13 @@ export const routes: Routes = [
           import('../pages/modulo-administrativo/admin-dashboard/admin-dashboard.component')
             .then(m => m.AdminDashboardComponent),
       },
-      /* {
+      {
         path: 'tortas',
         loadComponent: () =>
           import('../pages/modulo-administrativo/admin-tortas/admin-tortas.component')
             .then(m => m.AdminTortasComponent),
       },
-      {
+      /* {
         path: 'recetas',
         loadComponent: () =>
           import('../pages/modulo-administrativo/admin-recetas/admin-recetas.component')

@@ -120,11 +120,19 @@
     <div class="productos-grid" *ngIf="!mensajeNoResultados">
       <div class="producto-card" *ngFor="let p of productosFiltrados">
         <div class="producto-img-wrap">
-          <!-- <img [src]="'assets/' + p.imagen" [alt]="p.nombre" (error)="p.imagen = 'placeholder.jpg'"> -->
-          <span class="stock-tag" [class.agotado]="p.stockDisponible === 0">
-            {{ p.stockDisponible > 0 ? '✓ Disponible' : '✕ Agotado' }}
-          </span>
-        </div>
+  <img
+    *ngIf="p.imagenUrl"
+    [src]="p.imagenUrl"
+    [alt]="p.nombre"
+    class="producto-img"
+  />
+  <div *ngIf="!p.imagenUrl" class="producto-img-placeholder">
+    <span>🎂</span>
+  </div>
+  <span class="stock-tag" [class.agotado]="p.stockDisponible === 0">
+    {{ p.stockDisponible > 0 ? '✓ Disponible' : '✕ Agotado' }}
+  </span>
+</div>
         <div class="producto-body">
           <h5 class="producto-nombre">{{ p.nombre }}</h5>
           <p class="producto-desc">{{ p.descripcion }}</p>

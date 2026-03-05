@@ -9,4 +9,6 @@ export class ListadoTortaDTO {
   fechaModificacion!: Date;
   UsuarioCreacion!: string;
   UsuarioModificacion!: string;
+  imagenUrl?: string;
+  imagenPublicId?: string;
 }

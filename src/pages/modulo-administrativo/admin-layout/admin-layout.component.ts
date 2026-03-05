@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgIf } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { AuthService } from '../../../services/auth.service';
 
@@ -9,7 +9,7 @@ import { AuthService } from '../../../services/auth.service';
   selector: 'app-admin-layout',
   templateUrl: './admin-layout.component.html',
   styleUrls: ['./admin-layout.component.css'],
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, NgIf],
 })
 export class AdminLayoutComponent implements OnInit {
   sidebarCollapsed = false;
@@ -27,7 +27,10 @@ export class AdminLayoutComponent implements OnInit {
     '/admin/insumos':   'Insumos',
   };
 
-  constructor(private router: Router, private auth: AuthService) {}
+  constructor(
+    private router: Router,
+    private auth: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.loadUserData();
@@ -36,7 +39,7 @@ export class AdminLayoutComponent implements OnInit {
   }
 
   private loadUserData(): void {
-    const raw = localStorage.getItem('user');
+   /*  const raw = localStorage.getItem('user');
     if (!raw) {
       this.router.navigate(['/iniciar']);
       return;
@@ -47,7 +50,7 @@ export class AdminLayoutComponent implements OnInit {
     const names     = (user.persona?.nombres ?? this.userName).split(' ');
     this.userInitials = names.length >= 2
       ? `${names[0][0]}${names[1][0]}`.toUpperCase()
-      : names[0].substring(0, 2).toUpperCase();
+      : names[0].substring(0, 2).toUpperCase(); */
   }
 
   private setCurrentDate(): void {

@@ -369,7 +369,7 @@
   font-weight: 600;
   padding: 2px 8px;
   background: linear-gradient(135deg, var(--pink-500), var(--rose-dark));
-  color: white;
+  color: rgb(0, 0, 0);
   border-radius: 20px;
   letter-spacing: 0.3px;
   text-transform: capitalize;
