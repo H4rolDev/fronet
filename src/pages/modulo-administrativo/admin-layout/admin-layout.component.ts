@@ -25,6 +25,7 @@ export class AdminLayoutComponent implements OnInit {
     '/admin/recetas':   'Recetas de Tortas',
     '/admin/produccion':'Producción de Torta',
     '/admin/insumos':   'Insumos',
+    '/admin/unidad-medida': 'Unidad de Medida',
   };
 
   constructor(
@@ -39,7 +40,7 @@ export class AdminLayoutComponent implements OnInit {
   }
 
   private loadUserData(): void {
-   /*  const raw = localStorage.getItem('user');
+    const raw = localStorage.getItem('user');
     if (!raw) {
       this.router.navigate(['/iniciar']);
       return;
@@ -50,7 +51,7 @@ export class AdminLayoutComponent implements OnInit {
     const names     = (user.persona?.nombres ?? this.userName).split(' ');
     this.userInitials = names.length >= 2
       ? `${names[0][0]}${names[1][0]}`.toUpperCase()
-      : names[0].substring(0, 2).toUpperCase(); */
+      : names[0].substring(0, 2).toUpperCase();
   }
 
   private setCurrentDate(): void {
@@ -70,7 +71,6 @@ export class AdminLayoutComponent implements OnInit {
         this.currentPageTitle = this.pageTitles[e.urlAfterRedirects] ?? 'Admin';
       });
 
-    // Set initial
     this.currentPageTitle = this.pageTitles[this.router.url] ?? 'Admin';
   }
 

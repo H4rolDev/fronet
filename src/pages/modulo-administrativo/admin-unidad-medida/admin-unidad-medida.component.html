@@ -1,0 +1,165 @@
+@if (notificacion()) {
+<div class="toast" [class.toast--exito]="notificacion()!.tipo === 'exito'"
+  [class.toast--error]="notificacion()!.tipo === 'error'"
+  [class.toast--advertencia]="notificacion()!.tipo === 'advertencia'" role="alert" aria-live="polite">
+  <span class="toast__icono">
+    @switch (notificacion()!.tipo) {
+    @case ('exito') { ✓ }
+    @case ('error') { ✕ }
+    @case ('advertencia') { ⚠ }
+    }
+  </span>
+  <span class="toast__mensaje">{{ notificacion()!.mensaje }}</span>
+  <button class="toast__cerrar" (click)="cerrarNotificacion()" aria-label="Cerrar notificación">
+    ✕
+  </button>page
+</div>
+}
+<div class="page">
+  <header class="page__header">
+    <div class="page__header-left">
+      <h1 class="page__titulo">Unidades de Medida</h1>
+      <p class="page__subtitulo">Gestión del catálogo de unidades</p>
+    </div>
+    <button class="btn btn--primario" (click)="abrirModalCrear()">
+      <span class="btn__icono">+</span>
+      Nueva Unidad
+    </button>
+  </header>
+
+  <div class="barra-busqueda">
+    <div class="barra-busqueda__input-wrapper">
+      <span class="barra-busqueda__icono">⌕</span>
+      <input type="text" class="barra-busqueda__input" placeholder="Buscar por nombre..." [ngModel]="textoBusqueda()"
+        (ngModelChange)="onBusqueda($event)" aria-label="Buscar unidades de medida" />
+      @if (textoBusqueda()) {
+      <button class="barra-busqueda__limpiar" (click)="limpiarBusqueda()" aria-label="Limpiar búsqueda">
+        ✕
+      </button>
+      }
+    </div>
+    <span class="barra-busqueda__contador">
+      {{ unidadesFiltradas().length }}
+      {{ unidadesFiltradas().length === 1 ? 'registro' : 'registros' }}
+    </span>
+  </div>
+
+  <div class="tabla-wrapper">
+    <table class="tabla" aria-label="Listado de unidades de medida">
+      <thead class="tabla__head">
+        <tr>
+          <th class="tabla__th tabla__th--id">#</th>
+          <th class="tabla__th">Nombre</th>
+          <th class="tabla__th">Estado</th>
+          <th class="tabla__th">Creado por</th>
+          <th class="tabla__th">Fecha creación</th>
+          <th class="tabla__th tabla__th--acciones">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody class="tabla__body">
+
+        @if (cargandoTabla()) {
+        @for (i of [1,2,3,4,5]; track i) {
+        <tr class="tabla__fila tabla__fila--skeleton">
+          <td><span class="skeleton"></span></td>
+          <td><span class="skeleton skeleton--ancho"></span></td>
+          <td><span class="skeleton skeleton--corto"></span></td>
+          <td><span class="skeleton"></span></td>
+          <td><span class="skeleton"></span></td>
+          <td><span class="skeleton skeleton--corto"></span></td>
+        </tr>
+        }
+        }
+
+        @else if (unidadesFiltradas().length === 0) {
+        <tr>
+          <td colspan="6" class="tabla__vacia">
+            @if (textoBusqueda()) {
+            <div class="estado-vacio">
+              <span class="estado-vacio__icono">⌕</span>
+              <p>No se encontraron resultados para
+                <strong>"{{ textoBusqueda() }}"</strong>
+              </p>
+              <button class="btn btn--texto" (click)="limpiarBusqueda()">
+                Limpiar búsqueda
+              </button>
+            </div>
+            } @else {
+            <div class="estado-vacio">
+              <span class="estado-vacio__icono">📋</span>
+              <p>No hay unidades de medida registradas.</p>
+              <button class="btn btn--primario" (click)="abrirModalCrear()">
+                Crear primera unidad
+              </button>
+            </div>
+            }
+          </td>
+        </tr>
+        }
+
+        <!-- Filas de datos -->
+        @else {
+        @for (unidad of unidadesFiltradas(); track unidad.id) {
+        <tr class="tabla__fila">
+          <td class="tabla__td tabla__td--id">{{ unidad.id }}</td>
+          <td class="tabla__td tabla__td--nombre">{{ unidad.nombre }}</td>
+          <td class="tabla__td">
+            <span class="badge" [class.badge--activo]="unidad.activo" [class.badge--inactivo]="!unidad.activo">
+              {{ unidad.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td class="tabla__td tabla__td--secundario">{{ unidad.usuarioCreacion }}</td>
+          <td class="tabla__td tabla__td--secundario">{{ formatearFecha(unidad.fechaCreacion) }}</td>
+          <td class="tabla__td tabla__td--acciones">
+            <div class="acciones">
+              <button class="btn-accion btn-accion--editar" (click)="abrirModalEditar(unidad.id)"
+                [attr.aria-label]="'Editar ' + unidad.nombre" title="Editar">
+                ✎
+              </button>
+              <button class="btn-accion btn-accion--eliminar" (click)="confirmarEliminar(unidad)"
+                [attr.aria-label]="'Eliminar ' + unidad.nombre" title="Eliminar">
+                ✕
+              </button>
+            </div>
+          </td>
+        </tr>
+        }
+        }
+
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /page -->
+
+@if (idParaEliminar()) {
+<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="confirmar-titulo">
+  <div class="dialogo">
+    <div class="dialogo__icono">⚠</div>
+    <h2 class="dialogo__titulo" id="confirmar-titulo">¿Eliminar registro?</h2>
+    <p class="dialogo__mensaje">
+      Estás a punto de eliminar
+      <strong>"{{ nombreParaEliminar() }}"</strong>.
+      Esta acción no se puede deshacer.
+    </p>
+    <div class="dialogo__acciones">
+      <button class="btn btn--secundario" (click)="cancelarEliminar()" [disabled]="eliminando()">
+        Cancelar
+      </button>
+      <button class="btn btn--peligro" (click)="ejecutarEliminar()" [disabled]="eliminando()">
+        @if (eliminando()) {
+        <span class="spinner"></span> Eliminando...
+        } @else {
+        Sí, eliminar
+        }
+      </button>
+    </div>
+  </div>
+</div>
+}
+
+@if (modalAbierto() && modalInputData()) {
+<app-unidad-medida-modal [inputData]="modalInputData()!" (cerrar)="cerrarModal()"
+  (guardado)="onGuardadoExitoso($event)" />
+}

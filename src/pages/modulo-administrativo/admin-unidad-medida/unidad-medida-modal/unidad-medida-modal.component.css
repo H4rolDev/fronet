@@ -1,0 +1,318 @@
+/*
+ * unidad-medida-modal.component.css
+ * Estilos del modal de creación y edición de Unidad de Medida.
+ *
+ * Variables: heredadas del componente padre vía :root.
+ * Si el modal se usa de forma independiente, se redeclaran aquí también.
+ */
+
+/* ─── Variables (espejo del padre para que el modal sea autónomo) ────────── */
+:host {
+  --color-fondo:        #ffffff;
+  --color-superficie:   #1a1d27;
+  --color-superficie-2: #21253a;
+  --color-borde:        #2a2d3e;
+  --color-borde-focus:  #3b82f6;
+  --color-primario:     #3b82f6;
+  --color-primario-h:   #2563eb;
+  --color-peligro:      #ef4444;
+  --color-exito:        #22c55e;
+  --color-texto:        #e2e8f0;
+  --color-texto-dim:    #94a3b8;
+  --radio:              10px;
+  --sombra-modal:       0 25px 80px rgba(0,0,0,.7);
+}
+
+/* ─── Overlay ───────────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .7);
+  backdrop-filter: blur(6px);
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: overlayIn .2s ease;
+}
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ─── Panel del modal ────────────────────────────────────────────────────── */
+.modal-panel {
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: var(--sombra-modal);
+  overflow: hidden;
+  animation: panelIn .28s cubic-bezier(.34, 1.56, .64, 1);
+}
+@keyframes panelIn {
+  from { transform: scale(.88) translateY(16px); opacity: 0; }
+  to   { transform: scale(1)   translateY(0);    opacity: 1; }
+}
+
+/* ─── Header ────────────────────────────────────────────────────────────── */
+.modal-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--color-borde);
+  background: rgba(255, 255, 255, .02);
+}
+.modal-panel__header-left {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+}
+.modal-panel__icono {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59, 130, 246, .15);
+  color: var(--color-primario);
+  border-radius: 8px;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.modal-panel__titulo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-texto);
+  margin: 0;
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+.modal-panel__cerrar {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  color: var(--color-texto-dim);
+  cursor: pointer;
+  font-size: .8rem;
+  transition: background .15s, color .15s, border-color .15s;
+  flex-shrink: 0;
+}
+.modal-panel__cerrar:hover:not(:disabled) {
+  background: rgba(239, 68, 68, .1);
+  border-color: var(--color-peligro);
+  color: var(--color-peligro);
+}
+.modal-panel__cerrar:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ─── Body (formulario / skeleton) ──────────────────────────────────────── */
+.modal-panel__body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ─── Campos del formulario ──────────────────────────────────────────────── */
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: .375rem;
+  position: relative;
+}
+
+.campo__label {
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--color-texto-dim);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+}
+.campo__requerido {
+  color: var(--color-peligro);
+  font-size: .9rem;
+  line-height: 1;
+}
+
+.campo__input {
+  width: 100%;
+  padding: .75rem 1rem;
+  background: var(--color-superficie-2);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  color: var(--color-texto);
+  font-size: .95rem;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  transition: border-color .18s, box-shadow .18s, background .18s;
+  box-sizing: border-box;
+  outline: none;
+}
+.campo__input::placeholder { color: var(--color-texto-dim); }
+.campo__input:focus {
+  border-color: var(--color-borde-focus);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, .2);
+  background: #1e2235;
+}
+.campo__input:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* Estado de error en el campo */
+.campo--error .campo__input {
+  border-color: var(--color-peligro);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, .15);
+}
+.campo--error .campo__input:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, .25);
+}
+
+/* Contador de caracteres */
+.campo__contador {
+  position: absolute;
+  right: .75rem;
+  bottom: calc(100% - 1.1rem); /* alineado con el label */
+  font-size: .72rem;
+  color: var(--color-texto-dim);
+}
+
+/* Hint informativo */
+.campo__hint {
+  font-size: .75rem;
+  color: var(--color-texto-dim);
+  line-height: 1.4;
+}
+
+/* Mensaje de error de validación */
+.campo__error {
+  font-size: .78rem;
+  color: #f87171;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  animation: errorIn .18s ease;
+}
+.campo__error::before { content: '⚠'; font-size: .7rem; }
+@keyframes errorIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Alerta de error de la API ──────────────────────────────────────────── */
+.alerta-api {
+  display: flex;
+  align-items: flex-start;
+  gap: .625rem;
+  padding: .875rem 1rem;
+  background: rgba(239, 68, 68, .1);
+  border: 1px solid rgba(239, 68, 68, .3);
+  border-radius: var(--radio);
+  animation: errorIn .2s ease;
+}
+.alerta-api__icono {
+  color: var(--color-peligro);
+  font-size: .85rem;
+  flex-shrink: 0;
+  margin-top: .1rem;
+}
+.alerta-api__mensaje {
+  margin: 0;
+  font-size: .875rem;
+  color: #fca5a5;
+  line-height: 1.4;
+}
+
+/* ─── Footer ─────────────────────────────────────────────────────────────── */
+.modal-panel__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: .75rem;
+  padding-top: .5rem;
+  border-top: 1px solid var(--color-borde);
+  margin-top: .25rem;
+}
+
+/* ─── Botones ────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .65rem 1.25rem;
+  border-radius: var(--radio);
+  border: none;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .18s, opacity .18s, transform .12s;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  white-space: nowrap;
+}
+.btn:active:not(:disabled) { transform: scale(.97); }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.btn--primario { background: var(--color-primario); color: #fff; }
+.btn--primario:hover:not(:disabled) { background: var(--color-primario-h); }
+
+.btn--secundario {
+  background: transparent;
+  color: var(--color-texto-dim);
+  border: 1px solid var(--color-borde);
+}
+.btn--secundario:hover:not(:disabled) {
+  color: var(--color-texto);
+  border-color: var(--color-texto-dim);
+}
+
+/* ─── Spinner ────────────────────────────────────────────────────────────── */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, .3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Skeleton (carga en modo editar) ────────────────────────────────────── */
+.campo-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+.sk {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--color-borde) 25%,
+    #2f3347 50%,
+    var(--color-borde) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+.sk--label { height: 12px; width: 80px; }
+.sk--input  { height: 46px; width: 100%; border-radius: var(--radio); }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ─── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .modal-panel { border-radius: 12px 12px 0 0; }
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal-panel__footer { flex-direction: column-reverse; }
+  .btn { width: 100%; justify-content: center; }
+}

@@ -1,0 +1,156 @@
+/**
+ * @file unidad-medida.service.ts
+ * @description Servicio que encapsula TODAS las llamadas HTTP al API de Unidad de Medida.
+ *
+ * ─── PRINCIPIOS APLICADOS ────────────────────────────────────────────────────
+ *  • Single Responsibility : solo maneja comunicación con la API.
+ *  • DRY                   : BASE_URL centralizada; un cambio lo actualiza todo.
+ *  • Tipado estricto        : retorna Observables tipados con los DTOs del modelo.
+ *  • Error handling         : catchError transforma errores HTTP en mensajes
+ *                             legibles para que el componente solo muestre texto.
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * ─── CÓMO REPLICAR A OTRO MÓDULO ─────────────────────────────────────────────
+ *  1. Copia este archivo y renómbralo, p.ej. insumo.service.ts
+ *  2. Cambia BASE_URL por la URL de tu nuevo módulo.
+ *  3. Importa los DTOs correspondientes.
+ *  4. Ajusta los métodos y sus tipos de retorno.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { UnidadMedidaDetalleDTO, UnidadMedidaListadoDTO, UnidadMedidaRequestDTO } from '../models/unidad-medida-dto';
+
+const BASE_URL = 'https://localhost:7223/api/UnidadMedida';
+const USUARIO_ACTUAL = 'admin';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class UnidadMedidaService {
+
+  constructor(private http: HttpClient) {}
+
+  /**
+   * Retorna todos los registros de unidades de medida.
+   * El componente de listado llama este método al inicializarse
+   * y después de cada operación exitosa (crear / editar / eliminar).
+   */
+  obtenerListado(): Observable<UnidadMedidaListadoDTO[]> {
+    return this.http
+      .get<UnidadMedidaListadoDTO[]>(`${BASE_URL}/ObtenerCombo`)
+      .pipe(catchError(this.manejarError));
+  }
+
+  /**
+   * Obtiene el detalle completo de una unidad de medida por su ID.
+   * Se llama cuando el usuario hace clic en "Editar" antes de abrir el modal.
+   *
+   * @param id - ID de la unidad de medida a consultar
+   */
+  obtenerPorId(id: number): Observable<UnidadMedidaDetalleDTO> {
+    const params = new HttpParams().set('id', id.toString());
+    return this.http
+      .get<UnidadMedidaDetalleDTO>(`${BASE_URL}/ObtenerListadoPorId`, { params })
+      .pipe(catchError(this.manejarError));
+  }
+
+  /**
+   * Crea una nueva unidad de medida.
+   * El campo `id` debe ser 0 para que el backend lo trate como INSERT.
+   *
+   * @param datos - Nombre y abreviatura ingresados en el formulario
+   */
+  insertar(datos: { nombre: string; abreviatura: string }): Observable<any> {
+    const payload: UnidadMedidaRequestDTO = {
+      id: 0,
+      activo: true,
+      nombre: datos.nombre.trim(),
+      abreviatura: datos.abreviatura.trim(),
+      usuarioCreacion: USUARIO_ACTUAL,
+      usuarioModificacion: USUARIO_ACTUAL,
+      fechaCreacion: new Date().toISOString(),
+      fechaModificacion: new Date().toISOString(),
+    };
+
+    return this.http
+      .post<any>(`${BASE_URL}/Insertar`, payload)
+      .pipe(catchError(this.manejarError));
+  }
+
+  /**
+   * Actualiza una unidad de medida existente.
+   * Requiere el ID del registro y los datos actualizados.
+   *
+   * @param id         - ID del registro existente
+   * @param datos      - Campos actualizados desde el formulario
+   * @param detalle    - Datos originales del registro (para preservar fechaCreacion, etc.)
+   */
+  modificar(
+    id: number,
+    datos: { nombre: string; abreviatura: string },
+    detalle: UnidadMedidaDetalleDTO
+  ): Observable<any> {
+    const payload: UnidadMedidaRequestDTO = {
+      id,
+      activo: detalle.activo,
+      nombre: datos.nombre.trim(),
+      abreviatura: datos.abreviatura.trim(),
+      usuarioCreacion: detalle.usuarioCreacion,
+      usuarioModificacion: USUARIO_ACTUAL,
+      fechaCreacion: detalle.fechaCreacion,
+      fechaModificacion: new Date().toISOString(),
+    };
+
+    return this.http
+      .post<any>(`${BASE_URL}/Modificar`, payload)
+      .pipe(catchError(this.manejarError));
+  }
+
+  /**
+   * Elimina una unidad de medida por su ID.
+   * El usuario se envía como query param según el contrato de la API.
+   *
+   * @param id - ID de la unidad de medida a eliminar
+   */
+  eliminar(id: number): Observable<any> {
+    const params = new HttpParams()
+      .set('id', id.toString())
+      .set('usuario', USUARIO_ACTUAL);
+
+    return this.http
+      .delete<any>(`${BASE_URL}/Eliminar`, { params })
+      .pipe(catchError(this.manejarError));
+  }
+
+  /**
+   * Transforma errores HTTP en mensajes legibles para el componente.
+   * El componente solo recibe un string; nunca manipula HttpErrorResponse.
+   *
+   * Uso: .pipe(catchError(this.manejarError))
+   *
+   * @param error - HttpErrorResponse de Angular HttpClient
+   */
+  private manejarError(error: any): Observable<never> {
+    let mensaje = 'Ocurrió un error inesperado. Intenta de nuevo.';
+
+    if (error.status === 0) {
+      mensaje = 'No se puede conectar al servidor. Verifica tu conexión.';
+    } else if (error.status === 400) {
+      // El backend puede enviar un mensaje en error.error.message o error.error
+      mensaje = error.error?.message ?? error.error ?? 'Datos inválidos.';
+    } else if (error.status === 404) {
+      mensaje = 'El recurso solicitado no existe.';
+    } else if (error.status === 409) {
+      mensaje = 'Ya existe un registro con esos datos.';
+    } else if (error.status >= 500) {
+      mensaje = 'Error interno del servidor. Contacta al administrador.';
+    }
+
+    console.error('[UnidadMedidaService] Error HTTP:', error);
+    return throwError(() => new Error(mensaje));
+  }
+}

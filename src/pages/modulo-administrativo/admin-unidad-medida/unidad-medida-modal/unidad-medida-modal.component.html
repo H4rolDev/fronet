@@ -1,0 +1,108 @@
+<div class="modal-overlay" role="dialog" aria-modal="true" [attr.aria-label]="tituloModal"
+  (click)="onOverlayClick($event)">
+  <div class="modal-panel">
+
+    <!-- ── HEADER ─────────────────────────────────────────────────────────── -->
+    <header class="modal-panel__header">
+      <div class="modal-panel__header-left">
+        <span class="modal-panel__icono">{{ esEditar ? '✎' : '+' }}</span>
+        <h2 class="modal-panel__titulo">{{ tituloModal }}</h2>
+      </div>
+      <button class="modal-panel__cerrar" (click)="onCerrar()" [disabled]="guardando()" aria-label="Cerrar modal"
+        type="button">
+        ✕
+      </button>
+    </header>
+
+    <!-- ── SKELETON (carga en modo editar) ───────────────────────────────── -->
+    @if (cargandoDetalle()) {
+    <div class="modal-panel__body">
+      <div class="campo-skeleton">
+        <span class="sk sk--label"></span>
+        <span class="sk sk--input"></span>
+      </div>
+      <div class="campo-skeleton">
+        <span class="sk sk--label"></span>
+        <span class="sk sk--input"></span>
+      </div>
+    </div>
+    }
+
+    <!-- ── FORMULARIO ─────────────────────────────────────────────────────── -->
+    @if (!cargandoDetalle()) {
+    <form class="modal-panel__body" [formGroup]="formulario" (ngSubmit)="onSubmit()" novalidate autocomplete="off">
+
+      <!-- Campo: Nombre ─────────────────────────────────────── -->
+      <div class="campo" [class.campo--error]="mostrarError('nombre')">
+        <label class="campo__label" for="nombre">
+          Nombre
+          <span class="campo__requerido" aria-hidden="true">*</span>
+        </label>
+
+        <input id="nombre" type="text" class="campo__input" formControlName="nombre" placeholder="Ej: Kilogramos"
+          maxlength="100" aria-describedby="nombre-error" [attr.aria-invalid]="mostrarError('nombre')" />
+
+        <!-- Contador de caracteres -->
+        <span class="campo__contador">
+          {{ nombre.value?.length ?? 0 }}/100
+        </span>
+
+        <!-- Mensaje de error de validación -->
+        @if (mostrarError('nombre')) {
+        <p class="campo__error" id="nombre-error" role="alert">
+          {{ mensajeError('nombre') }}
+        </p>
+        }
+      </div>
+
+      <!-- Campo: Abreviatura ────────────────────────────────── -->
+      <div class="campo" [class.campo--error]="mostrarError('abreviatura')">
+        <label class="campo__label" for="abreviatura">
+          Abreviatura
+          <span class="campo__requerido" aria-hidden="true">*</span>
+        </label>
+
+        <input id="abreviatura" type="text" class="campo__input" formControlName="abreviatura" placeholder="Ej: kg"
+          maxlength="10" aria-describedby="abreviatura-error abreviatura-hint"
+          [attr.aria-invalid]="mostrarError('abreviatura')" />
+
+        <span class="campo__hint" id="abreviatura-hint">
+          Máximo 10 caracteres. Ej: kg, ml, L, und
+        </span>
+
+        @if (mostrarError('abreviatura')) {
+        <p class="campo__error" id="abreviatura-error" role="alert">
+          {{ mensajeError('abreviatura') }}
+        </p>
+        }
+      </div>
+
+      <!-- Error general de la API ─────────────────────────────────────── -->
+      @if (errorApi()) {
+      <div class="alerta-api" role="alert">
+        <span class="alerta-api__icono">✕</span>
+        <p class="alerta-api__mensaje">{{ errorApi() }}</p>
+      </div>
+      }
+
+      <!-- ── FOOTER ─────────────────────────────────────────────────────── -->
+      <footer class="modal-panel__footer">
+        <button type="button" class="btn btn--secundario" (click)="onCerrar()" [disabled]="guardando()">
+          Cancelar
+        </button>
+
+        <button type="submit" class="btn btn--primario" [disabled]="guardando() || cargandoDetalle()">
+          @if (guardando()) {
+          <span class="spinner"></span>
+          {{ esEditar ? 'Guardando...' : 'Creando...' }}
+          } @else {
+          <span>{{ esEditar ? '✓ Guardar cambios' : '+ Crear unidad' }}</span>
+          }
+        </button>
+      </footer>
+
+    </form>
+    }
+
+  </div><!-- /modal-panel -->
+</div><!-- /modal-overlay -->
