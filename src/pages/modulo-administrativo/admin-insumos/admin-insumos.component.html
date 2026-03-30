@@ -1,1 +1,227 @@
-<p>admin-insumos works!</p>
+<!-- TOAST ──────────────────────────────────────────────────────────────────── -->
+@if (notificacion()) {
+  <div
+    class="toast"
+    [class.toast--error]="notificacion()!.tipo === 'error'"
+    role="alert"
+    aria-live="polite"
+  >
+    <div class="toast__icono">{{ notificacion()!.tipo === 'exito' ? '✓' : '✕' }}</div>
+    <span class="toast__mensaje">{{ notificacion()!.mensaje }}</span>
+    <button class="toast__cerrar" (click)="cerrarNotificacion()" aria-label="Cerrar">✕</button>
+  </div>
+}
+
+<!-- HEADER ─────────────────────────────────────────────────────────────────── -->
+<div class="page-header">
+  <div>
+    <h1 class="page-titulo">Insumos</h1>
+    <p class="page-subtitulo">Control de inventario y costos de insumos</p>
+  </div>
+  <button class="btn-nuevo" (click)="abrirModalCrear()">
+    <span class="btn-nuevo__icono">+</span>
+    Nuevo Insumo
+  </button>
+</div>
+
+<!-- CARDS DE ESTADÍSTICAS ──────────────────────────────────────────────────── -->
+<!-- <div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card__label">Total insumos</div>
+    <div class="stat-card__valor">{{ insumos().length }}</div>
+    <div class="stat-card__sub">en el catálogo</div>
+  </div>
+  <div class="stat-card stat-card--alerta" [class.stat-card--alerta-activa]="insumosStockBajo() > 0">
+    <div class="stat-card__label">Stock bajo</div>
+    <div class="stat-card__valor">{{ insumosStockBajo() }}</div>
+    <div class="stat-card__sub">
+      <span class="stat-dot" [class.stat-dot--warn]="insumosStockBajo() > 0" [class.stat-dot--on]="insumosStockBajo() === 0"></span>
+      {{ insumosStockBajo() > 0 ? 'requieren atención' : 'todo en orden' }}
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__label">Costo promedio</div>
+    <div class="stat-card__valor stat-card__valor--sm">{{ formatearMoneda(costoPromedio()) }}</div>
+    <div class="stat-card__sub">por unidad</div>
+  </div>
+</div> -->
+
+<!-- TOOLBAR ─────────────────────────────────────────────────────────────────── -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <i class="search-wrap__icono">⌕</i>
+    <input
+      type="text"
+      class="search-wrap__input"
+      placeholder="Buscar por nombre o unidad de medida..."
+      [ngModel]="textoBusqueda()"
+      (ngModelChange)="onBusqueda($event)"
+      aria-label="Buscar insumos"
+    />
+    @if (textoBusqueda()) {
+      <button class="search-wrap__limpiar" (click)="limpiarBusqueda()" aria-label="Limpiar">✕</button>
+    }
+  </div>
+  <div class="count-pill">
+    {{ insumosFiltrados().length }}
+    {{ insumosFiltrados().length === 1 ? 'insumo' : 'insumos' }}
+  </div>
+</div>
+
+<!-- TABLA ────────────────────────────────────────────────────────────────────── -->
+<div class="tabla-card">
+  <table class="tabla" aria-label="Listado de insumos">
+    <thead class="tabla__head">
+      <tr>
+        <th class="tabla__th" style="width:52px">#</th>
+        <th class="tabla__th">Nombre</th>
+        <th class="tabla__th">Unidad</th>
+        <th class="tabla__th tabla__th--num">Stock actual</th>
+        <th class="tabla__th tabla__th--num">Stock mínimo</th>
+        <th class="tabla__th tabla__th--num">Costo unitario</th>
+        <th class="tabla__th tabla__th--centro" style="width:90px">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- Skeleton -->
+      @if (cargandoTabla()) {
+        @for (i of [1,2,3,4,5]; track i) {
+          <tr class="tabla__fila">
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--lg"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--md"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--md"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+          </tr>
+        }
+      }
+
+      <!-- Vacío -->
+      @else if (insumosFiltrados().length === 0) {
+        <tr>
+          <td colspan="7" class="tabla__vacia">
+            <div class="estado-vacio">
+              <div class="estado-vacio__icono">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+              </div>
+              @if (textoBusqueda()) {
+                <p>No se encontraron insumos para <strong>"{{ textoBusqueda() }}"</strong></p>
+                <button class="btn-nuevo" style="font-size:12px;padding:7px 14px" (click)="limpiarBusqueda()">Limpiar búsqueda</button>
+              } @else {
+                <p>No hay insumos registrados</p>
+                <button class="btn-nuevo" (click)="abrirModalCrear()">+ Registrar primer insumo</button>
+              }
+            </div>
+          </td>
+        </tr>
+      }
+
+      <!-- Filas de datos -->
+      @else {
+        @for (insumo of insumosFiltrados(); track insumo.id) {
+          <tr class="tabla__fila">
+            <td class="tabla__td tabla__td--id">{{ insumo.id }}</td>
+
+            <td class="tabla__td tabla__td--nombre">{{ insumo.nombre }}</td>
+
+            <td class="tabla__td">
+              <span class="badge-unidad">
+                {{ insumo.nombreUnidadMedida }}
+                <span class="badge-unidad__abrev">{{ insumo.abreviatura }}</span>
+              </span>
+            </td>
+
+            <td class="tabla__td tabla__td--num">
+              <span class="stock-val" [ngClass]="claseStock(insumo)">
+                {{ formatearNumero(insumo.stockActual) }}
+              </span>
+            </td>
+
+            <td class="tabla__td tabla__td--num tabla__td--dim">
+              {{ formatearNumero(insumo.stockMinimo) }}
+            </td>
+
+            <td class="tabla__td tabla__td--num">
+              <span class="costo-val">{{ formatearMoneda(insumo.costoUnitario) }}</span>
+            </td>
+
+            <td class="tabla__td tabla__td--centro">
+              <div class="acciones">
+                <button
+                  class="btn-accion btn-accion--editar"
+                  (click)="abrirModalEditar(insumo.id)"
+                  [attr.aria-label]="'Editar ' + insumo.nombre"
+                  title="Editar"
+                >✎</button>
+                <button
+                  class="btn-accion btn-accion--eliminar"
+                  (click)="confirmarEliminar(insumo)"
+                  [attr.aria-label]="'Eliminar ' + insumo.nombre"
+                  title="Eliminar"
+                >✕</button>
+              </div>
+            </td>
+          </tr>
+        }
+      }
+
+    </tbody>
+  </table>
+</div>
+
+<!-- LEYENDA STOCK ───────────────────────────────────────────────────────────── -->
+@if (!cargandoTabla() && insumos().length > 0) {
+  <div class="leyenda">
+    <span class="leyenda__item"><span class="stock-val stock--ok">●</span> Normal</span>
+    <span class="leyenda__item"><span class="stock-val stock--alerta">●</span> Alerta (cerca del mínimo)</span>
+    <span class="leyenda__item"><span class="stock-val stock--bajo">●</span> Bajo el mínimo</span>
+    <span class="leyenda__item"><span class="stock-val stock--agotado">●</span> Agotado</span>
+  </div>
+}
+
+<!-- DIÁLOGO CONFIRMACIÓN ELIMINAR ──────────────────────────────────────────── -->
+@if (idParaEliminar()) {
+  <div class="overlay" role="dialog" aria-modal="true">
+    <div class="dialogo">
+      <div class="dialogo__cuerpo">
+        <div class="dialogo__icono-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+          </svg>
+        </div>
+        <h2 class="dialogo__titulo">¿Eliminar insumo?</h2>
+        <p class="dialogo__mensaje">
+          Estás a punto de eliminar <strong>"{{ nombreParaEliminar() }}"</strong>.
+          Esta acción no se puede deshacer.
+        </p>
+      </div>
+      <div class="dialogo__footer">
+        <button class="btn-dialogo-cancel" (click)="cancelarEliminar()" [disabled]="eliminando()">
+          Cancelar
+        </button>
+        <button class="btn-dialogo-eliminar" (click)="ejecutarEliminar()" [disabled]="eliminando()">
+          @if (eliminando()) {
+            <span class="spinner"></span> Eliminando...
+          } @else {
+            Sí, eliminar
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- MODAL ───────────────────────────────────────────────────────────────────── -->
+@if (modalAbierto() && modalInputData()) {
+  <app-insumo-modal
+    [inputData]="modalInputData()!"
+    (cerrar)="cerrarModal()"
+    (guardado)="onGuardadoExitoso($event)"
+  />
+}

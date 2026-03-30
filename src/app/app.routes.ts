@@ -82,6 +82,13 @@ export const routes: Routes = [
           import('../pages/modulo-administrativo/admin-unidad-medida/admin-unidad-medida.component')
             .then(m => m.AdminUnidadMedidaComponent),
       },
+
+      {
+        path: 'receta-torta',
+        loadComponent: () =>
+          import('../pages/modulo-administrativo/admin-receta-torta/admin-receta-torta.component')
+            .then(m => m.AdminRecetaTortaComponent),
+      },
     ],
   },
 

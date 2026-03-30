@@ -1,112 +1,163 @@
-import { Component } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  signal,
+  computed,
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { takeUntil, finalize } from 'rxjs/operators';
+import { TortaListadoDTO, ModalInputData, Notificacion } from '../../../models/torta-dto';
 import { TortaService } from '../../../services/torta.service';
-import { Torta } from '../../../models/torta';
-import { CommonModule, NgIf } from '@angular/common';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TortaModalComponent } from './torta-modal/torta-modal.component';
-import { TortaDeleteModalComponent } from './torta-delete-modal/torta-delete-modal.component';
 
 @Component({
   selector: 'app-admin-tortas',
+  standalone: true,
+  imports: [CommonModule, FormsModule, TortaModalComponent],
   templateUrl: './admin-tortas.component.html',
-  styleUrl: './admin-tortas.component.css',
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, NgIf, TortaModalComponent, TortaDeleteModalComponent],
+  styleUrls: ['./admin-tortas.component.css'],
 })
-export class AdminTortasComponent {
-tortas: Torta[] = [];
-  loading = false;
-  error = '';
+export class AdminTortasComponent implements OnInit, OnDestroy {
 
-  showModal = false;
-  showDeleteModal = false;
-  selectedTorta: Torta | null = null;
-  tortaToDelete: Torta | null = null;
+  // ── Estado ─────────────────────────────────────────────────────────────────
+  tortas             = signal<TortaListadoDTO[]>([]);
+  textoBusqueda      = signal<string>('');
+  cargandoTabla      = signal<boolean>(false);
+  eliminando         = signal<boolean>(false);
+  modalAbierto       = signal<boolean>(false);
+  modalInputData     = signal<ModalInputData | null>(null);
+  idParaEliminar     = signal<number | null>(null);
+  nombreParaEliminar = signal<string>('');
+  notificacion       = signal<Notificacion | null>(null);
 
-  searchTerm = '';
-  filteredTortas: Torta[] = [];
+  // ── Computados ─────────────────────────────────────────────────────────────
+
+  /** Filtra por nombre, categoría o descripción */
+  tortasFiltradas = computed(() => {
+    const texto = this.textoBusqueda().toLowerCase().trim();
+    if (!texto) return this.tortas();
+    return this.tortas().filter(t =>
+      t.nombre.toLowerCase().includes(texto) ||
+      t.nombreCategoriaTorta.toLowerCase().includes(texto) ||
+      (t.descripcion ?? '').toLowerCase().includes(texto)
+    );
+  });
+
+  // ── Limpieza ───────────────────────────────────────────────────────────────
+  private destroy$   = new Subject<void>();
+  private toastTimer: any = null;
 
   constructor(private tortaService: TortaService) {}
 
-  ngOnInit(): void {
-    this.cargarTortas();
+  ngOnInit(): void  { this.cargarListado(); }
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    if (this.toastTimer) clearTimeout(this.toastTimer);
   }
 
-  cargarTortas(): void {
-    this.loading = true;
-    this.tortaService.obtenerCombo().subscribe({
-      next: (combo) => {
-        const requests = combo.map(c =>
-          new Promise<Torta>((resolve, reject) => {
-            this.tortaService.obtenerPorId(c.id).subscribe({ next: resolve, error: reject });
-          })
-        );
-        Promise.all(requests)
-          .then(tortas => {
-            this.tortas = tortas;
-            this.filteredTortas = tortas;
-            this.loading = false;
-          })
-          .catch(() => {
-            this.error = 'Error al cargar las tortas';
-            this.loading = false;
-          });
-      },
-      error: () => {
-        this.error = 'Error al cargar las tortas';
-        this.loading = false;
-      }
-    });
+  // ── Carga de datos ─────────────────────────────────────────────────────────
+  cargarListado(): void {
+    this.cargandoTabla.set(true);
+    this.tortaService.obtenerListado()
+      .pipe(takeUntil(this.destroy$), finalize(() => this.cargandoTabla.set(false)))
+      .subscribe({
+        next: data => this.tortas.set(data),
+        error: (err: Error) => this.mostrarNotificacion('error', err.message),
+      });
   }
 
-  onSearch(term: string): void {
-    this.searchTerm = term;
-    const t = term.toLowerCase();
-    this.filteredTortas = this.tortas.filter(x =>
-      x.nombre.toLowerCase().includes(t) ||
-      x.descripcion?.toLowerCase().includes(t)
-    );
+  // ── Búsqueda ───────────────────────────────────────────────────────────────
+  onBusqueda(valor: string): void { this.textoBusqueda.set(valor); }
+  limpiarBusqueda(): void { this.textoBusqueda.set(''); }
+
+  // ── Modal ──────────────────────────────────────────────────────────────────
+  abrirModalCrear(): void {
+    this.modalInputData.set({ mode: 'crear' });
+    this.modalAbierto.set(true);
   }
 
-  openCreate(): void {
-    this.selectedTorta = null;
-    this.showModal = true;
+  abrirModalEditar(id: number): void {
+    this.modalInputData.set({ mode: 'editar', id });
+    this.modalAbierto.set(true);
   }
 
-  openEdit(torta: Torta): void {
-    this.selectedTorta = { ...torta };
-    this.showModal = true;
+  cerrarModal(): void {
+    this.modalAbierto.set(false);
+    this.modalInputData.set(null);
   }
 
-  openDelete(torta: Torta): void {
-    this.tortaToDelete = torta;
-    this.showDeleteModal = true;
+  onGuardadoExitoso(mensaje: string): void {
+    this.cerrarModal();
+    this.cargarListado();
+    this.mostrarNotificacion('exito', mensaje);
   }
 
-  onModalClose(): void {
-    this.showModal = false;
-    this.selectedTorta = null;
+  // ── Eliminación ────────────────────────────────────────────────────────────
+  confirmarEliminar(torta: TortaListadoDTO): void {
+    this.idParaEliminar.set(torta.id);
+    this.nombreParaEliminar.set(torta.nombre);
   }
 
-  onModalSaved(): void {
-    this.showModal = false;
-    this.selectedTorta = null;
-    this.cargarTortas();
+  cancelarEliminar(): void {
+    this.idParaEliminar.set(null);
+    this.nombreParaEliminar.set('');
   }
 
-  onDeleteClose(): void {
-    this.showDeleteModal = false;
-    this.tortaToDelete = null;
+  ejecutarEliminar(): void {
+    const id = this.idParaEliminar();
+    if (!id) return;
+
+    this.eliminando.set(true);
+    this.tortaService.eliminar(id)
+      .pipe(takeUntil(this.destroy$), finalize(() => this.eliminando.set(false)))
+      .subscribe({
+        next: () => {
+          this.cancelarEliminar();
+          this.cargarListado();
+          this.mostrarNotificacion('exito', 'Torta eliminada correctamente.');
+        },
+        error: (err: Error) => {
+          this.cancelarEliminar();
+          this.mostrarNotificacion('error', err.message);
+        },
+      });
   }
 
-  onDeleteConfirmed(): void {
-    this.showDeleteModal = false;
-    this.tortaToDelete = null;
-    this.cargarTortas();
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  mostrarNotificacion(tipo: Notificacion['tipo'], mensaje: string): void {
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    this.notificacion.set({ tipo, mensaje });
+    this.toastTimer = setTimeout(() => this.notificacion.set(null), 4500);
   }
 
-  getUsuario(): string {
-    const raw = localStorage.getItem('user');
-    if (!raw) return 'admin';
-    return JSON.parse(raw)?.username ?? 'admin';
+  cerrarNotificacion(): void {
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    this.notificacion.set(null);
   }
+
+  // ── Helpers de template ────────────────────────────────────────────────────
+
+  claseStock(torta: TortaListadoDTO): string {
+    if (torta.stockDisponible === 0)  return 'stock--agotado';
+    if (torta.stockDisponible <= 3)   return 'stock--bajo';
+    if (torta.stockDisponible <= 8)   return 'stock--alerta';
+    return 'stock--ok';
+  }
+
+  formatearMoneda(valor: number | null): string {
+    if (valor === null || valor === undefined) return '—';
+    return new Intl.NumberFormat('es-PE', {
+      style: 'currency', currency: 'PEN', minimumFractionDigits: 2,
+    }).format(valor);
+  }
+
+  formatearNumero(valor: number): string {
+    return new Intl.NumberFormat('es-PE', { minimumFractionDigits: 0 }).format(valor);
+  }
+
+  trackById(_i: number, item: TortaListadoDTO): number { return item.id; }
 }

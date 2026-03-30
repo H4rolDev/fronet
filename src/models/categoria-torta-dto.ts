@@ -22,10 +22,9 @@
  * Objeto que devuelve GET /ObtenerCombo.
  * Usado para poblar la tabla del listado.
  */
-export interface UnidadMedidaListadoDTO {
+export interface CategoriaTortaListadoDTO {
   id: number;
   nombre: string;
-  abreviatura: string;
   activo: boolean;
   fechaCreacion: string;
   usuarioCreacion: string;
@@ -37,10 +36,9 @@ export interface UnidadMedidaListadoDTO {
  * Objeto que devuelve GET /ObtenerListadoPorId?id=X.
  * Usado para pre-cargar el formulario en modo edición.
  */
-export interface UnidadMedidaDetalleDTO {
+export interface CategoriaTortaDetalleDTO {
   id: number;
   nombre: string;
-  abreviatura: string;
   activo: boolean;
   usuarioCreacion: string;
   usuarioModificacion: string;
@@ -57,7 +55,7 @@ export interface UnidadMedidaDetalleDTO {
  *   id = 0  → el backend interpreta como INSERT
  *   id > 0  → el backend interpreta como UPDATE
  */
-export interface UnidadMedidaRequestDTO {
+export interface CategoriaTortaRequestDTO {
   id: number;
   activo: boolean;
   usuarioCreacion: string;
@@ -65,7 +63,6 @@ export interface UnidadMedidaRequestDTO {
   fechaCreacion: string;      // ISO 8601 → "2026-03-29T18:00:00.000Z"
   fechaModificacion: string;  // ISO 8601
   nombre: string;
-  abreviatura: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

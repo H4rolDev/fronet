@@ -1,165 +1,199 @@
+<!--
+  admin-unidad-medida.component.html
+  Listado de Unidades de Medida — tema Dulce & Co.
+
+  Estructura:
+  ├── Toast de notificación
+  ├── Header  (título + botón Nueva Unidad)
+  ├── Cards de estadísticas
+  ├── Toolbar  (búsqueda + contador)
+  ├── Tabla  (skeleton · datos · estado vacío)
+  ├── Diálogo de confirmación de eliminación
+  └── Modal de crear/editar (componente hijo)
+-->
+
+<!-- TOAST ─────────────────────────────────────────────────────────────────── -->
 @if (notificacion()) {
-<div class="toast" [class.toast--exito]="notificacion()!.tipo === 'exito'"
-  [class.toast--error]="notificacion()!.tipo === 'error'"
-  [class.toast--advertencia]="notificacion()!.tipo === 'advertencia'" role="alert" aria-live="polite">
-  <span class="toast__icono">
-    @switch (notificacion()!.tipo) {
-    @case ('exito') { ✓ }
-    @case ('error') { ✕ }
-    @case ('advertencia') { ⚠ }
-    }
-  </span>
-  <span class="toast__mensaje">{{ notificacion()!.mensaje }}</span>
-  <button class="toast__cerrar" (click)="cerrarNotificacion()" aria-label="Cerrar notificación">
-    ✕
-  </button>page
-</div>
-}
-<div class="page">
-  <header class="page__header">
-    <div class="page__header-left">
-      <h1 class="page__titulo">Unidades de Medida</h1>
-      <p class="page__subtitulo">Gestión del catálogo de unidades</p>
+  <div
+    class="toast"
+    [class.toast--error]="notificacion()!.tipo === 'error'"
+    role="alert"
+    aria-live="polite"
+  >
+    <div class="toast__icono">
+      {{ notificacion()!.tipo === 'exito' ? '✓' : '✕' }}
     </div>
-    <button class="btn btn--primario" (click)="abrirModalCrear()">
-      <span class="btn__icono">+</span>
-      Nueva Unidad
-    </button>
-  </header>
-
-  <div class="barra-busqueda">
-    <div class="barra-busqueda__input-wrapper">
-      <span class="barra-busqueda__icono">⌕</span>
-      <input type="text" class="barra-busqueda__input" placeholder="Buscar por nombre..." [ngModel]="textoBusqueda()"
-        (ngModelChange)="onBusqueda($event)" aria-label="Buscar unidades de medida" />
-      @if (textoBusqueda()) {
-      <button class="barra-busqueda__limpiar" (click)="limpiarBusqueda()" aria-label="Limpiar búsqueda">
-        ✕
-      </button>
-      }
-    </div>
-    <span class="barra-busqueda__contador">
-      {{ unidadesFiltradas().length }}
-      {{ unidadesFiltradas().length === 1 ? 'registro' : 'registros' }}
-    </span>
+    <span class="toast__mensaje">{{ notificacion()!.mensaje }}</span>
+    <button class="toast__cerrar" (click)="cerrarNotificacion()" aria-label="Cerrar">✕</button>
   </div>
+}
 
-  <div class="tabla-wrapper">
-    <table class="tabla" aria-label="Listado de unidades de medida">
-      <thead class="tabla__head">
-        <tr>
-          <th class="tabla__th tabla__th--id">#</th>
-          <th class="tabla__th">Nombre</th>
-          <th class="tabla__th">Estado</th>
-          <th class="tabla__th">Creado por</th>
-          <th class="tabla__th">Fecha creación</th>
-          <th class="tabla__th tabla__th--acciones">Acciones</th>
-        </tr>
-      </thead>
+<div class="page-header">
+  <div>
+    <h1 class="page-titulo">Unidades de Medida</h1>
+    <p class="page-subtitulo">Gestión del catálogo de unidades de medida</p>
+  </div>
+  <button class="btn-nuevo" (click)="abrirModalCrear()">
+    <span class="btn-nuevo__icono">+</span>
+    Nueva Unidad
+  </button>
+</div>
 
-      <tbody class="tabla__body">
+<div class="toolbar">
+  <div class="search-wrap">
+    <i class="search-wrap__icono">⌕</i>
+    <input
+      type="text"
+      class="search-wrap__input"
+      placeholder="Buscar por nombre..."
+      [ngModel]="textoBusqueda()"
+      (ngModelChange)="onBusqueda($event)"
+      aria-label="Buscar unidades de medida"
+    />
+    @if (textoBusqueda()) {
+      <button class="search-wrap__limpiar" (click)="limpiarBusqueda()" aria-label="Limpiar búsqueda">✕</button>
+    }
+  </div>
+  <div class="count-pill">
+    {{ unidadesFiltradas().length }}
+    {{ unidadesFiltradas().length === 1 ? 'registro' : 'registros' }}
+  </div>
+</div>
 
-        @if (cargandoTabla()) {
-        @for (i of [1,2,3,4,5]; track i) {
-        <tr class="tabla__fila tabla__fila--skeleton">
-          <td><span class="skeleton"></span></td>
-          <td><span class="skeleton skeleton--ancho"></span></td>
-          <td><span class="skeleton skeleton--corto"></span></td>
-          <td><span class="skeleton"></span></td>
-          <td><span class="skeleton"></span></td>
-          <td><span class="skeleton skeleton--corto"></span></td>
-        </tr>
+<!-- TABLA ─────────────────────────────────────────────────────────────────── -->
+<div class="tabla-card">
+  <table class="tabla" aria-label="Listado de unidades de medida">
+    <thead class="tabla__head">
+      <tr>
+        <th class="tabla__th" style="width:56px">#</th>
+        <th class="tabla__th">Nombre</th>
+        <th class="tabla__th">Abreviatura</th>
+        <th class="tabla__th">Estado</th>
+        <th class="tabla__th">Creado por</th>
+        <th class="tabla__th">Fecha creación</th>
+        <th class="tabla__th tabla__th--centro" style="width:90px">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- Skeleton mientras carga -->
+      @if (cargandoTabla()) {
+        @for (i of [1,2,3,4]; track i) {
+          <tr class="tabla__fila">
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--lg"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--md"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--md"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--md"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+          </tr>
         }
-        }
+      }
 
-        @else if (unidadesFiltradas().length === 0) {
+      <!-- Estado vacío -->
+      @else if (unidadesFiltradas().length === 0) {
         <tr>
           <td colspan="6" class="tabla__vacia">
-            @if (textoBusqueda()) {
             <div class="estado-vacio">
-              <span class="estado-vacio__icono">⌕</span>
-              <p>No se encontraron resultados para
-                <strong>"{{ textoBusqueda() }}"</strong>
-              </p>
-              <button class="btn btn--texto" (click)="limpiarBusqueda()">
-                Limpiar búsqueda
-              </button>
+              <div class="estado-vacio__icono">
+                <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+              </div>
+              @if (textoBusqueda()) {
+                <p>No se encontraron resultados para <strong>"{{ textoBusqueda() }}"</strong></p>
+                <button class="btn-nuevo" style="font-size:12px;padding:7px 14px" (click)="limpiarBusqueda()">Limpiar búsqueda</button>
+              } @else {
+                <p>No hay unidades de medida registradas</p>
+                <button class="btn-nuevo" (click)="abrirModalCrear()">+ Crear primera unidad</button>
+              }
             </div>
-            } @else {
-            <div class="estado-vacio">
-              <span class="estado-vacio__icono">📋</span>
-              <p>No hay unidades de medida registradas.</p>
-              <button class="btn btn--primario" (click)="abrirModalCrear()">
-                Crear primera unidad
-              </button>
-            </div>
-            }
           </td>
         </tr>
-        }
+      }
 
-        <!-- Filas de datos -->
-        @else {
+      <!-- Filas de datos -->
+      @else {
         @for (unidad of unidadesFiltradas(); track unidad.id) {
-        <tr class="tabla__fila">
-          <td class="tabla__td tabla__td--id">{{ unidad.id }}</td>
-          <td class="tabla__td tabla__td--nombre">{{ unidad.nombre }}</td>
-          <td class="tabla__td">
-            <span class="badge" [class.badge--activo]="unidad.activo" [class.badge--inactivo]="!unidad.activo">
-              {{ unidad.activo ? 'Activo' : 'Inactivo' }}
-            </span>
-          </td>
-          <td class="tabla__td tabla__td--secundario">{{ unidad.usuarioCreacion }}</td>
-          <td class="tabla__td tabla__td--secundario">{{ formatearFecha(unidad.fechaCreacion) }}</td>
-          <td class="tabla__td tabla__td--acciones">
-            <div class="acciones">
-              <button class="btn-accion btn-accion--editar" (click)="abrirModalEditar(unidad.id)"
-                [attr.aria-label]="'Editar ' + unidad.nombre" title="Editar">
-                ✎
-              </button>
-              <button class="btn-accion btn-accion--eliminar" (click)="confirmarEliminar(unidad)"
-                [attr.aria-label]="'Eliminar ' + unidad.nombre" title="Eliminar">
-                ✕
-              </button>
-            </div>
-          </td>
-        </tr>
+          <tr class="tabla__fila">
+            <td class="tabla__td tabla__td--id">{{ unidad.id }}</td>
+            <td class="tabla__td tabla__td--nombre">{{ unidad.nombre }}</td>
+            <td class="tabla__td tabla__td--nombre">{{ unidad.abreviatura }}</td>
+            <td class="tabla__td">
+              <span
+                class="badge"
+                [class.badge--activo]="unidad.activo"
+                [class.badge--inactivo]="!unidad.activo"
+              >
+                <span class="stat-dot" [class.stat-dot--on]="unidad.activo" [class.stat-dot--off]="!unidad.activo"></span>
+                {{ unidad.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="tabla__td tabla__td--dim">{{ unidad.usuarioCreacion }}</td>
+            <td class="tabla__td tabla__td--dim">{{ formatearFecha(unidad.fechaCreacion) }}</td>
+            <td class="tabla__td tabla__td--centro">
+              <div class="acciones">
+                <button
+                  class="btn-accion btn-accion--editar"
+                  (click)="abrirModalEditar(unidad.id)"
+                  [attr.aria-label]="'Editar ' + unidad.nombre"
+                  title="Editar"
+                >✎</button>
+                <button
+                  class="btn-accion btn-accion--eliminar"
+                  (click)="confirmarEliminar(unidad)"
+                  [attr.aria-label]="'Eliminar ' + unidad.nombre"
+                  title="Eliminar"
+                >✕</button>
+              </div>
+            </td>
+          </tr>
         }
-        }
+      }
 
-      </tbody>
-    </table>
-  </div>
+    </tbody>
+  </table>
+</div>
 
-</div><!-- /page -->
-
+<!-- DIÁLOGO CONFIRMACIÓN ELIMINAR ─────────────────────────────────────────── -->
 @if (idParaEliminar()) {
-<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="confirmar-titulo">
-  <div class="dialogo">
-    <div class="dialogo__icono">⚠</div>
-    <h2 class="dialogo__titulo" id="confirmar-titulo">¿Eliminar registro?</h2>
-    <p class="dialogo__mensaje">
-      Estás a punto de eliminar
-      <strong>"{{ nombreParaEliminar() }}"</strong>.
-      Esta acción no se puede deshacer.
-    </p>
-    <div class="dialogo__acciones">
-      <button class="btn btn--secundario" (click)="cancelarEliminar()" [disabled]="eliminando()">
-        Cancelar
-      </button>
-      <button class="btn btn--peligro" (click)="ejecutarEliminar()" [disabled]="eliminando()">
-        @if (eliminando()) {
-        <span class="spinner"></span> Eliminando...
-        } @else {
-        Sí, eliminar
-        }
-      </button>
+  <div class="overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-titulo">
+    <div class="dialogo">
+      <div class="dialogo__cuerpo">
+        <div class="dialogo__icono-wrap">
+          <svg viewBox="0 0 24 24">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+          </svg>
+        </div>
+        <h2 class="dialogo__titulo" id="confirm-titulo">¿Eliminar registro?</h2>
+        <p class="dialogo__mensaje">
+          Estás a punto de eliminar
+          <strong>"{{ nombreParaEliminar() }}"</strong>.
+          Esta acción no se puede deshacer.
+        </p>
+      </div>
+      <div class="dialogo__footer">
+        <button class="btn-dialogo-cancel" (click)="cancelarEliminar()" [disabled]="eliminando()">
+          Cancelar
+        </button>
+        <button class="btn-dialogo-eliminar" (click)="ejecutarEliminar()" [disabled]="eliminando()">
+          @if (eliminando()) {
+            <span class="spinner"></span> Eliminando...
+          } @else {
+            Sí, eliminar
+          }
+        </button>
+      </div>
     </div>
   </div>
-</div>
 }
 
+<!-- MODAL CREAR / EDITAR ───────────────────────────────────────────────────── -->
 @if (modalAbierto() && modalInputData()) {
-<app-unidad-medida-modal [inputData]="modalInputData()!" (cerrar)="cerrarModal()"
-  (guardado)="onGuardadoExitoso($event)" />
+  <app-unidad-medida-modal
+    [inputData]="modalInputData()!"
+    (cerrar)="cerrarModal()"
+    (guardado)="onGuardadoExitoso($event)"
+  />
 }

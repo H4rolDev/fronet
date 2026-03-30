@@ -1,0 +1,282 @@
+<!--
+  receta-torta-modal.component.html
+  Constructor de recetas — tema Dulce & Co.
+
+  Secciones:
+  ├── Header (título + modo)
+  ├── Skeleton (cargando datos)
+  └── Formulario
+      ├── [Solo CREAR] Select de torta
+      ├── [Solo EDITAR] Box de torta fija (no editable)
+      ├── Sección de ingredientes
+      │   ├── Tabla editable (select insumo + cantidad + botón quitar)
+      │   └── Botón "Agregar ingrediente"
+      ├── Alertas de validación
+      └── Footer (Cancelar + Guardar)
+-->
+
+<div
+  class="modal-overlay"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-label]="tituloModal"
+  (click)="onOverlayClick($event)"
+>
+  <div class="modal-panel">
+
+    <!-- HEADER ──────────────────────────────────────────────────────────────── -->
+    <header class="modal-panel__header">
+      <div class="modal-panel__header-left">
+        <div class="modal-panel__icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+            @if (esEditar) {
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            } @else {
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            }
+          </svg>
+        </div>
+        <div>
+          <h2 class="modal-panel__titulo">{{ tituloModal }}</h2>
+          <p class="modal-panel__subtitulo">
+            @if (esEditar) {
+              Solo puedes modificar ingredientes, no cambiar la torta
+            } @else {
+              Selecciona una torta y agrega sus ingredientes
+            }
+          </p>
+        </div>
+      </div>
+      <button
+        class="modal-panel__cerrar"
+        type="button"
+        (click)="onCerrar()"
+        [disabled]="guardando()"
+        aria-label="Cerrar"
+      >✕</button>
+    </header>
+
+    <!-- SKELETON ─────────────────────────────────────────────────────────────── -->
+    @if (cargandoInicial()) {
+      <div class="modal-panel__body">
+        <div class="sk-campo">
+          <span class="sk sk--label"></span>
+          <span class="sk sk--input"></span>
+        </div>
+        <div class="sk-tabla">
+          @for (i of [1,2,3]; track i) {
+            <div class="sk-fila">
+              <span class="sk sk--select"></span>
+              <span class="sk sk--cant"></span>
+              <span class="sk sk--btn"></span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- FORMULARIO ──────────────────────────────────────────────────────────── -->
+    @if (!cargandoInicial()) {
+      <div class="modal-panel__body">
+
+        <!-- ── [CREAR] Select de torta ──────────────────────────────────────── -->
+        @if (esCrear) {
+          <div class="campo" [class.campo--error]="!idTortaSeleccionada() && errorApi()">
+            <label class="campo__label" for="torta-select">
+              Torta <span class="campo__req">*</span>
+            </label>
+            <select
+              id="torta-select"
+              class="campo__select"
+              [ngModel]="idTortaSeleccionada()"
+              (ngModelChange)="idTortaSeleccionada.set(+$event || null)"
+            >
+              <option [ngValue]="null">— Seleccionar torta —</option>
+              @for (torta of tortas(); track torta.id) {
+                <option [ngValue]="torta.id">{{ torta.nombre }}</option>
+              }
+            </select>
+            @if (tortas().length === 0) {
+              <p class="campo__hint">No hay tortas disponibles. Regístralas primero.</p>
+            }
+          </div>
+        }
+
+        <!-- ── [EDITAR] Torta fija (no editable) ───────────────────────────── -->
+        @if (esEditar) {
+          <div class="torta-fija-box">
+            <div class="torta-fija-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" width="18" height="18">
+                <path d="M12 2C8 6 4 8 4 12h16c0-4-4-6-8-10z"/>
+                <rect x="2" y="12" width="20" height="4" rx="1"/>
+                <rect x="4" y="16" width="16" height="5" rx="1"/>
+              </svg>
+            </div>
+            <div style="flex:1">
+              <div class="torta-fija-lbl">Torta seleccionada</div>
+              <div class="torta-fija-nombre">{{ inputData.nombreTorta }}</div>
+            </div>
+            <span class="torta-fija-badge">No editable</span>
+          </div>
+        }
+
+        <!-- ── SECCIÓN INGREDIENTES ─────────────────────────────────────────── -->
+        <div class="seccion">
+          <div class="seccion__header">
+            <div class="seccion__titulo">
+              Ingredientes
+              <span class="seccion__contador">{{ filas().length }}</span>
+            </div>
+            <button
+              type="button"
+              class="btn-agregar-fila"
+              (click)="agregarFila()"
+              [disabled]="guardando()"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Agregar ingrediente
+            </button>
+          </div>
+
+          <!-- Tabla de ingredientes -->
+          <div class="tabla-wrap" [class.tabla-wrap--error]="hayDuplicados()">
+            <table class="tabla-ing">
+              <thead>
+                <tr>
+                  <th class="th-insumo">Insumo</th>
+                  <th class="th-cant">Cantidad</th>
+                  <th class="th-del"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (fila of filas(); track fila._uid) {
+                  <tr
+                    class="tr-ing"
+                    [class.tr-ing--nueva]="fila.esNueva"
+                    [class.tr-ing--error]="esInsumoRepetido(fila._uid, fila.idInsumo)"
+                  >
+                    <!-- Select de insumo -->
+                    <td class="td-ing">
+                      <div class="select-wrap">
+                        <select
+                          class="select-insumo"
+                          [class.select-insumo--error]="esInsumoRepetido(fila._uid, fila.idInsumo)"
+                          [ngModel]="fila.idInsumo"
+                          (ngModelChange)="onCambioInsumo(fila._uid, $event)"
+                          [disabled]="guardando()"
+                          [attr.aria-label]="'Insumo de la fila ' + ($index + 1)"
+                        >
+                          <option [ngValue]="null">— Seleccionar —</option>
+                          @for (ins of insumos(); track ins.id) {
+                            <option [ngValue]="ins.id">{{ ins.nombre }}</option>
+                          }
+                        </select>
+                        @if (fila.esNueva) {
+                          <span class="tag-nuevo">Nuevo</span>
+                        }
+                      </div>
+                      @if (esInsumoRepetido(fila._uid, fila.idInsumo)) {
+                        <p class="fila-error">Insumo duplicado</p>
+                      }
+                    </td>
+
+                    <!-- Input de cantidad -->
+                    <td class="td-cant">
+                      <div class="cant-wrap">
+                        <input
+                          type="number"
+                          class="input-cant"
+                          [class.input-cant--error]="fila.cantidadRequerida !== null && fila.cantidadRequerida <= 0"
+                          [ngModel]="fila.cantidadRequerida"
+                          (ngModelChange)="onCambioCantidad(fila._uid, $event)"
+                          placeholder="0"
+                          min="0.01"
+                          step="0.01"
+                          [disabled]="guardando()"
+                          [attr.aria-label]="'Cantidad del insumo ' + ($index + 1)"
+                        />
+                      </div>
+                      @if (fila.cantidadRequerida !== null && fila.cantidadRequerida <= 0) {
+                        <p class="fila-error">Debe ser mayor a 0</p>
+                      }
+                    </td>
+
+                    <!-- Botón eliminar fila -->
+                    <td class="td-del">
+                      <button
+                        type="button"
+                        class="btn-del-fila"
+                        (click)="eliminarFila(fila._uid)"
+                        [disabled]="guardando() || filas().length === 1"
+                        [title]="filas().length === 1 ? 'Debe haber al menos un ingrediente' : 'Quitar ingrediente'"
+                        [attr.aria-label]="'Quitar fila ' + ($index + 1)"
+                      >✕</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Alerta de duplicados -->
+          @if (hayDuplicados()) {
+            <div class="alerta alerta--warn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              No puedes agregar el mismo insumo más de una vez en la receta.
+            </div>
+          }
+
+        </div><!-- /seccion ingredientes -->
+
+        <!-- Error de API ────────────────────────────────────────────────────── -->
+        @if (errorApi()) {
+          <div class="alerta alerta--error" role="alert">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            {{ errorApi() }}
+          </div>
+        }
+
+      </div><!-- /modal-panel__body -->
+
+      <!-- FOOTER ─────────────────────────────────────────────────────────────── -->
+      <footer class="modal-panel__footer">
+        <div class="footer-info">
+          <strong>{{ filas().length }}</strong>
+          {{ filas().length === 1 ? 'ingrediente' : 'ingredientes' }} en la receta
+        </div>
+        <div class="footer-btns">
+          <button
+            type="button"
+            class="btn btn--secundario"
+            (click)="onCerrar()"
+            [disabled]="guardando()"
+          >Cancelar</button>
+          <button
+            type="button"
+            class="btn btn--primario"
+            (click)="onSubmit()"
+            [disabled]="guardando() || cargandoInicial() || hayDuplicados()"
+          >
+            @if (guardando()) {
+              <span class="spinner"></span>
+              {{ esEditar ? 'Guardando...' : 'Creando...' }}
+            } @else {
+              {{ esEditar ? '✓ Guardar receta' : '+ Crear receta' }}
+            }
+          </button>
+        </div>
+      </footer>
+    }
+
+  </div><!-- /modal-panel -->
+</div><!-- /modal-overlay -->

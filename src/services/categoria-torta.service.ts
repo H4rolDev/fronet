@@ -1,25 +1,24 @@
-import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-import { UnidadMedidaDetalleDTO, UnidadMedidaListadoDTO, UnidadMedidaRequestDTO } from '../models/unidad-medida-dto';
+import { catchError, Observable, throwError } from 'rxjs';
+import { Injectable } from '@angular/core';
+import { CategoriaTortaDetalleDTO, CategoriaTortaListadoDTO, CategoriaTortaRequestDTO } from '../models/categoria-torta-dto';
 
-const BASE_URL = 'https://localhost:7223/api/UnidadMedida';
+const BASE_URL = 'https://localhost:7223/api/CategoriaTorta';
 const USUARIO_ACTUAL = 'admin';
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
-export class UnidadMedidaService {
-  constructor(private http: HttpClient) {}
+export class CategoriaTortaService {
+constructor(private http: HttpClient) {}
 
   /**
    * Retorna todos los registros de unidades de medida.
    * El componente de listado llama este método al inicializarse
    * y después de cada operación exitosa (crear / editar / eliminar).
    */
-  obtenerListado(): Observable<UnidadMedidaListadoDTO[]> {
-    return this.http.get<UnidadMedidaListadoDTO[]>(`${BASE_URL}/ObtenerCombo`)
+  obtenerListado(): Observable<CategoriaTortaListadoDTO[]> {
+    return this.http.get<CategoriaTortaListadoDTO[]>(`${BASE_URL}/ObtenerCombo`)
       .pipe(catchError(this.manejarError));
   }
 
@@ -29,9 +28,9 @@ export class UnidadMedidaService {
    *
    * @param id - ID de la unidad de medida a consultar
    */
-  obtenerPorId(id: number): Observable<UnidadMedidaDetalleDTO> {
+  obtenerPorId(id: number): Observable<CategoriaTortaDetalleDTO> {
     const params = new HttpParams().set('id', id.toString());
-    return this.http.get<UnidadMedidaDetalleDTO>(`${BASE_URL}/ObtenerListadoPorId`, { params })
+    return this.http.get<CategoriaTortaDetalleDTO>(`${BASE_URL}/ObtenerListadoPorId`, { params })
       .pipe(catchError(this.manejarError));
   }
 
@@ -42,11 +41,10 @@ export class UnidadMedidaService {
    * @param datos - Nombre y abreviatura ingresados en el formulario
    */
   insertar(datos: { nombre: string; abreviatura: string }): Observable<any> {
-    const payload: UnidadMedidaRequestDTO = {
+    const payload: CategoriaTortaRequestDTO = {
       id: 0,
       activo: true,
       nombre: datos.nombre.trim(),
-      abreviatura: datos.abreviatura.trim(),
       usuarioCreacion: USUARIO_ACTUAL,
       usuarioModificacion: USUARIO_ACTUAL,
       fechaCreacion: new Date().toISOString(),
@@ -68,14 +66,13 @@ export class UnidadMedidaService {
    */
   modificar(
     id: number,
-    datos: { nombre: string; abreviatura: string },
-    detalle: UnidadMedidaDetalleDTO
+    datos: { nombre: string },
+    detalle: CategoriaTortaDetalleDTO
   ): Observable<any> {
-    const payload: UnidadMedidaRequestDTO = {
+    const payload: CategoriaTortaRequestDTO = {
       id,
       activo: detalle.activo,
       nombre: datos.nombre.trim(),
-      abreviatura: datos.abreviatura.trim(),
       usuarioCreacion: detalle.usuarioCreacion,
       usuarioModificacion: USUARIO_ACTUAL,
       fechaCreacion: detalle.fechaCreacion,

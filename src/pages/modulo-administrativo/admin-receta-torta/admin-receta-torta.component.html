@@ -1,0 +1,241 @@
+<!--
+  admin-receta-torta.component.html
+  Listado de Recetas de Torta — tema Dulce & Co.
+
+  Estructura:
+  ├── Toast de notificación
+  ├── Header + botón Nueva Receta
+  ├── Cards de estadísticas
+  ├── Toolbar de búsqueda
+  ├── Grid de cards (una por torta, con sus ingredientes)
+  ├── Estado vacío / skeleton
+  ├── Diálogo de confirmación de eliminación
+  └── Modal de crear/editar
+-->
+
+<!-- TOAST ──────────────────────────────────────────────────────────────────── -->
+@if (notificacion()) {
+  <div
+    class="toast"
+    [class.toast--error]="notificacion()!.tipo === 'error'"
+    role="alert"
+    aria-live="polite"
+  >
+    <div class="toast__icono">{{ notificacion()!.tipo === 'exito' ? '✓' : '✕' }}</div>
+    <span class="toast__mensaje">{{ notificacion()!.mensaje }}</span>
+    <button class="toast__cerrar" (click)="cerrarNotificacion()">✕</button>
+  </div>
+}
+
+<!-- HEADER ─────────────────────────────────────────────────────────────────── -->
+<div class="page-header">
+  <div>
+    <h1 class="page-titulo">Recetas de Tortas</h1>
+    <p class="page-subtitulo">Gestión de ingredientes e insumos por torta</p>
+  </div>
+  <button class="btn-nuevo" (click)="abrirModalCrear()">
+    <span class="btn-nuevo__icono">+</span>
+    Nueva Receta
+  </button>
+</div>
+
+<!-- STATS ──────────────────────────────────────────────────────────────────── -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card__label">Tortas con receta</div>
+    <div class="stat-card__valor">{{ recetasAgrupadas().length }}</div>
+    <div class="stat-card__sub">recetas registradas</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__label">Total ingredientes</div>
+    <div class="stat-card__valor">{{ totalIngredientes() }}</div>
+    <div class="stat-card__sub">combinaciones únicas</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__label">Insumos usados</div>
+    <div class="stat-card__valor">{{ insumosUnicos() }}</div>
+    <div class="stat-card__sub">del catálogo de insumos</div>
+  </div>
+</div>
+
+<!-- TOOLBAR ────────────────────────────────────────────────────────────────── -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <i class="search-wrap__icono">⌕</i>
+    <input
+      type="text"
+      class="search-wrap__input"
+      placeholder="Buscar por torta o ingrediente..."
+      [ngModel]="textoBusqueda()"
+      (ngModelChange)="onBusqueda($event)"
+      aria-label="Buscar recetas"
+    />
+    @if (textoBusqueda()) {
+      <button class="search-wrap__limpiar" (click)="limpiarBusqueda()">✕</button>
+    }
+  </div>
+  <div class="count-pill">
+    {{ recetasFiltradas().length }}
+    {{ recetasFiltradas().length === 1 ? 'receta' : 'recetas' }}
+  </div>
+</div>
+
+<!-- GRID DE CARDS ───────────────────────────────────────────────────────────── -->
+
+<!-- Skeleton cargando -->
+@if (cargandoTabla()) {
+  <div class="cards-grid">
+    @for (i of [1,2,3]; track i) {
+      <div class="torta-card torta-card--skeleton">
+        <div class="card-header">
+          <span class="skeleton skeleton--icon"></span>
+          <div style="flex:1">
+            <span class="skeleton skeleton--titulo"></span>
+            <span class="skeleton skeleton--sub" style="margin-top:6px;display:block"></span>
+          </div>
+        </div>
+        <div class="card-body">
+          @for (j of [1,2,3]; track j) {
+            <div class="insumo-row">
+              <span class="skeleton skeleton--fila"></span>
+              <span class="skeleton skeleton--cant"></span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<!-- Vacío -->
+@else if (recetasFiltradas().length === 0) {
+  <div class="estado-vacio">
+    <div class="estado-vacio__icono">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6">
+        <path d="M12 2C8 6 4 8 4 12h16c0-4-4-6-8-10z"/>
+        <rect x="2" y="12" width="20" height="4" rx="1"/>
+        <rect x="4" y="16" width="16" height="5" rx="1"/>
+      </svg>
+    </div>
+    @if (textoBusqueda()) {
+      <p>No se encontraron recetas para <strong>"{{ textoBusqueda() }}"</strong></p>
+      <button class="btn-nuevo" style="font-size:12px;padding:7px 14px" (click)="limpiarBusqueda()">
+        Limpiar búsqueda
+      </button>
+    } @else {
+      <p>Aún no hay recetas registradas</p>
+      <p class="estado-vacio__hint">Crea la primera receta asignando insumos a una torta</p>
+      <button class="btn-nuevo" (click)="abrirModalCrear()">+ Crear primera receta</button>
+    }
+  </div>
+}
+
+<!-- Cards de recetas -->
+@else {
+  <div class="cards-grid">
+    @for (receta of recetasFiltradas(); track receta.idTorta) {
+      <div class="torta-card">
+
+        <!-- Card header con nombre de torta y acciones -->
+        <div class="card-header">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8">
+              <path d="M12 2C8 6 4 8 4 12h16c0-4-4-6-8-10z"/>
+              <rect x="2" y="12" width="20" height="4" rx="1"/>
+              <rect x="4" y="16" width="16" height="5" rx="1"/>
+              <line x1="8" y1="12" x2="8" y2="17"/>
+              <line x1="12" y1="12" x2="12" y2="17"/>
+              <line x1="16" y1="12" x2="16" y2="17"/>
+            </svg>
+          </div>
+          <div class="card-header__info">
+            <h3 class="card-titulo">{{ receta.nombreTorta }}</h3>
+            <p class="card-subtitulo">
+              {{ receta.ingredientes.length }}
+              {{ receta.ingredientes.length === 1 ? 'ingrediente' : 'ingredientes' }}
+              · {{ receta.usuarioCreacion }}
+            </p>
+          </div>
+          <div class="card-acciones">
+            <button
+              class="btn-accion btn-accion--editar"
+              (click)="abrirModalEditar(receta)"
+              title="Editar receta"
+              [attr.aria-label]="'Editar receta de ' + receta.nombreTorta"
+            >✎</button>
+            <button
+              class="btn-accion btn-accion--eliminar"
+              (click)="confirmarEliminar(receta)"
+              title="Eliminar receta"
+              [attr.aria-label]="'Eliminar receta de ' + receta.nombreTorta"
+            >✕</button>
+          </div>
+        </div>
+
+        <!-- Lista de ingredientes -->
+        <div class="card-body">
+          @for (ing of receta.ingredientes; track ing.id) {
+            <div class="insumo-row">
+              <span class="insumo-dot"></span>
+              <span class="insumo-nombre">{{ ing.nombreInsumo }}</span>
+              <span class="insumo-cantidad">{{ ing.cantidadRequerida }}</span>
+            </div>
+          }
+        </div>
+
+        <!-- Footer con fecha -->
+        <div class="card-footer">
+          <span class="card-footer__label">Última modificación</span>
+          <span class="card-footer__valor">{{ formatearFecha(receta.ultimaModificacion) }}</span>
+        </div>
+
+      </div>
+    }
+  </div>
+}
+
+<!-- DIÁLOGO CONFIRMAR ELIMINACIÓN ──────────────────────────────────────────── -->
+@if (tortaParaEliminar()) {
+  <div class="overlay" role="dialog" aria-modal="true">
+    <div class="dialogo">
+      <div class="dialogo__cuerpo">
+        <div class="dialogo__icono-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+          </svg>
+        </div>
+        <h2 class="dialogo__titulo">¿Eliminar receta?</h2>
+        <p class="dialogo__mensaje">
+          Se eliminarán los
+          <strong>{{ tortaParaEliminar()!.ingredientes.length }} ingredientes</strong>
+          de la receta de <strong>"{{ tortaParaEliminar()!.nombreTorta }}"</strong>.
+          Esta acción no se puede deshacer.
+        </p>
+      </div>
+      <div class="dialogo__footer">
+        <button class="btn-dialogo-cancel" (click)="cancelarEliminar()" [disabled]="eliminando()">
+          Cancelar
+        </button>
+        <button class="btn-dialogo-eliminar" (click)="ejecutarEliminar()" [disabled]="eliminando()">
+          @if (eliminando()) {
+            <span class="spinner"></span> Eliminando...
+          } @else {
+            Sí, eliminar receta
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- MODAL ───────────────────────────────────────────────────────────────────── -->
+@if (modalAbierto() && modalInputData()) {
+  <app-receta-torta-modal
+    [inputData]="modalInputData()!"
+    (cerrar)="cerrarModal()"
+    (guardado)="onGuardadoExitoso($event)"
+  />
+}

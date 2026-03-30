@@ -1,149 +1,246 @@
-<div class="tortas-page">
-
-  <!-- PAGE HEADER -->
-  <div class="page-header">
-    <div class="header-info">
-      <h1 class="page-title">
-        <span class="title-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path d="M3 19h18M5 19V12M19 19V12M3 12c0-1 .8-2 2-2h14c1.2 0 2 1 2 2"/>
-            <path d="M8 10V8c0-2.2 1.8-4 4-4s4 1.8 4 4v2"/>
-          </svg>
-        </span>
-        Catálogo de Tortas
-      </h1>
-      <p class="page-subtitle">Gestiona el inventario de tortas disponibles</p>
-    </div>
-    <button class="btn-create" (click)="openCreate()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-      Nueva Torta
-    </button>
+<!-- TOAST ──────────────────────────────────────────────────────────────────── -->
+@if (notificacion()) {
+  <div
+    class="toast"
+    [class.toast--error]="notificacion()!.tipo === 'error'"
+    role="alert"
+    aria-live="polite"
+  >
+    <div class="toast__icono">{{ notificacion()!.tipo === 'exito' ? '✓' : '✕' }}</div>
+    <span class="toast__mensaje">{{ notificacion()!.mensaje }}</span>
+    <button class="toast__cerrar" (click)="cerrarNotificacion()" aria-label="Cerrar">✕</button>
   </div>
+}
 
-  <!-- SEARCH & STATS -->
-  <div class="toolbar">
-    <div class="search-box">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-      <input
-        type="text"
-        placeholder="Buscar torta..."
-        [value]="searchTerm"
-        (input)="onSearch($any($event.target).value)"
-        class="search-input"
-      />
-    </div>
-    <div class="stats-pill">
-      <span class="stats-count">{{ filteredTortas.length }}</span>
-      <span class="stats-label">tortas</span>
-    </div>
+<!-- HEADER ─────────────────────────────────────────────────────────────────── -->
+<div class="page-header">
+  <div>
+    <h1 class="page-titulo">Tortas</h1>
+    <p class="page-subtitulo">Gestión del catálogo de tortas y precios</p>
   </div>
+  <button class="btn-nuevo" (click)="abrirModalCrear()">
+    <span class="btn-nuevo__icono">+</span>
+    Nueva Torta
+  </button>
+</div>
 
-  <!-- ERROR -->
-  <div class="alert-error" *ngIf="error">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-    </svg>
-    {{ error }}
-    <button class="alert-close" (click)="error = ''">✕</button>
+<!-- TOOLBAR ─────────────────────────────────────────────────────────────────── -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <i class="search-wrap__icono">⌕</i>
+    <input
+      type="text"
+      class="search-wrap__input"
+      placeholder="Buscar por nombre, categoría o descripción..."
+      [ngModel]="textoBusqueda()"
+      (ngModelChange)="onBusqueda($event)"
+      aria-label="Buscar tortas"
+    />
+    @if (textoBusqueda()) {
+      <button class="search-wrap__limpiar" (click)="limpiarBusqueda()" aria-label="Limpiar">✕</button>
+    }
   </div>
-
-  <!-- LOADING -->
-  <div class="loading-state" *ngIf="loading">
-    <div class="spinner"></div>
-    <span>Cargando tortas...</span>
+  <div class="count-pill">
+    {{ tortasFiltradas().length }}
+    {{ tortasFiltradas().length === 1 ? 'torta' : 'tortas' }}
   </div>
+</div>
 
-  <!-- EMPTY STATE -->
-  <div class="empty-state" *ngIf="!loading && filteredTortas.length === 0 && !error">
-    <div class="empty-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-        <path d="M3 19h18M5 19V12M19 19V12M3 12c0-1 .8-2 2-2h14c1.2 0 2 1 2 2"/>
-        <path d="M8 10V8c0-2.2 1.8-4 4-4s4 1.8 4 4v2"/>
-      </svg>
-    </div>
-    <h3>Sin tortas registradas</h3>
-    <p>Crea tu primera torta para comenzar</p>
-    <button class="btn-create" (click)="openCreate()">+ Agregar Torta</button>
+<!-- TABLA ────────────────────────────────────────────────────────────────────── -->
+<div class="tabla-card">
+  <table class="tabla" aria-label="Listado de tortas">
+    <thead class="tabla__head">
+      <tr>
+        <th class="tabla__th" style="width:52px">#</th>
+        <th class="tabla__th" style="width:64px">Imagen</th>
+        <th class="tabla__th">Nombre</th>
+        <th class="tabla__th">Categoría</th>
+        <th class="tabla__th">Cantidades</th>
+        <th class="tabla__th tabla__th--num">Stock</th>
+        <th class="tabla__th tabla__th--num">Precio</th>
+        <th class="tabla__th tabla__th--centro" style="width:80px">Person.</th>
+        <th class="tabla__th tabla__th--centro" style="width:90px">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- Skeleton -->
+      @if (cargandoTabla()) {
+        @for (i of [1,2,3,4,5]; track i) {
+          <tr class="tabla__fila">
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--thumb"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--lg"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--md"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--md"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--md"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+          </tr>
+        }
+      }
+
+      <!-- Vacío -->
+      @else if (tortasFiltradas().length === 0) {
+        <tr>
+          <td colspan="9" class="tabla__vacia">
+            <div class="estado-vacio">
+              <div class="estado-vacio__icono">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+                  <path d="M12 2C8 2 4 5 4 9c0 2.5 1.5 4.5 3 6l5 7 5-7c1.5-1.5 3-3.5 3-6 0-4-4-7-8-7z"/>
+                  <circle cx="12" cy="9" r="2.5"/>
+                </svg>
+              </div>
+              @if (textoBusqueda()) {
+                <p>No se encontraron tortas para <strong>"{{ textoBusqueda() }}"</strong></p>
+                <button class="btn-nuevo" style="font-size:12px;padding:7px 14px" (click)="limpiarBusqueda()">Limpiar búsqueda</button>
+              } @else {
+                <p>No hay tortas registradas</p>
+                <button class="btn-nuevo" (click)="abrirModalCrear()">+ Registrar primera torta</button>
+              }
+            </div>
+          </td>
+        </tr>
+      }
+
+      <!-- Filas de datos -->
+      @else {
+        @for (torta of tortasFiltradas(); track torta.id) {
+          <tr class="tabla__fila">
+
+            <td class="tabla__td tabla__td--id">{{ torta.id }}</td>
+
+            <!-- Thumbnail imagen -->
+            <td class="tabla__td tabla__td--thumb">
+              @if (torta.imagenUrl) {
+                <img
+                  class="torta-thumb"
+                  [src]="torta.imagenUrl"
+                  [alt]="torta.nombre"
+                  loading="lazy"
+                />
+              } @else {
+                <div class="torta-thumb torta-thumb--placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="3"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </div>
+              }
+            </td>
+
+            <td class="tabla__td tabla__td--nombre">
+              <div class="nombre-wrap">
+                <span class="nombre-principal">{{ torta.nombre }}</span>
+                @if (torta.descripcion) {
+                  <span class="nombre-desc">{{ torta.descripcion }}</span>
+                }
+              </div>
+            </td>
+
+            <td class="tabla__td">
+              <span class="badge-categoria">{{ torta.nombreCategoriaTorta }}</span>
+            </td>
+
+            <td class="tabla__td tabla__td--dim">
+              {{ torta.cantidades || '—' }}
+            </td>
+
+            <td class="tabla__td tabla__td--num">
+              <span class="stock-val" [ngClass]="claseStock(torta)">
+                {{ formatearNumero(torta.stockDisponible) }}
+              </span>
+            </td>
+
+            <td class="tabla__td tabla__td--num">
+              <span class="precio-val">{{ formatearMoneda(torta.precioVenta) }}</span>
+            </td>
+
+            <td class="tabla__td tabla__td--centro">
+              @if (torta.esPersonalizable) {
+                <span class="badge-person badge-person--si">Sí</span>
+              } @else {
+                <span class="badge-person badge-person--no">No</span>
+              }
+            </td>
+
+            <td class="tabla__td tabla__td--centro">
+              <div class="acciones">
+                <button
+                  class="btn-accion btn-accion--editar"
+                  (click)="abrirModalEditar(torta.id)"
+                  [attr.aria-label]="'Editar ' + torta.nombre"
+                  title="Editar"
+                >✎</button>
+                <button
+                  class="btn-accion btn-accion--eliminar"
+                  (click)="confirmarEliminar(torta)"
+                  [attr.aria-label]="'Eliminar ' + torta.nombre"
+                  title="Eliminar"
+                >✕</button>
+              </div>
+            </td>
+
+          </tr>
+        }
+      }
+
+    </tbody>
+  </table>
+</div>
+
+<!-- LEYENDA STOCK ───────────────────────────────────────────────────────────── -->
+@if (!cargandoTabla() && tortas().length > 0) {
+  <div class="leyenda">
+    <span class="leyenda__item"><span class="stock-val stock--ok">●</span> Normal (&gt;8)</span>
+    <span class="leyenda__item"><span class="stock-val stock--alerta">●</span> Alerta (4–8)</span>
+    <span class="leyenda__item"><span class="stock-val stock--bajo">●</span> Bajo (1–3)</span>
+    <span class="leyenda__item"><span class="stock-val stock--agotado">●</span> Agotado</span>
   </div>
+}
 
-  <!-- GRID -->
-  <div class="tortas-grid" *ngIf="!loading && filteredTortas.length > 0">
-    <div class="torta-card" *ngFor="let torta of filteredTortas">
-
-      <!-- IMAGE -->
-      <div class="card-image">
-        <img *ngIf="torta.imagenUrl" [src]="torta.imagenUrl" [alt]="torta.nombre" />
-        <div class="card-image-placeholder" *ngIf="!torta.imagenUrl">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-            <path d="M3 19h18M5 19V12M19 19V12M3 12c0-1 .8-2 2-2h14c1.2 0 2 1 2 2"/>
-            <path d="M8 10V8c0-2.2 1.8-4 4-4s4 1.8 4 4v2"/>
-          </svg>
-        </div>
-        <div class="card-status" [class.active]="torta.estado" [class.inactive]="!torta.estado">
-          {{ torta.estado ? 'Activo' : 'Inactivo' }}
-        </div>
-      </div>
-
-      <!-- BODY -->
-      <div class="card-body">
-        <h3 class="card-name">{{ torta.nombre }}</h3>
-        <p class="card-desc">{{ torta.descripcion || 'Sin descripción' }}</p>
-
-        <div class="card-metrics">
-          <div class="metric">
-            <span class="metric-label">Precio</span>
-            <span class="metric-value price">S/ {{ torta.precioVenta | number:'1.2-2' }}</span>
-          </div>
-          <div class="metric">
-            <span class="metric-label">Stock</span>
-            <span class="metric-value stock" [class.low]="torta.stockDisponible < 5">
-              {{ torta.stockDisponible }}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- ACTIONS -->
-      <div class="card-actions">
-        <button class="btn-edit" (click)="openEdit(torta)" title="Editar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-          </svg>
-          Editar
-        </button>
-        <button class="btn-delete" (click)="openDelete(torta)" title="Eliminar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<!-- DIÁLOGO CONFIRMACIÓN ELIMINAR ──────────────────────────────────────────── -->
+@if (idParaEliminar()) {
+  <div class="overlay" role="dialog" aria-modal="true">
+    <div class="dialogo">
+      <div class="dialogo__cuerpo">
+        <div class="dialogo__icono-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
             <polyline points="3 6 5 6 21 6"/>
             <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
             <path d="M10 11v6M14 11v6"/>
             <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
           </svg>
-          Eliminar
+        </div>
+        <h2 class="dialogo__titulo">¿Eliminar torta?</h2>
+        <p class="dialogo__mensaje">
+          Estás a punto de eliminar <strong>"{{ nombreParaEliminar() }}"</strong>.
+          Esta acción no se puede deshacer.
+        </p>
+      </div>
+      <div class="dialogo__footer">
+        <button class="btn-dialogo-cancel" (click)="cancelarEliminar()" [disabled]="eliminando()">
+          Cancelar
+        </button>
+        <button class="btn-dialogo-eliminar" (click)="ejecutarEliminar()" [disabled]="eliminando()">
+          @if (eliminando()) {
+            <span class="spinner"></span> Eliminando...
+          } @else {
+            Sí, eliminar
+          }
         </button>
       </div>
-
     </div>
   </div>
+}
 
-</div>
-
-<!-- MODALS -->
-<app-torta-modal
-  *ngIf="showModal"
-  [torta]="selectedTorta"
-  (closed)="onModalClose()"
-  (saved)="onModalSaved()">
-</app-torta-modal>
-
-<app-torta-delete-modal
-  *ngIf="showDeleteModal"
-  [torta]="tortaToDelete"
-  [usuario]="getUsuario()"
-  (closed)="onDeleteClose()"
-  (deleted)="onDeleteConfirmed()">
-</app-torta-delete-modal>
+<!-- MODAL ───────────────────────────────────────────────────────────────────── -->
+@if (modalAbierto() && modalInputData()) {
+  <app-torta-modal
+    [inputData]="modalInputData()!"
+    (cerrar)="cerrarModal()"
+    (guardado)="onGuardadoExitoso($event)"
+  />
+}

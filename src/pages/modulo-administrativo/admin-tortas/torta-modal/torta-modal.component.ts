@@ -1,229 +1,319 @@
 import {
-  Component, Input, Output, EventEmitter, OnInit, OnChanges
+  Component,
+  OnInit,
+  OnDestroy,
+  Input,
+  Output,
+  EventEmitter,
+  HostListener,
+  signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, NgForm } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+  AbstractControl,
+} from '@angular/forms';
+import { forkJoin, Subject } from 'rxjs';
+import { takeUntil, finalize } from 'rxjs/operators';
+import { TortaDetalleDTO, ModalInputData } from '../../../../models/torta-dto';
+import { CategoriaTortaListadoDTO } from '../../../../models/torta-dto';
 import { TortaService } from '../../../../services/torta.service';
-import { Torta, TortaForm } from '../../../../models/torta';
+import { CategoriaTortaService } from '../../../../services/categoria-torta.service';
 
 @Component({
-  standalone: true,
   selector: 'app-torta-modal',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './torta-modal.component.html',
   styleUrls: ['./torta-modal.component.css'],
-  imports: [CommonModule, FormsModule],
 })
-export class TortaModalComponent implements OnInit, OnChanges {
-  @Input() torta: Torta | null = null;
-  @Output() closed = new EventEmitter<void>();
-  @Output() saved = new EventEmitter<void>();
+export class TortaModalComponent implements OnInit, OnDestroy {
 
-  isEdit = false;
-  loading = false;
-  error = '';
-  success = '';
+  @Input({ required: true }) inputData!: ModalInputData;
+  @Output() cerrar   = new EventEmitter<void>();
+  @Output() guardado = new EventEmitter<string>();
 
-  form: TortaForm = this.emptyForm();
+  // ── Estado ─────────────────────────────────────────────────────────────────
+  cargandoInicial = signal<boolean>(false);
+  guardando       = signal<boolean>(false);
+  errorApi        = signal<string | null>(null);
 
-  selectedFile: File | null = null;
-  previewUrl: string | null = null;
-  imageError = '';
+  /** Combo de categorías para el <select> */
+  categorias = signal<CategoriaTortaListadoDTO[]>([]);
 
-  readonly MAX_FILE_SIZE = 5 * 1024 * 1024;
-  readonly ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  /** Detalle original en modo editar */
+  private detalleOriginal: TortaDetalleDTO | null = null;
 
-  constructor(private tortaService: TortaService) {}
+  // ── Estado de imagen ───────────────────────────────────────────────────────
+  /** Archivo seleccionado por el usuario */
+  imagenSeleccionada = signal<File | null>(null);
+  /** Preview en base64 de la nueva imagen seleccionada */
+  imagenPreview      = signal<string | null>(null);
+  /** URL de imagen existente (en modo editar) */
+  imagenExistente    = signal<string | null>(null);
+  /** Si el usuario pidió quitar la imagen existente */
+  quitarImagen       = signal<boolean>(false);
+
+  // ── Formulario ─────────────────────────────────────────────────────────────
+  formulario!: FormGroup;
+
+  // ── Getters ────────────────────────────────────────────────────────────────
+  get nombre():           AbstractControl { return this.formulario.get('nombre')!; }
+  get idCategoriaTorta(): AbstractControl { return this.formulario.get('idCategoriaTorta')!; }
+  get descripcion():      AbstractControl { return this.formulario.get('descripcion')!; }
+  get cantidades():       AbstractControl { return this.formulario.get('cantidades')!; }
+  get stockDisponible():  AbstractControl { return this.formulario.get('stockDisponible')!; }
+  get precioVenta():      AbstractControl { return this.formulario.get('precioVenta')!; }
+  get esPersonalizable(): AbstractControl { return this.formulario.get('esPersonalizable')!; }
+
+  get esEditar():    boolean { return this.inputData.mode === 'editar'; }
+  get tituloModal(): string  { return this.esEditar ? 'Editar Torta' : 'Nueva Torta'; }
+
+  /** Determina si hay imagen para mostrar en preview (nueva o existente) */
+  get hayImagenPreview(): boolean {
+    return !!this.imagenPreview() || (!!this.imagenExistente() && !this.quitarImagen());
+  }
+
+  /** URL de preview: prioriza la nueva seleccionada, si no usa la existente */
+  get urlPreview(): string | null {
+    return this.imagenPreview() ?? (this.quitarImagen() ? null : this.imagenExistente());
+  }
+
+  private destroy$ = new Subject<void>();
+
+  constructor(
+    private fb:                   FormBuilder,
+    private tortaService:         TortaService,
+    private categoriaTortaService: CategoriaTortaService,
+  ) {}
+
+  // ── Ciclo de vida ──────────────────────────────────────────────────────────
 
   ngOnInit(): void {
-    this.init();
+    this.inicializarFormulario();
+    this.cargarDatosIniciales();
   }
 
-  ngOnChanges(): void {
-    this.init();
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  private init(): void {
-    this.error = '';
-    this.success = '';
-    this.imageError = '';
-    this.selectedFile = null;
+  @HostListener('document:keydown.escape')
+  onEscape(): void { if (!this.guardando()) this.onCerrar(); }
 
-    if (this.torta) {
-      this.isEdit = true;
-      this.form = {
-        id: this.torta.id,
-        nombre: this.torta.nombre,
-        descripcion: this.torta.descripcion ?? '',
-        precioVenta: this.torta.precioVenta,
-        stockDisponible: this.torta.stockDisponible,
-        imagenUrl: this.torta.imagenUrl ?? '',
-        imagenPublicId: this.torta.imagenPublicId ?? '',
-        estado: this.torta.estado,
-        usuarioCreacion: this.torta.usuarioCreacion,
-        usuarioModificacion: this.getUsuario(),
-        fechaCreacion: this.torta.fechaCreacion ?? new Date().toISOString(),
-        fechaModificacion: new Date().toISOString(),
-      };
-      this.previewUrl = this.torta.imagenUrl || null;
+  // ── Formulario ─────────────────────────────────────────────────────────────
+
+  private inicializarFormulario(): void {
+    this.formulario = this.fb.group({
+      nombre: [
+        '',
+        [Validators.required, Validators.minLength(2), Validators.maxLength(150), Validators.pattern(/\S+/)],
+      ],
+      idCategoriaTorta: [
+        null,
+        [Validators.required, Validators.min(1)],
+      ],
+      descripcion: [
+        '',
+        [Validators.maxLength(500)],
+      ],
+      cantidades: [
+        '',
+        [Validators.maxLength(200)],
+      ],
+      stockDisponible: [
+        0,
+        [Validators.required, Validators.min(0)],
+      ],
+      precioVenta: [
+        null,
+        [Validators.min(0)],
+      ],
+      esPersonalizable: [false],
+    });
+  }
+
+  // ── Carga de datos iniciales ───────────────────────────────────────────────
+
+  private cargarDatosIniciales(): void {
+    this.cargandoInicial.set(true);
+    this.formulario.disable();
+
+    if (this.esEditar && this.inputData.id) {
+
+      forkJoin({
+        categorias: this.categoriaTortaService.obtenerListado(),
+        detalle:    this.tortaService.obtenerPorId(this.inputData.id),
+      })
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.cargandoInicial.set(false);
+          this.formulario.enable();
+        })
+      )
+      .subscribe({
+        next: ({ categorias, detalle }) => {
+          this.categorias.set(categorias);
+          this.detalleOriginal = detalle;
+
+          // Si tiene imagen, cargarla en el estado
+          if (detalle.imagenUrl) {
+            this.imagenExistente.set(detalle.imagenUrl);
+          }
+
+          this.formulario.patchValue({
+            nombre:           detalle.nombre,
+            idCategoriaTorta: detalle.idCategoriaTorta,
+            descripcion:      detalle.descripcion ?? '',
+            cantidades:       detalle.cantidades ?? '',
+            stockDisponible:  detalle.stockDisponible,
+            precioVenta:      detalle.precioVenta,
+            esPersonalizable: detalle.esPersonalizable ?? false,
+          });
+        },
+        error: (err: Error) => {
+          this.errorApi.set(`Error al cargar los datos: ${err.message}`);
+        },
+      });
+
     } else {
-      this.isEdit = false;
-      this.form = this.emptyForm();
-      this.previewUrl = null;
+
+      this.categoriaTortaService.obtenerListado()
+        .pipe(
+          takeUntil(this.destroy$),
+          finalize(() => {
+            this.cargandoInicial.set(false);
+            this.formulario.enable();
+          })
+        )
+        .subscribe({
+          next: categorias => this.categorias.set(categorias),
+          error: (err: Error) => this.errorApi.set(err.message),
+        });
     }
   }
 
-  private emptyForm(): TortaForm {
-    return {
-      id: 0,
-      nombre: '',
-      descripcion: '',
-      precioVenta: null,
-      stockDisponible: null,
-      imagenUrl: '',
-      imagenPublicId: '',
-      estado: true,
-      usuarioCreacion: this.getUsuario(),
-      fechaCreacion: new Date().toISOString(),
-      fechaModificacion: new Date().toISOString(),
-    };
-  }
+  // ── Manejo de imagen ───────────────────────────────────────────────────────
 
-  getUsuario(): string {
-    const raw = localStorage.getItem('user');
-    if (!raw) return 'admin';
-    return JSON.parse(raw)?.username ?? 'admin';
-  }
+  onArchivoSeleccionado(event: Event): void {
+    const input  = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    if (!archivo) return;
 
-  onFileChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    this.imageError = '';
-    if (!file) return;
-
-    if (!this.ALLOWED_TYPES.includes(file.type)) {
-      this.imageError = 'Formato no permitido. Use JPG, PNG o WEBP.';
+    // Validaciones básicas en cliente
+    const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!tiposPermitidos.includes(archivo.type)) {
+      this.errorApi.set('Solo se permiten imágenes JPG, PNG, WEBP o GIF.');
       input.value = '';
       return;
     }
-    if (file.size > this.MAX_FILE_SIZE) {
-      this.imageError = 'El archivo supera los 5 MB permitidos.';
+    if (archivo.size > 5 * 1024 * 1024) {
+      this.errorApi.set('La imagen no debe superar los 5 MB.');
       input.value = '';
       return;
     }
 
-    this.selectedFile = file;
+    this.errorApi.set(null);
+    this.imagenSeleccionada.set(archivo);
+    this.quitarImagen.set(false);
+
+    // Generar preview con FileReader
     const reader = new FileReader();
-    reader.onload = () => { this.previewUrl = reader.result as string; };
-    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+      this.imagenPreview.set(e.target?.result as string);
+    };
+    reader.readAsDataURL(archivo);
   }
 
-  removeImage(): void {
-    this.selectedFile = null;
-    this.previewUrl = null;
-    this.form.imagenUrl = '';
-    this.form.imagenPublicId = '';
-    this.imageError = '';
+  quitarImagenSeleccionada(): void {
+    this.imagenSeleccionada.set(null);
+    this.imagenPreview.set(null);
+    // Resetear el input file buscándolo por id
+    const inputFile = document.getElementById('imagen') as HTMLInputElement;
+    if (inputFile) inputFile.value = '';
   }
 
-  validateForm(): boolean {
-    if (!this.form.nombre?.trim()) {
-      this.error = 'El nombre es obligatorio.'; return false;
-    }
-    if (this.form.nombre.trim().length < 3) {
-      this.error = 'El nombre debe tener al menos 3 caracteres.'; return false;
-    }
-    if (this.form.precioVenta === null || this.form.precioVenta === undefined) {
-      this.error = 'El precio de venta es obligatorio.'; return false;
-    }
-    if (this.form.precioVenta <= 0) {
-      this.error = 'El precio de venta debe ser mayor a 0.'; return false;
-    }
-    if (this.form.stockDisponible === null || this.form.stockDisponible === undefined) {
-      this.error = 'El stock disponible es obligatorio.'; return false;
-    }
-    if (this.form.stockDisponible < 0) {
-      this.error = 'El stock no puede ser negativo.'; return false;
-    }
-    return true;
+  onQuitarImagenExistente(): void {
+    this.quitarImagen.set(true);
+    this.imagenExistente.set(null);
+    this.imagenSeleccionada.set(null);
+    this.imagenPreview.set(null);
   }
 
-  submit(ngForm: NgForm): void {
-    this.error = '';
-    this.success = '';
-    if (!this.validateForm()) return;
-    this.loading = true;
-    this.isEdit ? this.doUpdate() : this.doCreate();
+  /** Dispara el click del input file oculto */
+  abrirSelectorArchivo(): void {
+    const inputFile = document.getElementById('imagen') as HTMLInputElement;
+    if (inputFile) inputFile.click();
   }
 
-  private buildFormData(): FormData {
-    const fd = new FormData();
-    fd.append('id', String(this.form.id));
-    fd.append('nombre', this.form.nombre.trim());
-    fd.append('descripcion', this.form.descripcion?.trim() ?? '');
-    fd.append('precioVenta', String(this.form.precioVenta));
-    fd.append('stockDisponible', String(this.form.stockDisponible));
-    fd.append('estado', String(this.form.estado));
-    fd.append('usuarioCreacion', this.form.usuarioCreacion);
-    fd.append('usuarioModificacion', this.getUsuario());
-    fd.append('fechaCreacion', this.form.fechaCreacion);
-    fd.append('fechaModificacion', new Date().toISOString());
-    // Conservar imagen existente si no se seleccionó una nueva
-    if (this.form.imagenUrl) fd.append('imagenUrl', this.form.imagenUrl);
-    if (this.form.imagenPublicId) fd.append('imagenPublicId', this.form.imagenPublicId);
-    // Imagen nueva si la hay
-    if (this.selectedFile) {
-      fd.append('imagen', this.selectedFile, this.selectedFile.name);
+  // ── Submit ─────────────────────────────────────────────────────────────────
+
+  onSubmit(): void {
+    this.formulario.markAllAsTouched();
+    if (this.formulario.invalid) return;
+
+    this.errorApi.set(null);
+    this.guardando.set(true);
+
+    const datos = {
+      nombre:           this.formulario.value.nombre.trim(),
+      idCategoriaTorta: Number(this.formulario.value.idCategoriaTorta),
+      descripcion:      this.formulario.value.descripcion?.trim() || null,
+      cantidades:       this.formulario.value.cantidades?.trim() || null,
+      stockDisponible:  Number(this.formulario.value.stockDisponible),
+      precioVenta:      this.formulario.value.precioVenta !== null && this.formulario.value.precioVenta !== ''
+                          ? Number(this.formulario.value.precioVenta) : null,
+      esPersonalizable: Boolean(this.formulario.value.esPersonalizable),
+    };
+
+    const imagenAEnviar = this.imagenSeleccionada();
+
+    const operacion$ = this.esEditar
+      ? this.tortaService.modificar(this.inputData.id!, datos, this.detalleOriginal!, imagenAEnviar)
+      : this.tortaService.insertar(datos, imagenAEnviar);
+
+    operacion$
+      .pipe(takeUntil(this.destroy$), finalize(() => this.guardando.set(false)))
+      .subscribe({
+        next: () => {
+          const msg = this.esEditar
+            ? `"${datos.nombre}" actualizada correctamente.`
+            : `"${datos.nombre}" registrada correctamente.`;
+          this.guardado.emit(msg);
+        },
+        error: (err: Error) => this.errorApi.set(err.message),
+      });
+  }
+
+  onCerrar(): void { this.cerrar.emit(); }
+
+  onOverlayClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement).classList.contains('modal-overlay')) {
+      if (!this.guardando()) this.onCerrar();
     }
-    return fd;
   }
 
-  private doCreate(): void {
-    const fd = new FormData();
-    fd.append('nombre', this.form.nombre.trim());
-    fd.append('descripcion', this.form.descripcion?.trim() ?? '');
-    fd.append('precioVenta', String(this.form.precioVenta));
-    fd.append('stockDisponible', String(this.form.stockDisponible));
-    fd.append('estado', String(this.form.estado));
-    fd.append('usuarioCreacion', this.form.usuarioCreacion);
-    if (this.selectedFile) {
-      fd.append('imagen', this.selectedFile, this.selectedFile.name);
-    }
+  // ── Helpers de validación ──────────────────────────────────────────────────
 
-    this.tortaService.insertarConImagen(fd).subscribe({
-      next: () => {
-        this.loading = false;
-        this.success = '¡Torta creada exitosamente!';
-        setTimeout(() => this.saved.emit(), 900);
-      },
-      error: (err) => {
-        this.loading = false;
-        this.error = err?.error?.message ?? 'Error al crear la torta.';
-      }
-    });
+  mostrarError(campo: string): boolean {
+    const c = this.formulario.get(campo);
+    return !!(c && c.invalid && c.touched);
   }
 
-  private doUpdate(): void {
-    // Usamos ModificarConImagen que acepta [FromForm] + IFormFile opcional
-    const fd = this.buildFormData();
-
-    this.tortaService.modificarConImagen(fd).subscribe({
-      next: () => {
-        this.loading = false;
-        this.success = '¡Torta actualizada correctamente!';
-        setTimeout(() => this.saved.emit(), 900);
-      },
-      error: (err) => {
-        this.loading = false;
-        this.error = err?.error?.message ?? 'Error al actualizar la torta.';
-      }
-    });
-  }
-
-  close(): void { this.closed.emit(); }
-
-  onOverlayClick(e: MouseEvent): void {
-    if ((e.target as HTMLElement).classList.contains('modal-overlay')) {
-      this.close();
-    }
+  mensajeError(campo: string): string {
+    const c = this.formulario.get(campo);
+    if (!c || !c.errors) return '';
+    const e = c.errors;
+    if (e['required'])   return 'Este campo es obligatorio.';
+    if (e['pattern'])    return 'No puede contener solo espacios.';
+    if (e['min'])        return `El valor mínimo es ${e['min'].min}.`;
+    if (e['minlength'])  return `Mínimo ${e['minlength'].requiredLength} caracteres.`;
+    if (e['maxlength'])  return `Máximo ${e['maxlength'].requiredLength} caracteres.`;
+    return 'Valor inválido.';
   }
 }
