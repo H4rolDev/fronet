@@ -18,6 +18,7 @@ import { FilaIngrediente, ModalInputData, RecetaTortaListadoDTO } from '../../..
 import { InsumoListadoDTO } from '../../../../models/insumo-dto';
 import { RecetaTortaService } from '../../../../services/receta-torta.service';
 import { InsumoService } from '../../../../services/insumo.service';
+import { environment } from '../../../../environments/environment';
 
 
 /**
@@ -153,6 +154,7 @@ export class RecetaTortaModalComponent implements OnInit, OnDestroy {
             idInsumo: f.idInsumo,
             cantidadRequerida: f.cantidadRequerida,
             esNueva: false,
+            abreviatura: this.abreviaturaInsumo(f.idInsumo),
           })));
         },
         error: (err: Error) => this.errorApi.set(err.message),
@@ -182,7 +184,7 @@ export class RecetaTortaModalComponent implements OnInit, OnDestroy {
    */
   private cargarTortas() {
     return this.insumoService['http']
-      .get<TortaComboDTO[]>('https://localhost:7223/api/Torta/ObtenerCombo');
+      .get<TortaComboDTO[]>(`${environment.apiUrl}/Torta/ObtenerCombo`);
   }
 
   // ── Gestión de filas ───────────────────────────────────────────────────────
@@ -191,7 +193,7 @@ export class RecetaTortaModalComponent implements OnInit, OnDestroy {
   agregarFila(): void {
     this.filas.update(filas => [
       ...filas,
-      { _uid: nextUid(), idInsumo: null, cantidadRequerida: null, esNueva: true },
+      { _uid: nextUid(), idInsumo: null, cantidadRequerida: null, esNueva: true, abreviatura: '—' },
     ]);
   }
 
@@ -210,8 +212,9 @@ export class RecetaTortaModalComponent implements OnInit, OnDestroy {
 
   /** Actualiza el idInsumo de una fila */
   onCambioInsumo(uid: number, idInsumo: number | null): void {
+    const id = Number(idInsumo) || null;
     this.filas.update(filas =>
-      filas.map(f => f._uid === uid ? { ...f, idInsumo: Number(idInsumo) || null } : f)
+      filas.map(f => f._uid === uid ? { ...f, idInsumo: id, abreviatura: this.abreviaturaInsumo(id) } : f)
     );
   }
 
@@ -240,6 +243,11 @@ export class RecetaTortaModalComponent implements OnInit, OnDestroy {
   nombreInsumo(id: number | null): string {
     if (!id) return '';
     return this.insumos().find(i => i.id === id)?.nombre ?? '';
+  }
+
+  abreviaturaInsumo(id: number | null): string {
+    if (!id) return '—';
+    return this.insumos().find(i => i.id === id)?.abreviatura ?? '—';
   }
 
   // ── Submit ─────────────────────────────────────────────────────────────────

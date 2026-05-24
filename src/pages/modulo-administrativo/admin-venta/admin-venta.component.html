@@ -1,0 +1,288 @@
+<!--
+  admin-venta.component.html
+  Módulo de Ventas — tema Dulce & Co.
+
+  Acciones por fila:
+    Pendiente   → Ver | Ticket | Cancelar
+    Completado  → Ver | Ticket
+    Cancelado   → Ver
+-->
+
+<!-- TOAST ──────────────────────────────────────────────────────────────────── -->
+@if (notificacion()) {
+  <div class="toast" [class.toast--error]="notificacion()!.tipo==='error'" role="alert" aria-live="assertive">
+    <div class="toast__ico">{{ notificacion()!.tipo==='exito' ? '✓' : '✕' }}</div>
+    <span class="toast__msg">{{ notificacion()!.mensaje }}</span>
+    <button class="toast__x" (click)="cerrarToast()">✕</button>
+  </div>
+}
+
+<!-- HEADER ─────────────────────────────────────────────────────────────────── -->
+<div class="page-header">
+  <div>
+    <h1 class="page-titulo">Ventas de Tortas</h1>
+    <p class="page-subtitulo">Registro y gestión del punto de venta</p>
+  </div>
+  <button class="btn-nuevo" (click)="abrirCrear()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Nueva Venta
+  </button>
+</div>
+
+<!-- STATS ──────────────────────────────────────────────────────────────────── -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card__lbl">Ventas hoy</div>
+    <div class="stat-card__val">{{ ventasHoy() }}</div>
+    <div class="stat-card__sub">{{ formatMoneda(totalHoy()) }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__lbl">Este mes</div>
+    <div class="stat-card__val">{{ mesActual() }}</div>
+    <div class="stat-card__sub">{{ formatMoneda(totalMes()) }}</div>
+  </div>
+  <div class="stat-card" [class.stat-card--alerta]="pendientes() > 0">
+    <div class="stat-card__lbl">Pendientes</div>
+    <div class="stat-card__val">{{ pendientes() }}</div>
+    <div class="stat-card__sub">
+      <span class="dot" [class.dot--warn]="pendientes()>0" [class.dot--on]="pendientes()===0"></span>
+      por completar
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__lbl">Canceladas</div>
+    <div class="stat-card__val">{{ canceladas() }}</div>
+    <div class="stat-card__sub">este mes</div>
+  </div>
+</div>
+
+<!-- TOOLBAR ────────────────────────────────────────────────────────────────── -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <i class="search-ico">⌕</i>
+    <input
+      type="text"
+      class="search-inp"
+      placeholder="Buscar por ID..."
+      [ngModel]="busqueda()"
+      (ngModelChange)="onBusqueda($event)"
+    />
+    @if (busqueda()) {
+      <button class="search-clr" (click)="onBusqueda('')">✕</button>
+    }
+  </div>
+
+  <!-- <div class="filtros">
+    @for (f of [['todos','Todos'],['pendiente','Pendiente'],['completado','Completado'],['cancelado','Cancelado']] as any[]; track f[0]) {
+      <button
+        class="filtro-btn"
+        [class.filtro-btn--activo]="filtroEstado() === f[0]"
+        (click)="setFiltro(f[0])"
+      >{{ f[1] }}</button>
+    }
+  </div> -->
+
+  <div class="count-pill">
+    {{ ventasFiltradas().length }} {{ ventasFiltradas().length === 1 ? 'venta' : 'ventas' }}
+  </div>
+</div>
+
+<!-- TABLA ──────────────────────────────────────────────────────────────────── -->
+<div class="tabla-card">
+  <table class="tabla" aria-label="Listado de ventas">
+    <thead class="tabla__head">
+      <tr>
+        <th class="th" style="width:60px">#</th>
+        <th class="th">Fecha</th>
+        <th class="th th--num">Total</th>
+        <th class="th">Estado</th>
+        <th class="th">Entrega</th>
+        <th class="th th--centro" style="width:160px">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      @if (cargando()) {
+        @for (i of [1,2,3,4,5]; track i) {
+          <tr class="fila">
+            @for (j of [1,2,3,4,5,6]; track j) {
+              <td class="td"><span class="sk" [style.width]="j===2||j===1?'80px':'60px'"></span></td>
+            }
+          </tr>
+        }
+      }
+
+      @else if (ventasPagina().length === 0) {
+        <tr>
+          <td colspan="6" class="td-vacia">
+            <div class="estado-vacio">
+              <div class="ev-ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6">
+                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                  <rect x="9" y="3" width="6" height="4" rx="1"/>
+                </svg>
+              </div>
+              @if (busqueda() || filtroEstado() !== 'todos') {
+                <p>Sin resultados con los filtros aplicados</p>
+                <button class="btn-limpiar" (click)="limpiarFiltros()">Limpiar filtros</button>
+              } @else {
+                <p>No hay ventas registradas</p>
+                <button class="btn-nuevo" (click)="abrirCrear()">+ Registrar primera venta</button>
+              }
+            </div>
+          </td>
+        </tr>
+      }
+
+      @else {
+        @for (v of ventasPagina(); track v.id) {
+          <tr class="fila">
+            <td class="td td--id">#{{ v.id }}</td>
+            <td class="td td--dim">{{ formatFecha(v.fechaVenta) }}</td>
+            <td class="td td--num">
+              <span class="total-chip">{{ formatMoneda(v.total) }}</span>
+            </td>
+            <td class="td">
+              <span class="badge" [ngClass]="ESTADO_CLASE[v.idEstadoVenta]">
+                <span class="dot-badge"></span>
+                {{ ESTADO_LABEL[v.idEstadoVenta] ?? 'Desconocido' }}
+              </span>
+            </td>
+            <td class="td">
+              @if (v.idTipoEntrega === 2) {
+                <span class="badge badge--delivery">🛵 Delivery</span>
+              } @else {
+                <span class="badge badge--recojo">Recojo</span>
+              }
+            </td>
+            <td class="td td--centro">
+              <div class="acciones">
+                <!-- Ver detalle — siempre disponible -->
+                <button
+                  class="btn-acc btn-acc--ver"
+                  (click)="abrirDetalle(v)"
+                  title="Ver detalle"
+                  aria-label="Ver detalle venta"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  Ver
+                </button>
+
+                <!-- Ticket — Pendiente y Completado -->
+                @if (esImprimible(v)) {
+                  <button
+                    class="btn-acc btn-acc--ticket"
+                    (click)="abrirComprobante(v)"
+                    title="Ver e imprimir comprobante"
+                    aria-label="Ver comprobante"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="6 9 6 2 18 2 18 9"/>
+                      <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+                      <rect x="6" y="14" width="12" height="8"/>
+                    </svg>
+                    Ticket
+                  </button>
+                }
+
+                <!-- Cancelar — solo Pendiente -->
+                @if (esCancelable(v)) {
+                  <button
+                    class="btn-acc btn-acc--cancelar"
+                    (click)="iniciarCancelar(v)"
+                    title="Cancelar venta"
+                    aria-label="Cancelar venta"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      }
+
+    </tbody>
+  </table>
+
+  @if (totalPaginas() > 1) {
+    <div class="pag">
+      <button class="pag-btn" (click)="irPagina(paginaActual()-1)" [disabled]="paginaActual()===1">‹</button>
+      @for (p of paginasArr(); track p) {
+        <button class="pag-btn" [class.pag-btn--act]="p===paginaActual()" (click)="irPagina(p)">{{ p }}</button>
+      }
+      <button class="pag-btn" (click)="irPagina(paginaActual()+1)" [disabled]="paginaActual()===totalPaginas()">›</button>
+      <span class="pag-info">Pág. {{ paginaActual() }}/{{ totalPaginas() }} · {{ ventasFiltradas().length }} registros</span>
+    </div>
+  }
+</div>
+
+<!-- ═══ CONFIRMACIÓN CANCELAR ═══ -->
+@if (ventaCancelar()) {
+  <div class="overlay" role="dialog" aria-modal="true">
+    <div class="dialogo">
+      <div class="dialogo__cuerpo">
+        <div class="dialogo__ico-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <h2 class="dialogo__titulo">¿Cancelar Venta #{{ ventaCancelar()!.id }}?</h2>
+        <p class="dialogo__msg">Esta acción no se puede deshacer. Ingresa el motivo de cancelación.</p>
+        <div class="campo" style="margin-top:14px;text-align:left">
+          <label class="campo-lbl" for="motivo-cancel">Motivo <span style="color:#c0392b">*</span></label>
+          <textarea
+            id="motivo-cancel"
+            class="campo-ta"
+            rows="3"
+            placeholder="Describe el motivo de la cancelación..."
+            [ngModel]="motivoCancel()"
+            (ngModelChange)="motivoCancel.set($event)"
+            maxlength="300"
+          ></textarea>
+        </div>
+      </div>
+      <div class="dialogo__footer">
+        <button class="btn-dial-cancel" (click)="cerrarCancelar()" [disabled]="procesando()">Volver</button>
+        <button
+          class="btn-dial-danger"
+          (click)="confirmarCancelar()"
+          [disabled]="procesando() || !motivoCancel().trim()"
+        >
+          @if (procesando()) { <span class="spinner"></span> Cancelando... }
+          @else { Confirmar cancelación }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ═══ MODALES ═══ -->
+@if (mostrarCrear()) {
+  <app-venta-crear-modal
+    (cerrar)="cerrarCrear()"
+    (ventaCreada)="onVentaCreada($event)"
+  />
+}
+
+@if (mostrarDetalle() && ventaSeleccionada()) {
+  <app-venta-detalle-modal
+    [idVenta]="ventaSeleccionada()!.id"
+    (cerrar)="cerrarDetalle()"
+    (abrirComprobante)="abrirComprobanteDesdeDetalle($event)"
+  />
+}
+
+@if (mostrarComprobante() && ventaSeleccionada()) {
+  <app-venta-comprobante-modal
+    [idVenta]="ventaSeleccionada()!.id"
+    (cerrar)="cerrarComprobante()"
+  />
+}

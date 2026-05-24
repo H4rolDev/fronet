@@ -40,16 +40,19 @@
 
       <div *ngIf="isLoggedIn()" class="user-menu">
         <button class="user-btn" (click)="toggleDropdown()">
-          <span class="user-avatar">{{ (user?.nombre || 'U')[0].toUpperCase() }}</span>
-          <span class="user-name">{{ user?.nombre || 'Mi cuenta' }}</span>
+          <span class="user-avatar">{{ userInitial }}</span>
+          <span class="user-name">{{ userName }}</span>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <polyline points="6 9 12 15 18 9"/>
           </svg>
         </button>
         <div class="user-dropdown" *ngIf="dropdownOpen">
-          <a class="ud-item" routerLink="/cuenta"        (click)="dropdownOpen=false">👤 Perfil</a>
-          <a class="ud-item" routerLink="/configuracion" (click)="dropdownOpen=false">⚙️ Configuración</a>
-          <a class="ud-item" routerLink="/pedidos"       (click)="dropdownOpen=false">🧾 Mis pedidos</a>
+          @if (isAdmin()) {
+            <a class="ud-item" routerLink="/admin/dashboard" (click)="dropdownOpen=false">⚙️ Panel Admin</a>
+          } @else {
+            <a class="ud-item" routerLink="/cuenta" (click)="dropdownOpen=false">👤 Mi Perfil</a>
+            <a class="ud-item" routerLink="/pedidos" (click)="dropdownOpen=false">🧾 Mis Pedidos</a>
+          }
           <hr class="ud-divider">
           <a class="ud-item ud-item--danger" (click)="logout()">🚪 Cerrar sesión</a>
         </div>
@@ -93,8 +96,12 @@
     <div class="mn-divider"></div>
     <a *ngIf="!isLoggedIn()" class="mn-link mn-link--cta" routerLink="/iniciar" (click)="menuMobileOpen=false">🔑 Iniciar Sesión</a>
     <ng-container *ngIf="isLoggedIn()">
-      <a class="mn-link" routerLink="/cuenta"  (click)="menuMobileOpen=false">👤 Perfil</a>
-      <a class="mn-link" routerLink="/pedidos" (click)="menuMobileOpen=false">🧾 Mis pedidos</a>
+      @if (isAdmin()) {
+        <a class="mn-link" routerLink="/admin/dashboard" (click)="menuMobileOpen=false">⚙️ Panel Admin</a>
+      } @else {
+        <a class="mn-link" routerLink="/cuenta" (click)="menuMobileOpen=false">👤 Mi Perfil</a>
+        <a class="mn-link" routerLink="/pedidos" (click)="menuMobileOpen=false">🧾 Mis Pedidos</a>
+      }
       <a class="mn-link mn-link--danger" (click)="logout(); menuMobileOpen=false">🚪 Cerrar sesión</a>
     </ng-container>
   </nav>

@@ -1019,3 +1019,65 @@ body, html {
   background: #f5ede4;
   font-size: 3rem;
 }
+
+.carrito-item-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5ede4;
+  font-size: 1.5rem;
+}
+
+.carrito-item-cant {
+  font-size: 0.75rem;
+  color: var(--marron-claro);
+  margin-left: 6px;
+}
+
+.carrito-item-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.cantidad-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-cant {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--rosa-medio);
+  background: var(--rosa-suave);
+  color: var(--rosa-oscuro);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.btn-cant:hover:not(:disabled) {
+  background: var(--rosa-fuerte);
+  color: white;
+}
+
+.btn-cant:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cant-valor {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--marron-oscuro);
+  min-width: 20px;
+  text-align: center;
+}

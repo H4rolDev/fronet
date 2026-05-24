@@ -96,6 +96,8 @@ export interface FilaIngrediente {
   cantidadRequerida: number | null;
   /** true = fila recién agregada en esta sesión de edición */
   esNueva: boolean;
+  /** Abreviatura de la unidad de medida del insumo */
+  abreviatura: string;
 }
 
 /**

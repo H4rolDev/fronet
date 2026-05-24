@@ -56,7 +56,7 @@
         <th class="tabla__th">Nombre</th>
         <th class="tabla__th">Categoría</th>
         <th class="tabla__th">Cantidades</th>
-        <th class="tabla__th tabla__th--num">Stock</th>
+        <th class="tabla__th tabla__th--num" style="width:80px">Stock</th>
         <th class="tabla__th tabla__th--num">Precio</th>
         <th class="tabla__th tabla__th--centro" style="width:80px">Person.</th>
         <th class="tabla__th tabla__th--centro" style="width:90px">Acciones</th>
@@ -149,9 +149,7 @@
             </td>
 
             <td class="tabla__td tabla__td--num">
-              <span class="stock-val" [ngClass]="claseStock(torta)">
-                {{ formatearNumero(torta.stockDisponible) }}
-              </span>
+              <span class="stock-val">{{ torta.stockDisponible }}</span>
             </td>
 
             <td class="tabla__td tabla__td--num">
@@ -190,16 +188,6 @@
     </tbody>
   </table>
 </div>
-
-<!-- LEYENDA STOCK ───────────────────────────────────────────────────────────── -->
-@if (!cargandoTabla() && tortas().length > 0) {
-  <div class="leyenda">
-    <span class="leyenda__item"><span class="stock-val stock--ok">●</span> Normal (&gt;8)</span>
-    <span class="leyenda__item"><span class="stock-val stock--alerta">●</span> Alerta (4–8)</span>
-    <span class="leyenda__item"><span class="stock-val stock--bajo">●</span> Bajo (1–3)</span>
-    <span class="leyenda__item"><span class="stock-val stock--agotado">●</span> Agotado</span>
-  </div>
-}
 
 <!-- DIÁLOGO CONFIRMACIÓN ELIMINAR ──────────────────────────────────────────── -->
 @if (idParaEliminar()) {

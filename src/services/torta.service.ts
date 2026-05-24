@@ -3,10 +3,11 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { TortaDetalleDTO, TortaListadoDTO, TortaRequestDTO } from '../models/torta-dto';
+import { environment } from '../environments/environment';
 
 // ─── Configuración ────────────────────────────────────────────────────────────
 
-const BASE_URL = 'https://localhost:7223/api/Torta';
+const BASE_URL = `${environment.apiUrl}/Torta`;
 const USUARIO  = 'admin'; // reemplazar con tu AuthService
 
 // ─────────────────────────────────────────────────────────────────────────────

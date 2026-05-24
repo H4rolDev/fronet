@@ -1,0 +1,91 @@
+<div class="modal-overlay" role="dialog" aria-modal="true" [attr.aria-label]="tituloModal"
+  (click)="onOverlayClick($event)">
+  <div class="modal-panel">
+
+    <header class="modal-panel__header">
+      <div class="modal-panel__header-left">
+        <div class="modal-panel__icon-wrap">
+          @if (esEditar) {
+          <svg viewBox="0 0 24 24">
+            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+          } @else {
+          <svg viewBox="0 0 24 24">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          }
+        </div>
+        <div>
+          <h2 class="modal-panel__titulo">{{ tituloModal }}</h2>
+          <p class="modal-panel__subtitulo">
+            {{ esEditar ? 'Modifica los campos y guarda los cambios' : 'Completa los campos para registrar' }}
+          </p>
+        </div>
+      </div>
+      <button class="modal-panel__cerrar" type="button" (click)="onCerrar()" [disabled]="guardando()"
+        aria-label="Cerrar modal">✕</button>
+    </header>
+
+    <!-- SKELETON (carga en modo editar) ─────────────────────────────────────── -->
+    @if (cargandoDetalle()) {
+    <div class="modal-panel__body">
+      <div class="campo-skeleton">
+        <span class="sk sk--label"></span>
+        <span class="sk sk--input"></span>
+      </div>
+      <div class="campo-skeleton">
+        <span class="sk sk--label"></span>
+        <span class="sk sk--input"></span>
+      </div>
+    </div>
+    }
+
+    <!-- FORMULARIO ─────────────────────────────────────────────────────────── -->
+    @if (!cargandoDetalle()) {
+    <form class="modal-panel__body" [formGroup]="formulario" (ngSubmit)="onSubmit()" novalidate autocomplete="off">
+
+      <!-- Campo: Nombre -->
+      <div class="campo">
+        <label class="campo__label" for="nombre">
+          Nombre <span class="campo__req">*</span>
+        </label>
+        <input id="nombre" type="text" class="campo__input" [class.campo__input--error]="mostrarError('nombre')"
+          formControlName="nombre" placeholder="Ej: Entrada" maxlength="100"
+          [attr.aria-invalid]="mostrarError('nombre')" aria-describedby="nombre-error" />
+        @if (mostrarError('nombre')) {
+        <p class="campo__error" id="nombre-error" role="alert">
+          {{ mensajeError('nombre') }}
+        </p>
+        }
+      </div>
+
+      <!-- Error de la API -->
+      @if (errorApi()) {
+      <div class="alerta-api" role="alert">
+        <div class="alerta-api__icono">✕</div>
+        <p class="alerta-api__texto">{{ errorApi() }}</p>
+      </div>
+      }
+
+      <!-- FOOTER ───────────────────────────────────────────────────────────── -->
+      <footer class="modal-panel__footer">
+        <button type="button" class="btn btn--secundario" (click)="onCerrar()"
+          [disabled]="guardando()">Cancelar</button>
+
+        <button type="submit" class="btn btn--primario" [disabled]="guardando() || cargandoDetalle()">
+          @if (guardando()) {
+          <span class="spinner"></span>
+          {{ esEditar ? 'Guardando...' : 'Creando...' }}
+          } @else {
+          {{ esEditar ? '✓ Guardar cambios' : '+ Crear categoria' }}
+          }
+        </button>
+      </footer>
+
+    </form>
+    }
+
+  </div>
+</div>

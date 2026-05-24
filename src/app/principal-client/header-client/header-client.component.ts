@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule, RouterOutlet } from '@angular/router';
-import { AuthService } from '../../../services/auth.service';
+import { AuthService, PersonaInfo } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-header-client',
@@ -11,7 +11,7 @@ import { AuthService } from '../../../services/auth.service';
   styleUrl: './header-client.component.css',
   standalone: true,
 })
-export class HeaderClientComponent {
+export class HeaderClientComponent implements OnInit {
 
   title = 'cakes';
   terminoBusqueda = '';
@@ -26,7 +26,7 @@ export class HeaderClientComponent {
   ) {}
 
   ngOnInit(): void {
-    // Aos.init({ duration: 1000, once: true });
+    this.user = this.auth.getUser();
   }
 
   ejecutarBusqueda() {
@@ -50,7 +50,14 @@ export class HeaderClientComponent {
     if (!t.closest('.mobile-nav') && !t.closest('.hamburger')) this.menuMobileOpen = false;
   }
 
-  isLoggedIn(): boolean { return !!this.user; }
+  isLoggedIn(): boolean { 
+    this.user = this.auth.getUser();
+    return !!this.user; 
+  }
+
+  isAdmin(): boolean {
+    return this.auth.isAdmin();
+  }
 
   toggleDropdown() { this.dropdownOpen = !this.dropdownOpen; }
 
@@ -59,5 +66,17 @@ export class HeaderClientComponent {
     this.dropdownOpen  = false;
     this.menuMobileOpen = false;
     this.router.navigate(['/iniciar']);
+  }
+
+  get userName(): string {
+    const persona = this.user?.persona;
+    if (persona?.nombres) {
+      return persona.nombres;
+    }
+    return this.user?.username || 'Mi cuenta';
+  }
+
+  get userInitial(): string {
+    return this.userName.charAt(0).toUpperCase();
   }
 }

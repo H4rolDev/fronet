@@ -1,0 +1,341 @@
+<div
+  class="modal-overlay"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-label]="tituloModal"
+  (click)="onOverlayClick($event)"
+>
+  <div class="modal-panel">
+
+    <!-- HEADER ──────────────────────────────────────────────────────────────── -->
+    <header class="modal-panel__header">
+      <div class="modal-panel__header-left">
+        <div class="modal-panel__icon-wrap"
+          [class.modal-panel__icon-wrap--entrada]="esTipoEntrada"
+          [class.modal-panel__icon-wrap--salida]="esTipoSalida"
+        >
+          @if (esTipoEntrada) {
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+              <line x1="12" y1="19" x2="12" y2="5"/>
+              <polyline points="5 12 12 5 19 12"/>
+            </svg>
+          } @else if (esTipoSalida) {
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <polyline points="19 12 12 19 5 12"/>
+            </svg>
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+              <path d="M12 2C8 2 4 5 4 9c0 2.5 1.5 4.5 3 6l5 7 5-7c1.5-1.5 3-3.5 3-6 0-4-4-7-8-7z"/>
+              <circle cx="12" cy="9" r="2.5"/>
+            </svg>
+          }
+        </div>
+        <div>
+          <h2 class="modal-panel__titulo">{{ tituloModal }}</h2>
+          <p class="modal-panel__subtitulo">
+            {{ esEditar ? 'Modifica los datos del movimiento' : 'Registra una entrada o salida de torta' }}
+          </p>
+        </div>
+      </div>
+      <button
+        class="modal-panel__cerrar"
+        type="button"
+        (click)="onCerrar()"
+        [disabled]="guardando()"
+        aria-label="Cerrar"
+      >✕</button>
+    </header>
+
+    <!-- Banner visual tipo -->
+    @if (tipoSeleccionado && !cargandoInicial()) {
+      <div class="tipo-banner"
+        [class.tipo-banner--entrada]="esTipoEntrada"
+        [class.tipo-banner--salida]="esTipoSalida"
+      >
+        <span class="tipo-banner__icono">{{ esTipoEntrada ? '↑' : esTipoSalida ? '↓' : '↔' }}</span>
+        <span class="tipo-banner__texto">
+          @if (esTipoEntrada) { Estás registrando una ENTRADA de tortas al stock }
+          @if (esTipoSalida)  { Estás registrando una SALIDA de tortas del stock }
+          @if (!esTipoEntrada && !esTipoSalida) { Movimiento: {{ tipoSeleccionado.nombre }} }
+        </span>
+      </div>
+    }
+
+    <!-- SKELETON ─────────────────────────────────────────────────────────────── -->
+    @if (cargandoInicial()) {
+      <div class="modal-panel__body">
+        @for (i of [1,2,3,4,5]; track i) {
+          <div class="campo-skeleton">
+            <span class="sk sk--label"></span>
+            <span class="sk sk--input"></span>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- FORMULARIO ──────────────────────────────────────────────────────────── -->
+    @if (!cargandoInicial()) {
+      <form
+        class="modal-panel__body"
+        [formGroup]="formulario"
+        (ngSubmit)="onSubmit()"
+        novalidate
+        autocomplete="off"
+      >
+
+        <!-- ── TIPO DE MOVIMIENTO ──────────────────────────────────────────── -->
+        <div class="campo" [class.campo--error]="mostrarError('idTipoMovimiento')">
+          <label class="campo__label">
+            Tipo de movimiento <span class="campo__req">*</span>
+          </label>
+          <div class="tipo-selector" [class.disabled]="formulario.disabled">
+            @for (tipo of tiposMovimiento(); track tipo.id) {
+              <button
+                type="button"
+                class="tipo-selector__btn"
+                [class.tipo-selector__btn--activo]="idTipoMovimiento.value == tipo.id"
+                [class.tipo-selector__btn--entrada]="tipo.nombre.toLowerCase().includes('entrada')"
+                [class.tipo-selector__btn--salida]="tipo.nombre.toLowerCase().includes('salida')"
+                [disabled]="formulario.disabled || guardando()"
+                (click)="formulario.get('idTipoMovimiento')!.setValue(tipo.id); formulario.get('idTipoMovimiento')!.markAsTouched()"
+              >
+                <span class="tipo-selector__icono">
+                  {{ tipo.nombre.toLowerCase().includes('entrada') ? '↑' : tipo.nombre.toLowerCase().includes('salida') ? '↓' : '↔' }}
+                </span>
+                <span class="tipo-selector__nombre">{{ tipo.nombre }}</span>
+              </button>
+            }
+          </div>
+          <input type="hidden" formControlName="idTipoMovimiento" />
+          @if (mostrarError('idTipoMovimiento')) {
+            <p class="campo__error" role="alert">{{ mensajeError('idTipoMovimiento') }}</p>
+          }
+        </div>
+
+        <!-- ── SELECCIÓN DE TORTA ──────────────────────────────────────────── -->
+        <div class="campo" [class.campo--error]="mostrarError('idTorta')">
+          <label class="campo__label" for="idTorta">
+            Torta <span class="campo__req">*</span>
+          </label>
+          <select
+            id="idTorta"
+            class="campo__select"
+            formControlName="idTorta"
+            [attr.aria-invalid]="mostrarError('idTorta')"
+          >
+            <option [ngValue]="null" disabled>— Seleccionar torta —</option>
+            @for (t of tortas(); track t.id) {
+              <option [ngValue]="t.id">
+                {{ t.nombre }} ({{ t.nombreCategoriaTorta }}) — Stock: {{ t.stockDisponible }}
+              </option>
+            }
+          </select>
+          @if (tortas().length === 0) {
+            <p class="campo__hint">No hay tortas disponibles.</p>
+          }
+          @if (mostrarError('idTorta')) {
+            <p class="campo__error" role="alert">{{ mensajeError('idTorta') }}</p>
+          }
+        </div>
+
+        <!-- ── CARD PREVIEW TORTA SELECCIONADA ────────────────────────────── -->
+        @if (tortaSeleccionada()) {
+          <div class="torta-card"
+            [class.torta-card--entrada]="esTipoEntrada"
+            [class.torta-card--salida]="esTipoSalida"
+          >
+            <!-- Imagen -->
+            <div class="torta-card__img-wrap">
+              @if (tortaSeleccionada()!.imagenUrl) {
+                <img
+                  class="torta-card__img"
+                  [src]="tortaSeleccionada()!.imagenUrl!"
+                  [alt]="tortaSeleccionada()!.nombre"
+                  loading="lazy"
+                />
+              } @else {
+                <div class="torta-card__img torta-card__img--placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5">
+                    <path d="M12 2C8 2 4 5 4 9c0 2.5 1.5 4.5 3 6l5 7 5-7c1.5-1.5 3-3.5 3-6 0-4-4-7-8-7z"/>
+                  </svg>
+                </div>
+              }
+            </div>
+
+            <!-- Info -->
+            <div class="torta-card__info">
+              <div class="torta-card__nombre">{{ tortaSeleccionada()!.nombre }}</div>
+              <div class="torta-card__categoria">{{ tortaSeleccionada()!.nombreCategoriaTorta }}</div>
+              @if (tortaSeleccionada()!.descripcion) {
+                <div class="torta-card__desc">{{ tortaSeleccionada()!.descripcion }}</div>
+              }
+              <div class="torta-card__meta">
+                @if (tortaSeleccionada()!.cantidades) {
+                  <span class="torta-card__meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px">
+                      <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                    </svg>
+                    {{ tortaSeleccionada()!.cantidades }}
+                  </span>
+                }
+                @if (tortaSeleccionada()!.esPersonalizable) {
+                  <span class="torta-card__meta-item torta-card__meta-item--person">✦ Personalizable</span>
+                }
+              </div>
+            </div>
+
+            <!-- Datos clave -->
+            <div class="torta-card__datos">
+              <div class="torta-card__dato">
+                <span class="torta-card__dato-label">Precio</span>
+                <span class="torta-card__dato-val">{{ formatearMoneda(tortaSeleccionada()!.precioVenta) }}</span>
+              </div>
+              <div class="torta-card__dato">
+                <span class="torta-card__dato-label">Stock actual</span>
+                <span class="torta-card__dato-val stock-val" [ngClass]="claseStockTorta()">
+                  {{ tortaSeleccionada()!.stockDisponible }}
+                  @if (tortaSeleccionada()!.stockDisponible === 0) { (Agotado) }
+                  @else if (tortaSeleccionada()!.stockDisponible <= 3) { (Bajo) }
+                </span>
+              </div>
+            </div>
+
+            <!-- Indicador de efecto del movimiento -->
+            @if (esTipoEntrada || esTipoSalida) {
+              <div class="torta-card__efecto"
+                [class.torta-card__efecto--entrada]="esTipoEntrada"
+                [class.torta-card__efecto--salida]="esTipoSalida"
+              >
+                @if (esTipoEntrada) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px">
+                    <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+                  </svg>
+                  Esta entrada sumará al stock
+                }
+                @if (esTipoSalida) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px">
+                    <line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>
+                  </svg>
+                  Esta salida restará del stock
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- ── Cantidad + Fecha ────────────────────────────────────────────── -->
+        <div class="campo-fila">
+
+          <div class="campo" [class.campo--error]="mostrarError('cantidad')">
+            <label class="campo__label" for="cantidad">
+              Cantidad <span class="campo__req">*</span>
+            </label>
+            <div class="campo__input-suffix-wrap">
+              <input
+                id="cantidad"
+                type="number"
+                class="campo__input"
+                formControlName="cantidad"
+                placeholder="0"
+                min="0.01"
+                step="1"
+                [attr.aria-invalid]="mostrarError('cantidad')"
+              />
+              @if (esTipoEntrada || esTipoSalida) {
+                <span class="campo__suffix"
+                  [class.campo__suffix--entrada]="esTipoEntrada"
+                  [class.campo__suffix--salida]="esTipoSalida"
+                >{{ esTipoEntrada ? '+' : '−' }}</span>
+              }
+            </div>
+            @if (mostrarError('cantidad')) {
+              <p class="campo__error" role="alert">{{ mensajeError('cantidad') }}</p>
+            }
+          </div>
+
+          <div class="campo" [class.campo--error]="mostrarError('fechaMovimiento')">
+            <label class="campo__label" for="fechaMovimiento">
+              Fecha del movimiento <span class="campo__req">*</span>
+            </label>
+            <input
+              id="fechaMovimiento"
+              type="datetime-local"
+              class="campo__input"
+              formControlName="fechaMovimiento"
+              [attr.aria-invalid]="mostrarError('fechaMovimiento')"
+            />
+            @if (mostrarError('fechaMovimiento')) {
+              <p class="campo__error" role="alert">{{ mensajeError('fechaMovimiento') }}</p>
+            }
+          </div>
+
+        </div>
+
+        <!-- ── Referencia ──────────────────────────────────────────────────── -->
+        <div class="campo" [class.campo--error]="mostrarError('referencia')">
+          <label class="campo__label" for="referencia">
+            Referencia <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input
+            id="referencia"
+            type="text"
+            class="campo__input"
+            formControlName="referencia"
+            placeholder="Ej: Pedido #001, Producción semanal, Venta directa..."
+            maxlength="300"
+          />
+          @if (mostrarError('referencia')) {
+            <p class="campo__error" role="alert">{{ mensajeError('referencia') }}</p>
+          }
+        </div>
+
+        <!-- ── Nota sin eliminación ────────────────────────────────────────── -->
+        <div class="nota-modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            style="width:13px;height:13px;flex-shrink:0;margin-top:1px">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          Los movimientos no pueden eliminarse para garantizar la trazabilidad del stock.
+        </div>
+
+        <!-- ── Error API ───────────────────────────────────────────────────── -->
+        @if (errorApi()) {
+          <div class="alerta-api" role="alert">
+            <div class="alerta-api__icono">✕</div>
+            <p class="alerta-api__texto">{{ errorApi() }}</p>
+          </div>
+        }
+
+        <!-- ── FOOTER ──────────────────────────────────────────────────────── -->
+        <footer class="modal-panel__footer">
+          <button
+            type="button"
+            class="btn btn--secundario"
+            (click)="onCerrar()"
+            [disabled]="guardando()"
+          >Cancelar</button>
+          <button
+            type="submit"
+            class="btn btn--primario"
+            [class.btn--entrada]="esTipoEntrada"
+            [class.btn--salida]="esTipoSalida"
+            [disabled]="guardando() || cargandoInicial()"
+          >
+            @if (guardando()) {
+              <span class="spinner"></span>
+              {{ esEditar ? 'Guardando...' : 'Registrando...' }}
+            } @else {
+              @if (esTipoEntrada) { ↑ }
+              @if (esTipoSalida)  { ↓ }
+              {{ esEditar ? 'Guardar cambios' : 'Registrar movimiento' }}
+            }
+          </button>
+        </footer>
+
+      </form>
+    }
+  </div>
+</div>

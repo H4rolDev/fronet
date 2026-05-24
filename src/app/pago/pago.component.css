@@ -1,0 +1,31 @@
+.qr-box {
+  text-align: center;
+  padding: 20px;
+  background: #f8f8f8;
+  border-radius: 12px;
+  margin: 16px 0;
+}
+.qr-img {
+  max-width: 200px;
+  height: auto;
+  border-radius: 8px;
+}
+.yape-nombre {
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #550F26;
+}
+.qr-placeholder {
+  padding: 40px;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  color: #888;
+}
+.qr-placeholder span {
+  font-size: 40px;
+}
+.qr-placeholder p {
+  margin: 8px 0 0;
+  font-weight: 500;
+}

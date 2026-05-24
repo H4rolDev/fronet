@@ -2,6 +2,8 @@
 // DTOs DE LECTURA
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { InsumoListadoDTO } from "./insumo-dto";
+
 export interface TortaListadoDTO {
   id: number;
   nombre: string;
@@ -80,6 +82,7 @@ export type FormMode = 'crear' | 'editar';
 export interface ModalInputData {
   mode: FormMode;
   id?: number;
+  fila?: InsumoListadoDTO;
 }
 
 export interface Notificacion {

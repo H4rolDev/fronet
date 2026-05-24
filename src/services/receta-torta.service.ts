@@ -15,9 +15,10 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { RecetaTortaDetalleDTO, RecetaTortaListadoDTO, RecetaTortaRequestDTO } from '../models/receta-torta-dto';
+import { environment } from '../environments/environment';
 
 
-const BASE_URL = 'https://localhost:7223/api/RecetaTorta';
+const BASE_URL = `${environment.apiUrl}/RecetaTorta`;
 const USUARIO  = 'admin'; // reemplazar con AuthService
 
 @Injectable({ providedIn: 'root' })

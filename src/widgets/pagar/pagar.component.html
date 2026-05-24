@@ -1,107 +1,203 @@
-<h5 class="text-center">DETALLE FACTURACION</h5>
-<p class="text-center"><strong>Ojo</strong> La entrega a domicilio solo funciona dentro de ciudad del Cusco</p>
-<div class="card-body col-md-4 mx-auto">
+<h5 class="text-center">CONFIRMAR PEDIDO</h5>
+<p class="text-center"><strong>Importante:</strong> Sube tu comprobante de pago para validar tu orden</p>
+
+<div class="card-body col-md-8 mx-auto">
   <div class="card w-80 alert alert-success">
-    <div *ngIf="isLoading" class="d-flex justify-content-center">
-      <div class="spinner-dorder text-primary" role="status">
-        <span class="visually-hiddesn">Loading...</span>
-      </div>
-    </div>
-    <div class="d-flex justify-content-center">
-    <form *ngIf="!isLoading" class="d-flex flex-column text-center" [formGroup]="miFormulario" (ngSubmit)="onSubmit()">
-
-      <div class="d-flex flex-column">
-        <div *ngIf="isError" class="alert alert-danger py-1">Lo sentimos la transaccion no se realizo</div>
-        <div *ngIf="isSuccess" class="alert alert-success py-1">La transaccion se completo</div>
-      </div>
-
-      <div class = "form-group d-flex flex-column">
-         <label for = "credit">Ingrese su tarjeta credito</label>
-         <input type = "text" id="credit" formControlName="tarjeta" class = "form-control" placeholder = "Ingrese Numero">
-         <div *ngIf="tarjeta?.invalid" class="text-danger">
-          <span *ngIf="tarjeta?.errors?.['required']">Numero de tarjeta es requerido</span>
-          <span *ngIf="tarjeta?.errors?.['minlength']">minimo 5 digitos</span>
-         </div>
-      </div>
-      <div class = "form-group d-flex flex-horizontal">
-        <div>
-          <label for = "exp">Ingrese expiracion</label>
-          <input type = "text" id="exp" formControlName="expiracion" class = "form-control" placeholder = "Ingrese fecha">
-          <div *ngIf="expiracion?.invalid" class="text-danger">
-            <span *ngIf="expiracion?.errors?.['required']">la expiracion es requerido</span>
-            <span *ngIf="expiracion?.errors?.['minlength']">formato mm/yy</span>
-           </div>
+    
+    @if (isLoading) {
+      <div class="d-flex justify-content-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Procesando...</span>
         </div>
-        <div class = "form-group">
-          <label for = "cvv">Ingrese CVV</label>
-          <input type = "text" id="cvv" formControlName="cvv" class = "form-control ms-3" placeholder = "Ingrese cvv">
-          <div *ngIf="cvv?.invalid" class="text-danger">
-            <span *ngIf="cvv?.errors?.['required']">cvv es requerido</span>
-            <span *ngIf="cvv?.errors?.['maxlength']">solo 3 digitos</span>
+      </div>
+    }
+
+    @if (!isLoading) {
+      <form class="d-flex flex-column" [formGroup]="miFormulario" (ngSubmit)="onSubmit()">
+
+        @if (isError) {
+          <div class="alert alert-danger py-2 mb-3">{{ mensajeRespuesta }}</div>
+        }
+        @if (isSuccess) {
+          <div class="alert alert-success py-2 mb-3">{{ mensajeRespuesta }}</div>
+        }
+
+        <!-- Datos de contacto -->
+        <div class="form-section">
+          <h6 class="section-title">Datos de Contacto</h6>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Nombre completo *</label>
+                <input type="text" formControlName="nombre" class="form-control" placeholder="Tu nombre">
+                @if (nombre?.invalid && nombre?.touched) {
+                  <small class="text-danger">El nombre es requerido</small>
+                }
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Teléfono *</label>
+                <input type="tel" formControlName="telefono" class="form-control" placeholder="999-999-999">
+                @if (telefono?.invalid && telefono?.touched) {
+                  <small class="text-danger">El teléfono es requerido</small>
+                }
+              </div>
+            </div>
           </div>
         </div>
-     </div>
-    <div class = "form-group">
-      <label for = "name">Monto a pagar</label>
-      <input type = "number" formControlName="monto" class = "form-control" placeholder = "Ingrese monto">
-      <div *ngIf="monto?.invalid" class="text-danger">
-        <span *ngIf="monto?.errors?.['required']">monto es requerido</span>
-       </div>
-    </div>
 
-    <div class = "form-group">
-      <label for = "nom">Ingrese Nombre Completo</label>
-      <input type = "text" id="nom" formControlName="nombre" class = "form-control" placeholder = "Ingrese Nombre">
-      <div *ngIf="nombre?.invalid" class="text-danger">
-        <span *ngIf="nombre?.errors?.['required']">nombre es requerido</span>
-      </div>
-   </div>
-   <div class = "form-group d-flex flex-horizontal">
-    <div>
-      <label for = "dir">Ingrese direccion</label>
-      <input type = "text" id="dir" formControlName="direccion" class = "form-control" placeholder = "Ingrese direccion">
-      <div *ngIf="direccion?.invalid" class="text-danger">
-        <span *ngIf="direccion?.errors?.['required']">direccion es requerido</span>
-      </div>
-    </div>
-    <div class = "form-group">
-      <label for = "tel">Ingrese telefono</label>
-      <input type = "text" id="tel" formControlName="telefono" class = "form-control ms-3" placeholder = "Ingrese telefono">
-      <div *ngIf="telefono?.invalid" class="text-danger">
-        <span *ngIf="telefono?.errors?.['required']">telefono es requerido</span>
-      </div>
-    </div>
-    </div>
-    <div class = "form-group">
-      <label for = "cor">Ingrese Correo</label>
-      <input type = "text" id="cor" formControlName="correo" class = "form-control" placeholder = "Ingrese correo">
-      <div *ngIf="correo?.invalid" class="text-danger">
-        <span *ngIf="correo?.errors?.['required']">correo es requerido</span>
-      </div>
-    </div>
+        <!-- Método de entrega -->
+        <div class="form-section">
+          <h6 class="section-title">Tipo de Entrega</h6>
+          
+          <div class="form-group">
+            <select formControlName="metodoEntrega" class="form-select">
+              <option value="1">Recojo en tienda</option>
+              <option value="2">Delivery a domicilio</option>
+            </select>
+          </div>
 
-    <div class = "form-group">
-      <label for = "met">Seleccione metodo de envio</label>
-      <select formControlName="metodo" class = "form-control">
-        <option></option>
-        <option>Entrega en tienda</option>
-        <option>Envio domicilio</option>
-      </select>
-      <div *ngIf="metodo?.invalid" class="text-danger">
-        <span *ngIf="metodo?.errors?.['required']">Metodo envio es requerido</span>
-        <span *ngIf="metodo?.errors?.['minlength']">minimo 5 digitos</span>
-      </div>
-    </div>
+          @if (metodoEntrega?.value === '2') {
+            <div class="form-group">
+              <label>Dirección de entrega</label>
+              <input type="text" formControlName="direccion" class="form-control" placeholder="Ingresa tu dirección">
+            </div>
+          }
+        </div>
 
-    <div class = "">
-      <button type="submit" class="btn btn-primary col-md-4">Pagar</button>
-    </div>
-    <div>
-      <p class="text-center"><strong>Entrega en tienda</strong> Puede recogerlo en San Borja G-21 - Wanchaq - Cusco</p>
-      <p class="text-center"><strong>Entrega a domicilio</strong> La entrega a domicilio se realizara dentro de las 24 horas</p>
-    </div>
-    </form>
+        <!-- Comprobante de pago -->
+        <div class="form-section">
+          <h6 class="section-title">Comprobante de Pago *</h6>
+          
+          <div class="alert alert-info mb-3">
+            <small><strong>Instrucciones:</strong></small><br>
+            <small>1. Realiza tu pago mediante Yape, transferencia o efectivo</small><br>
+            <small>2. Toma una foto o captura del comprobante</small><br>
+            <small>3. Sube la imagen y proporciona el número de operación</small>
+          </div>
+
+          @if (!imagenPreview) {
+            <div class="upload-zone" (click)="triggerFileInput()">
+              <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#aaa" stroke-width="1.5">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <p>Haz clic para subir el comprobante</p>
+              <small>JPG, PNG (máx 5MB)</small>
+            </div>
+            <input type="file" id="input-comprobante" accept="image/*" (change)="onFileSelected($event)" style="display: none">
+          } @else {
+            <div class="preview-container">
+              <img [src]="imagenPreview" alt="Comprobante" class="preview-image">
+              <button type="button" class="btn-remove-image" (click)="quitarImagen()">✕</button>
+            </div>
+          }
+
+          @if (subiendoImagen()) {
+            <div class="text-center py-2">
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Subiendo imagen...
+            </div>
+          }
+        </div>
+
+        <!-- Número de operación -->
+        <div class="form-section">
+          <h6 class="section-title">Número de Operación *</h6>
+          
+          <div class="form-group">
+            <input type="text" [(ngModel)]="numeroOperacion" [ngModelOptions]="{standalone: true}" 
+                   class="form-control" placeholder="Ej: 123-456-789">
+          </div>
+        </div>
+
+        <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-primary btn-lg" [disabled]="isLoading">
+            @if (isLoading) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Confirmar Pago
+          </button>
+        </div>
+
+        <div class="mt-3 text-center">
+          <p class="small text-muted"><strong>Entrega en tienda:</strong> San Borja G-21 - Wanchaq - Cusco</p>
+          <p class="small text-muted"><strong>Delivery:</strong> Entrega dentro de 24 horas</p>
+        </div>
+
+      </form>
+    }
+  </div>
 </div>
-</div>
 
-
+<style>
+  .form-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 8px;
+  }
+  .section-title {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .form-group {
+    margin-bottom: 12px;
+  }
+  .form-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 4px;
+    display: block;
+  }
+  .upload-zone {
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .upload-zone:hover {
+    border-color: #550F26;
+    background: #fdf8f8;
+  }
+  .upload-zone p {
+    margin: 10px 0 5px;
+    color: #666;
+  }
+  .upload-zone small {
+    color: #999;
+  }
+  .preview-container {
+    position: relative;
+    display: inline-block;
+  }
+  .preview-image {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+  }
+  .btn-remove-image {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+</style>

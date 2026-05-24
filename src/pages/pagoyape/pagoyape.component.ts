@@ -1,8 +1,7 @@
 import { Component, OnInit, OnDestroy } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { Router, RouterModule } from "@angular/router";
-import { CarritoService } from "../../services/carrito.service";
-import { ProductoModel } from "../../models/producto.model";
+import { CarritoService, ItemCarrito } from "../../services/carrito.service";
 import { Subscription } from "rxjs";
 
 @Component({
@@ -14,7 +13,7 @@ import { Subscription } from "rxjs";
 })
 export class PagoyapeComponent implements OnInit, OnDestroy {
 
-  carrito: ProductoModel[] = [];
+  carrito: ItemCarrito[] = [];
   total = 0;
   mensajeExito = '';
   private carritoSubscription!: Subscription;

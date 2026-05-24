@@ -3,8 +3,9 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { UnidadMedidaDetalleDTO, UnidadMedidaListadoDTO, UnidadMedidaRequestDTO } from '../models/unidad-medida-dto';
+import { environment } from '../environments/environment';
 
-const BASE_URL = 'https://localhost:7223/api/UnidadMedida';
+const BASE_URL = `${environment.apiUrl}/UnidadMedida`;
 const USUARIO_ACTUAL = 'admin';
 
 @Injectable({

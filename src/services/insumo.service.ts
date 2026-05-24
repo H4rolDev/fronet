@@ -1,151 +1,172 @@
 /**
  * @file insumo.service.ts
- * @description Servicio que encapsula TODAS las llamadas HTTP al API de Insumos.
+ * @description Servicio HTTP para el módulo de Insumos.
  *
- * También reutiliza UnidadMedidaService para cargar el combo de unidades
- * de medida dentro del modal, evitando duplicar lógica HTTP.
+ * Cubre los 9 endpoints del módulo:
+ *  1. GET  ObtenerCombo              → listado principal (1 fila por insumo)
+ *  2. GET  ObtenerListadoPorId       → detalle insumo para editar
+ *  3. GET  ObtenerLotesPorInsumo     → lotes de un insumo para modal detalle
+ *  4. POST InsertarMultipleTabla     → crear insumo + primer lote
+ *  5. PUT  ActualizarLoteInsumo      → editar lote (cantidades, costo, venc.)
+ *  6. PUT  DesactivarLoteInsumo      → desactivar lote (solo si stock = 0)
+ *  7. PUT  DesactivarInsumo          → desactivar insumo (solo si stock = 0)
+ *  8. PUT  ActivarInsumo             → reactivar insumo
+ *  9. PUT  ActivarLoteInsumo         → reactivar lote (requiere insumo activo + no vencido)
  */
 
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { InsumoDetalleDTO, InsumoListadoDTO, InsumoRequestDTO } from '../models/insumo-dto';
 
-// ─── Configuración ────────────────────────────────────────────────────────────
+import {
+  InsumoListadoDTO,
+  InsumoDetalleDTO,
+  InsumoLoteDTO,
+  InsertarLoteInsumoDTO,
+  ActualizarLoteInsumoDTO,
+} from '../models/insumo-dto';
+import { environment } from '../environments/environment';
 
-const BASE_URL   = 'https://localhost:7223/api/Insumo';
-const USUARIO    = 'admin'; // reemplazar con tu AuthService
-
-// ─────────────────────────────────────────────────────────────────────────────
+const BASE = `${environment.apiUrl}/Insumo`;
+const USR  = 'admin'; // reemplazar con AuthService
 
 @Injectable({ providedIn: 'root' })
 export class InsumoService {
 
-  constructor(private http: HttpClient) {}
+  constructor(public http: HttpClient) {}
 
-  // ── GET /ObtenerCombo ──────────────────────────────────────────────────────
-  /**
-   * Retorna la lista completa de insumos con nombre de unidad de medida incluido.
-   */
+  // ── 1. Listado principal ───────────────────────────────────────────────────
   obtenerListado(): Observable<InsumoListadoDTO[]> {
-    return this.http
-      .get<InsumoListadoDTO[]>(`${BASE_URL}/ObtenerCombo`)
-      .pipe(catchError(this.manejarError));
+    return this.http.get<InsumoListadoDTO[]>(`${BASE}/ObtenerCombo`)
+      .pipe(catchError(this.err));
   }
 
-  // ── GET /ObtenerListadoPorId ───────────────────────────────────────────────
-  /**
-   * Obtiene el detalle completo de un insumo para pre-cargar el formulario
-   * en modo edición.
-   *
-   * @param id - ID del insumo
-   */
+  // ── 2. Detalle insumo por ID ───────────────────────────────────────────────
   obtenerPorId(id: number): Observable<InsumoDetalleDTO> {
-    const params = new HttpParams().set('id', id.toString());
-    return this.http
-      .get<InsumoDetalleDTO>(`${BASE_URL}/ObtenerListadoPorId`, { params })
-      .pipe(catchError(this.manejarError));
+    const params = new HttpParams().set('id', id);
+    return this.http.get<InsumoDetalleDTO>(`${BASE}/ObtenerListadoPorId`, { params })
+      .pipe(catchError(this.err));
   }
 
-  // ── POST /Insertar ─────────────────────────────────────────────────────────
+  // ── 3. Lotes de un insumo ─────────────────────────────────────────────────
+  obtenerLotesPorInsumo(idInsumo: number): Observable<InsumoLoteDTO[]> {
+    const params = new HttpParams().set('idInsumo', idInsumo);
+    return this.http.get<InsumoLoteDTO[]>(`${BASE}/ObtenerLotesPorInsumo`, { params })
+      .pipe(catchError(this.err));
+  }
+
+  // ── 4. Crear insumo + primer lote ─────────────────────────────────────────
   /**
-   * Crea un nuevo insumo. id = 0 indica al backend que es un INSERT.
-   *
-   * @param datos - Campos del formulario
+   * @param idInsumo  0 = crear insumo nuevo; >0 = usar insumo existente
+   * @param nombre    solo si idInsumo = 0
+   * @param idUnidad  solo si idInsumo = 0
    */
-  insertar(datos: {
+  insertarLote(datos: {
+    idInsumo: number;
     nombre: string;
     idUnidadMedida: number;
-    stockActual: number;
-    stockMinimo: number;
+    cantidadInicial: number;
+    cantidadDisponible: number;
     costoUnitario: number;
-  }): Observable<any> {
-    const payload: InsumoRequestDTO = {
-      id: 0,
-      activo: true,
-      nombre: datos.nombre.trim(),
-      idUnidadMedida: datos.idUnidadMedida,
-      stockActual: datos.stockActual,
-      stockMinimo: datos.stockMinimo,
-      costoUnitario: datos.costoUnitario,
-      usuarioCreacion: USUARIO,
-      usuarioModificacion: USUARIO,
-      fechaCreacion: new Date().toISOString(),
-      fechaModificacion: new Date().toISOString(),
+    fechaVencimiento: string | null;
+  }): Observable<number> {
+    const payload: InsertarLoteInsumoDTO = {
+      idInsumo:           datos.idInsumo,
+      nombre:             datos.nombre?.trim() ?? '',
+      idUnidadMedida:     datos.idUnidadMedida,
+      idLote:             0,
+      numeroLote:         '',
+      cantidadInicial:    datos.cantidadInicial,
+      cantidadDisponible: datos.cantidadDisponible,
+      costoUnitario:      datos.costoUnitario,
+      fechaVencimiento:   datos.fechaVencimiento,
+      usuario:            USR,
     };
-
-    return this.http
-      .post<any>(`${BASE_URL}/Insertar`, payload)
-      .pipe(catchError(this.manejarError));
+    return this.http.post<number>(`${BASE}/InsertarMultipleTabla`, payload)
+      .pipe(catchError(this.err));
   }
 
-  // ── POST /Modificar ────────────────────────────────────────────────────────
+  // ── 5. Actualizar lote ────────────────────────────────────────────────────
   /**
-   * Actualiza un insumo existente. Preserva los campos de auditoría originales.
-   *
-   * @param id      - ID del registro a actualizar
-   * @param datos   - Campos actualizados del formulario
-   * @param detalle - Detalle original (para preservar fechaCreacion, etc.)
+   * Solo modifica: cantidadInicial, cantidadDisponible, costoUnitario, fechaVencimiento.
+   * El backend registra un movimiento si cambia cantidadDisponible.
    */
-  modificar(
-    id: number,
-    datos: {
-      nombre: string;
-      idUnidadMedida: number;
-      stockActual: number;
-      stockMinimo: number;
+  actualizarLote(
+    lote: InsumoLoteDTO,
+    cambios: {
+      cantidadInicial: number;
+      cantidadDisponible: number;
       costoUnitario: number;
-    },
-    detalle: InsumoDetalleDTO
-  ): Observable<any> {
-    const payload: InsumoRequestDTO = {
-      id,
-      activo: detalle.activo,
-      nombre: datos.nombre.trim(),
-      idUnidadMedida: datos.idUnidadMedida,
-      stockActual: datos.stockActual,
-      stockMinimo: datos.stockMinimo,
-      costoUnitario: datos.costoUnitario,
-      usuarioCreacion: detalle.usuarioCreacion,
-      usuarioModificacion: USUARIO,
-      fechaCreacion: detalle.fechaCreacion,
-      fechaModificacion: new Date().toISOString(),
+      fechaVencimiento: string | null;
+    }
+  ): Observable<boolean> {
+    const payload: ActualizarLoteInsumoDTO = {
+      idLote:             lote.id,
+      idInsumo:           lote.idInsumo,
+      nombre:             '',          // no relevante en actualización
+      idUnidadMedida:     0,
+      numeroLote:         lote.numeroLote,
+      cantidadInicial:    cambios.cantidadInicial,
+      cantidadDisponible: cambios.cantidadDisponible,
+      costoUnitario:      cambios.costoUnitario,
+      fechaVencimiento:   cambios.fechaVencimiento,
+      usuario:            USR,
     };
-
-    return this.http
-      .put<any>(`${BASE_URL}/Modificar`, payload)
-      .pipe(catchError(this.manejarError));
+    return this.http.put<boolean>(`${BASE}/ActualizarLoteInsumo`, payload)
+      .pipe(catchError(this.err));
   }
 
-  // ── DELETE /Eliminar ───────────────────────────────────────────────────────
+  // ── 6. Actualizar insumo (nombre / unidad) ─────────────────────────────────
   /**
-   * Elimina un insumo por su ID.
-   * La API recibe id y usuario como query params.
-   *
-   * @param id - ID del insumo a eliminar
+   * Ajustar endpoint según tu API real de edición de insumo.
    */
-  eliminar(id: number): Observable<any> {
-    const params = new HttpParams()
-      .set('id', id.toString())
-      .set('usuario', USUARIO);
+  actualizarInsumo(id: number, nombre: string, idUnidadMedida: number, date: string): Observable<any> {
+    return this.http.put<any>(`${BASE}/Modificar`, {
+      id, nombre: nombre.trim(), idUnidadMedida, usuarioCreacion: USR, fechaCreacion: date,
+    }).pipe(catchError(this.err));
+  }
 
-    return this.http
-      .delete<any>(`${BASE_URL}/Eliminar`, { params })
-      .pipe(catchError(this.manejarError));
+  // ── 7. Desactivar insumo ──────────────────────────────────────────────────
+  /** El backend valida que stockDisponible === 0. Si no, lanza 400. */
+  desactivarInsumo(id: number): Observable<any> {
+    const params = new HttpParams().set('id', id).set('usuario', USR);
+    return this.http.put<any>(`${BASE}/DesactivarInsumo`, null, { params })
+      .pipe(catchError(this.err));
+  }
+
+  // ── 8. Desactivar lote ────────────────────────────────────────────────────
+  /** El backend valida que cantidadDisponible === 0. Si no, lanza 400. */
+  desactivarLote(idLote: number): Observable<any> {
+    const params = new HttpParams().set('id', idLote).set('usuario', USR);
+    return this.http.put<any>(`${BASE}/DesactivarLoteInsumo`, null, { params })
+      .pipe(catchError(this.err));
+  }
+
+  // ── 9. Activar insumo ─────────────────────────────────────────────────────
+  activarInsumo(id: number): Observable<any> {
+    const params = new HttpParams().set('id', id).set('usuario', USR);
+    return this.http.put<any>(`${BASE}/ActivarInsumo`, null, { params })
+      .pipe(catchError(this.err));
+  }
+
+  // ── 10. Activar lote ──────────────────────────────────────────────────────
+  /** El backend valida que insumo esté activo y lote no esté vencido. */
+  activarLote(idLote: number): Observable<any> {
+    const params = new HttpParams().set('id', idLote).set('usuario', USR);
+    return this.http.put<any>(`${BASE}/ActivarLoteInsumo`, null, { params })
+      .pipe(catchError(this.err));
   }
 
   // ── Error handler ──────────────────────────────────────────────────────────
-  private manejarError(error: any): Observable<never> {
-    let mensaje = 'Ocurrió un error inesperado. Intenta de nuevo.';
-
-    if (error.status === 0)          mensaje = 'No se puede conectar al servidor.';
-    else if (error.status === 400)   mensaje = error.error?.message ?? 'Datos inválidos.';
-    else if (error.status === 404)   mensaje = 'El recurso solicitado no existe.';
-    else if (error.status === 409)   mensaje = 'Ya existe un insumo con ese nombre.';
-    else if (error.status >= 500)    mensaje = 'Error del servidor. Contacta al administrador.';
-
+  private err(error: any): Observable<never> {
+    let msg = 'Ocurrió un error inesperado.';
+    if (error.status === 0)        msg = 'No se puede conectar al servidor.';
+    else if (error.status === 400) msg = error.error?.message ?? error.error ?? 'Solicitud inválida.';
+    else if (error.status === 404) msg = 'Registro no encontrado.';
+    else if (error.status === 409) msg = error.error?.message ?? 'Conflicto de datos.';
+    else if (error.status >= 500)  msg = 'Error del servidor. Contacta al administrador.';
     console.error('[InsumoService]', error);
-    return throwError(() => new Error(mensaje));
+    return throwError(() => new Error(msg));
   }
 }

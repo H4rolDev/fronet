@@ -1,122 +1,190 @@
-import { Component, input, Input, OnInit } from "@angular/core";
-import {ReactiveFormsModule, FormBuilder, FormGroup, Validators} from "@angular/forms";
+import { Component, OnInit, signal } from "@angular/core";
+import { DomSanitizer } from "@angular/platform-browser";
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { CommonModule } from "@angular/common";
-import { ContabilidadService } from "../../services/contabilidad.service";
-import { UsuarioService } from "../../services/usuario.service";
+import { FormsModule } from "@angular/forms";
+import { HttpClient } from "@angular/common/http";
+import { VentaService } from "../../services/venta.service";
+import { CarritoService } from "../../services/carrito.service";
+import { environment } from "../../environments/environment";
+
+const BASE = environment.apiUrl;
 
 @Component({
   selector: "widget-pagar",
   templateUrl: './pagar.component.html',
-  imports: [CommonModule, ReactiveFormsModule]
+  imports: [CommonModule, ReactiveFormsModule, FormsModule]
 })
-
-export class PagarComponent implements OnInit{
-  [x: string]: any;
-  //logica de negocio
+export class PagarComponent implements OnInit {
   miFormulario: FormGroup;
   estadoPeticion = "nothing";
+  mensajeRespuesta = "";
+  
+  imagenPreview: string | null = null;
+  imagenFile: File | null = null;
+  imagenUrl: string | null = null;
+  subiendoImagen = signal(false);
+  numeroOperacion = "";
 
-  //consumir el servicio
-  constructor(private _usuarioService: UsuarioService, private forBuilder: FormBuilder, private contabilidadService: ContabilidadService) {
-    this.miFormulario = this.forBuilder.group({
-      tarjeta:['', [Validators.required, Validators.minLength(5)]],
-      expiracion:['', [Validators.required, Validators.minLength(5)]],
-      cvv:['', [Validators.required, Validators.maxLength(3)]],
-      monto:['', [Validators.required]],
-      nombre:['', [Validators.required]],
-      direccion:['', [Validators.required]],
-      telefono:['', [Validators.required]],
-      correo:['', [Validators.required]],
-      metodo:['', [Validators.required, Validators.minLength(5)]]
-    })
-  }
-  get tarjeta(){
-    return this.miFormulario.get('tarjeta');
-  }
-  get expiracion(){
-    return this.miFormulario.get('expiracion');
-  }
-  get cvv(){
-    return this.miFormulario.get('cvv');
-  }
-  get monto(){
-    return this.miFormulario.get('monto');
-  }
-  get nombre(){
-    return this.miFormulario.get('nombre');
-  }
-  get direccion(){
-    return this.miFormulario.get('direccion');
-  }
-  get telefono(){
-    return this.miFormulario.get('telefono');
-  }
-  get correo(){
-    return this.miFormulario.get('correo');
-  }
-  get metodo(){
-    return this.miFormulario.get('metodo');
-  }
-  get isSuccess(){
-    return this.estadoPeticion === "success";
-  }
-  get isError(){
-    return this.estadoPeticion === "error";
-  }
-  get isLoading(){
-    return this.estadoPeticion === "loading";
+  constructor(
+    private fb: FormBuilder,
+    private http: HttpClient,
+    private ventaService: VentaService,
+    private carritoService: CarritoService,
+    private sanitizer: DomSanitizer
+  ) {
+    this.miFormulario = this.fb.group({
+      nombre: ['', [Validators.required]],
+      telefono: ['', [Validators.required]],
+      direccion: [''],
+      metodoEntrega: ['1', [Validators.required]]
+    });
   }
 
-  onSubmit() {
-    if(this.miFormulario.valid){
-      this.estadoPeticion = "loading";
-      console.log('formulario enviandose');
-      console.log("valores: ", this.miFormulario.value);
-      this.contabilidadService.registrarPago({
-        'numero_tarjeta': this.miFormulario.value['tarjeta'],
-        'expiracion': this.miFormulario.value['expiracion'],
-        'cvv': this.miFormulario.value['cvv'],
-        'monto': this.miFormulario.value['monto'],
-        'nombre': this.miFormulario.value['nombre'],
-        'direccion': this.miFormulario.value['direccion'],
-        'telefono': this.miFormulario.value['telefono'],
-        'correo': this.miFormulario.value['correo'],
-        'metodo': this.miFormulario.value['metodo'],
-      }).subscribe({
-        next: (data) => {
-          setTimeout(() => {
-            this.estadoPeticion = "success";
-          }, 2000);
-        },
-        error: (err) => {
-          this.estadoPeticion = "error";
-        }
-      })
-    }
-    else{
-      console.log('error en formulario');
-      console.log("fields: ", this.miFormulario.get('tarjeta')?.errors);
+  get nombre() { return this.miFormulario.get('nombre'); }
+  get telefono() { return this.miFormulario.get('telefono'); }
+  get direccion() { return this.miFormulario.get('direccion'); }
+  get metodoEntrega() { return this.miFormulario.get('metodoEntrega'); }
+  
+  get isSuccess() { return this.estadoPeticion === "success"; }
+  get isError() { return this.estadoPeticion === "error"; }
+  get isLoading() { return this.estadoPeticion === "loading"; }
+
+  ngOnInit(): void {}
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen no debe superar 5MB');
+        return;
+      }
+      this.imagenFile = file;
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.imagenPreview = e.target.result;
+      };
+      reader.readAsDataURL(file);
     }
   }
 
+  async subirImagen(): Promise<string | null> {
+    if (!this.imagenFile) return null;
+    
+    this.subiendoImagen.set(true);
+    
+    const formData = new FormData();
+    formData.append('file', this.imagenFile);
+    formData.append('upload_preset', 'ml_default');
+    
+    try {
+      const response: any = await this.http.post(
+        'https://api.cloudinary.com/v1_1/dnqtkwvmr/image/upload',
+        formData
+      ).toPromise();
+      
+      this.subiendoImagen.set(false);
+      return response.secure_url;
+    } catch (error) {
+      console.error('Error subiendo imagen:', error);
+      this.subiendoImagen.set(false);
+      return null;
+    }
+  }
 
+  async onSubmit() {
+    if (!this.nombre?.value || !this.telefono?.value) {
+      alert('Por favor complete los datos de contacto');
+      return;
+    }
 
-  //logica de negocio
+    if (!this.imagenFile || !this.numeroOperacion) {
+      alert('Debe subir el comprobante de pago y el número de operación');
+      return;
+    }
 
-    ngOnInit(): void {
-      console.log('ngmInit');
-      this._usuarioService.generateToken().subscribe({
-        next: (data:any) => {
-          console.log('gg', data);
-          localStorage.setItem("xangulary", data.token);
-        },
-        error: (err) => {
+    this.estadoPeticion = "loading";
+    this.mensajeRespuesta = "";
 
-        }
-      });
+    try {
+      // 1. Subir imagen
+      const imagenUrl = await this.subirImagen();
+      if (!imagenUrl) {
+        throw new Error('Error al subir la imagen del comprobante');
       }
 
+      // 2. Obtener items del carrito
+      const items = this.carritoService.obtenerCarrito();
+      if (items.length === 0) {
+        throw new Error('El carrito está vacío');
+      }
 
+      // 3. Calcular total
+      const total = items.reduce((sum: number, item: any) => sum + (item.precio * item.cantidad), 0);
 
+      // 4. Datos de entrega
+      const esDelivery = this.miFormulario.value.metodoEntrega === '2';
+      
+      // 5. Construir payload
+      const idTipoEntrega: 1 | 2 = parseInt(this.miFormulario.value.metodoEntrega) as 1 | 2;
+      const payload: any = {
+        idPersona: 1,
+        idTipoEntrega: idTipoEntrega,
+        usuario: 'cliente',
+        imagenComprobante: imagenUrl,
+        numeroOperacion: this.numeroOperacion,
+        detalles: items.map((item: any) => ({
+          idTorta: item.id,
+          cantidad: item.cantidad,
+          precioBase: item.precio,
+          precioPersonalizacion: 0
+        })),
+        pagos: [{
+          idMetodoPago: 1, // Efectivo/Yape
+          monto: total
+        }],
+        entrega: esDelivery ? {
+          direccion: this.miFormulario.value.direccion || '',
+          telefono: this.miFormulario.value.telefono,
+          nombreContacto: this.miFormulario.value.nombre,
+          costoDelivery: 10
+        } : null
+      };
 
+      // 6. Enviar al backend
+      this.ventaService.registrar(payload).subscribe({
+        next: (idVenta: number) => {
+          console.log('Venta creada con ID:', idVenta);
+          this.estadoPeticion = "success";
+          this.mensajeRespuesta = "¡Pago enviado! Tu comprobante está siendo validado. Te notificaremos cuando sea aprobado.";
+          this.carritoService.limpiarCarrito();
+        },
+        error: (err: any) => {
+          console.error('Error al registrar venta:', err);
+          this.estadoPeticion = "error";
+          this.mensajeRespuesta = err.message || 'Error al procesar el pago. Intenta de nuevo.';
+        }
+      });
+
+    } catch (error: any) {
+      console.error('Error:', error);
+      this.estadoPeticion = "error";
+      this.mensajeRespuesta = error.message || 'Error al procesar el pago';
+    }
+  }
+
+  quitarImagen() {
+    this.imagenFile = null;
+    this.imagenPreview = null;
+    this.imagenUrl = null;
+  }
+
+  triggerFileInput() {
+    const input = document.getElementById('input-comprobante') as HTMLInputElement;
+    if (input) input.click();
+  }
+
+  get isDelivery() {
+    return this.miFormulario.get('metodoEntrega')?.value === '2';
+  }
 }

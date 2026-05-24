@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -8,6 +8,8 @@ import {
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   standalone: true,
@@ -16,7 +18,8 @@ import { AuthService } from '../../services/auth.service';
   styleUrls: ['./iniciar.component.css'],
   imports: [ReactiveFormsModule, CommonModule],
 })
-export class IniciarComponent implements OnInit {
+export class IniciarComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   loginForm: FormGroup;
   registerForm: FormGroup;
   isRegisterMode = false;
@@ -33,10 +36,22 @@ export class IniciarComponent implements OnInit {
       password: ['', Validators.required],
     });
     this.registerForm = this.fb.group({
-      nombre: ['', Validators.required],
+      nombres: ['', Validators.required],
+      apellidoPaterno: ['', Validators.required],
+      apellidoMaterno: [''],
+      numeroDocumento: ['', Validators.required],
+      idTipoDocumento: [1, Validators.required],
+      telefono: [''],
+      direccion: [''],
       username: ['', Validators.required],
-      password: ['', Validators.required],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      confirmarPassword: ['', Validators.required],
     });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   ngOnInit(): void {
@@ -86,6 +101,12 @@ export class IniciarComponent implements OnInit {
 
     if (roles.includes('Administrador')) {
       ruta = '/admin/dashboard';
+    } else if (roles.includes('Atencion')) {
+      ruta = '/admin/dashboard';
+    } else if (roles.includes('Produccion')) {
+      ruta = '/admin/dashboard';
+    } else if (roles.includes('Repartidor')) {
+      ruta = '/admin/repartidor';
     } else if (roles.includes('Cliente')) {
       ruta = '/cuenta';
     }
@@ -97,28 +118,48 @@ export class IniciarComponent implements OnInit {
 
   register() {
     if (this.registerForm.invalid) {
-      this.message = 'Completa todos los campos del registro';
+      this.message = 'Completa todos los campos obligatorios';
+      return;
+    }
+
+    const { confirmarPassword, ...data } = this.registerForm.value;
+    
+    if (data.password !== confirmarPassword) {
+      this.message = 'Las contraseñas no coinciden';
       return;
     }
 
     this.isLoading = true;
     this.message = '';
-    const { nombre, username, password } = this.registerForm.value;
 
-    this.auth.register(nombre, username, password).subscribe({
+    this.auth.register(data).subscribe({
       next: (res: any) => {
         this.isLoading = false;
-        if (res.success) {
-          this.message = '✅ Registrado correctamente. Ahora inicia sesión.';
-          this.isRegisterMode = false;
+        if (res.idUsuario) {
+          this.message = '✅ Registrado correctamente. Iniciando sesión...';
+          this.registerForm.reset({ idTipoDocumento: 1 });
+          this.loginAfterRegister(data.username, data.password);
         } else {
-          this.message = res.error || 'Error al registrar';
+          this.message = res.mensaje || res.error || 'Error al registrar';
         }
       },
-      error: () => {
+      error: (err) => {
         this.isLoading = false;
-        this.message = 'Error en el registro';
+        this.message = err.error?.mensaje || 'Error en el registro';
       },
+    });
+  }
+
+  private loginAfterRegister(username: string, password: string): void {
+    this.auth.login(username, password).subscribe({
+      next: (res: any) => {
+        localStorage.setItem('user', JSON.stringify(res));
+        this.redirectByRole(res);
+      },
+      error: () => {
+        this.message = '✅ Registrado. Ahora inicia sesión.';
+        this.isRegisterMode = false;
+      }
     });
   }
 }

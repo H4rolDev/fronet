@@ -1,20 +1,3 @@
-/**
- * @file unidad-medida-modal.component.ts
- * @description Modal para CREAR y EDITAR una Unidad de Medida.
- *
- * Responsabilidades:
- *  • Recibir el modo ('crear' | 'editar') y el id opcional desde el padre.
- *  • En modo editar: cargar los datos actuales via ObtenerListadoPorId.
- *  • Gestionar el formulario reactivo con validaciones.
- *  • Llamar al servicio (insertar o modificar) y emitir eventos al padre.
- *  • Manejar el cierre con Escape y click fuera del panel.
- *
- * Comunicación con el padre:
- *  • @Input()  inputData  → recibe modo e id.
- *  • @Output() cerrar     → emite cuando el usuario cancela o cierra.
- *  • @Output() guardado   → emite un mensaje de éxito al padre.
- */
-
 import {
   Component,
   OnInit,

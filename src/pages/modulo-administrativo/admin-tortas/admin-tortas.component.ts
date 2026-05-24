@@ -141,13 +141,6 @@ export class AdminTortasComponent implements OnInit, OnDestroy {
 
   // ── Helpers de template ────────────────────────────────────────────────────
 
-  claseStock(torta: TortaListadoDTO): string {
-    if (torta.stockDisponible === 0)  return 'stock--agotado';
-    if (torta.stockDisponible <= 3)   return 'stock--bajo';
-    if (torta.stockDisponible <= 8)   return 'stock--alerta';
-    return 'stock--ok';
-  }
-
   formatearMoneda(valor: number | null): string {
     if (valor === null || valor === undefined) return '—';
     return new Intl.NumberFormat('es-PE', {

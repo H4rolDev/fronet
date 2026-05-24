@@ -103,7 +103,7 @@
       <div class="topbar-right">
         <button class="btn-carrito" (click)="mostrarCarrito = !mostrarCarrito">
           🛒
-          <span class="carrito-badge" *ngIf="carrito.length > 0">{{ carrito.length }}</span>
+          <span class="carrito-badge" *ngIf="cantidadCarrito > 0">{{ cantidadCarrito }}</span>
         </button>
       </div>
     </div>
@@ -173,15 +173,23 @@
         <small>Agrega tus productos favoritos</small>
       </div>
 
-      <div *ngFor="let item of carrito; let i = index" class="carrito-item">
+      <div *ngFor="let item of carrito" class="carrito-item">
         <div class="carrito-item-img">
-          <!-- <img [src]="'assets/' + item.imagen" [alt]="item.nombre"> -->
+          <img *ngIf="item.imagen" [src]="item.imagen" [alt]="item.nombre">
+          <div *ngIf="!item.imagen" class="carrito-item-placeholder">🎂</div>
         </div>
         <div class="carrito-item-info">
           <h6>{{ item.nombre }}</h6>
-          <span class="carrito-item-precio">S/ {{ item.precioVenta }}</span>
+          <span class="carrito-item-precio">S/ {{ item.precio.toFixed(2) }}</span>
         </div>
-        <button class="btn-remove" (click)="eliminarDelCarrito(i)">✕</button>
+        <div class="carrito-item-actions">
+          <div class="cantidad-controls">
+            <button class="btn-cant" (click)="actualizarCantidad(item.id, -1)" [disabled]="item.cantidad <= 1">−</button>
+            <span class="cant-valor">{{ item.cantidad }}</span>
+            <button class="btn-cant" (click)="actualizarCantidad(item.id, 1)" [disabled]="item.cantidad >= item.stock">+</button>
+          </div>
+          <button class="btn-remove" (click)="eliminarDelCarrito(item.id)">✕</button>
+        </div>
       </div>
     </div>
 

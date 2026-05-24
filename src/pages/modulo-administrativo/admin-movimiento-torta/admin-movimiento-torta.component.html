@@ -1,0 +1,244 @@
+<!-- TOAST ──────────────────────────────────────────────────────────────────── -->
+@if (notificacion()) {
+  <div
+    class="toast"
+    [class.toast--error]="notificacion()!.tipo === 'error'"
+    role="alert"
+    aria-live="polite"
+  >
+    <div class="toast__icono">{{ notificacion()!.tipo === 'exito' ? '✓' : '✕' }}</div>
+    <span class="toast__mensaje">{{ notificacion()!.mensaje }}</span>
+    <button class="toast__cerrar" (click)="cerrarNotificacion()" aria-label="Cerrar">✕</button>
+  </div>
+}
+
+<!-- HEADER ─────────────────────────────────────────────────────────────────── -->
+<div class="page-header">
+  <div>
+    <h1 class="page-titulo">Movimientos de Torta</h1>
+    <p class="page-subtitulo">Registro de entradas y salidas del stock de tortas</p>
+  </div>
+  <button class="btn-nuevo" (click)="abrirModalCrear()">
+    <span class="btn-nuevo__icono">+</span>
+    Nuevo Movimiento
+  </button>
+</div>
+
+<!-- CARDS RESUMEN ───────────────────────────────────────────────────────────── -->
+@if (!cargandoTabla() && movimientos().length > 0) {
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-card__icon stat-card__icon--total">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2C8 2 4 5 4 9c0 2.5 1.5 4.5 3 6l5 7 5-7c1.5-1.5 3-3.5 3-6 0-4-4-7-8-7z"/>
+          <circle cx="12" cy="9" r="2.5"/>
+        </svg>
+      </div>
+      <div class="stat-card__body">
+        <div class="stat-card__label">Tortas con movimiento</div>
+        <div class="stat-card__valor">{{ tortasUnicas() }}</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__icon stat-card__icon--entrada">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <line x1="12" y1="19" x2="12" y2="5"/>
+          <polyline points="5 12 12 5 19 12"/>
+        </svg>
+      </div>
+      <div class="stat-card__body">
+        <div class="stat-card__label">Total entradas</div>
+        <div class="stat-card__valor stat-card__valor--entrada">{{ formatearNumero(totalEntradas()) }}</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__icon stat-card__icon--salida">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <polyline points="19 12 12 19 5 12"/>
+        </svg>
+      </div>
+      <div class="stat-card__body">
+        <div class="stat-card__label">Total salidas</div>
+        <div class="stat-card__valor stat-card__valor--salida">{{ formatearNumero(totalSalidas()) }}</div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- TOOLBAR ─────────────────────────────────────────────────────────────────── -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <i class="search-wrap__icono">⌕</i>
+    <input
+      type="text"
+      class="search-wrap__input"
+      placeholder="Buscar por torta, tipo o referencia..."
+      [ngModel]="textoBusqueda()"
+      (ngModelChange)="onBusqueda($event)"
+      aria-label="Buscar movimientos"
+    />
+    @if (textoBusqueda()) {
+      <button class="search-wrap__limpiar" (click)="limpiarBusqueda()" aria-label="Limpiar">✕</button>
+    }
+  </div>
+
+  <div class="filtro-tipo-wrap">
+    @for (tipo of tiposUnicos(); track tipo.id) {
+      <button
+        class="filtro-btn"
+        [class.filtro-btn--activo]="filtroTipo() === tipo.id.toString()"
+        [class.filtro-btn--entrada]="tipo.nombre.toLowerCase().includes('entrada')"
+        [class.filtro-btn--salida]="tipo.nombre.toLowerCase().includes('salida')"
+        (click)="onFiltroTipo(filtroTipo() === tipo.id.toString() ? '' : tipo.id.toString())"
+      >
+        {{ iconoTipo(tipo.nombre) }} {{ tipo.nombre }}
+      </button>
+    }
+  </div>
+
+  <div class="count-pill">
+    {{ movimientosFiltrados().length }}
+    {{ movimientosFiltrados().length === 1 ? 'movimiento' : 'movimientos' }}
+  </div>
+</div>
+
+<!-- TABLA ────────────────────────────────────────────────────────────────────── -->
+<div class="tabla-card">
+  <table class="tabla" aria-label="Listado de movimientos de torta">
+    <thead class="tabla__head">
+      <tr>
+        <th class="tabla__th" style="width:52px">#</th>
+        <th class="tabla__th" style="width:110px">Tipo</th>
+        <th class="tabla__th">Torta</th>
+        <th class="tabla__th tabla__th--num">Cantidad</th>
+        <th class="tabla__th">Fecha movimiento</th>
+        <th class="tabla__th">Referencia</th>
+        <th class="tabla__th">Registrado</th>
+        <th class="tabla__th tabla__th--centro" style="width:80px">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- Skeleton -->
+      @if (cargandoTabla()) {
+        @for (i of [1,2,3,4,5,6]; track i) {
+          <tr class="tabla__fila">
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--md"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--lg"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--md"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--md"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--md"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+          </tr>
+        }
+      }
+
+      <!-- Vacío -->
+      @else if (movimientosFiltrados().length === 0) {
+        <tr>
+          <td colspan="8" class="tabla__vacia">
+            <div class="estado-vacio">
+              <div class="estado-vacio__icono">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+                  <path d="M12 2C8 2 4 5 4 9c0 2.5 1.5 4.5 3 6l5 7 5-7c1.5-1.5 3-3.5 3-6 0-4-4-7-8-7z"/>
+                  <circle cx="12" cy="9" r="2.5"/>
+                </svg>
+              </div>
+              @if (textoBusqueda() || filtroTipo()) {
+                <p>No se encontraron movimientos con los filtros aplicados</p>
+                <button class="btn-nuevo" style="font-size:12px;padding:7px 14px"
+                  (click)="limpiarBusqueda(); onFiltroTipo('')">
+                  Limpiar filtros
+                </button>
+              } @else {
+                <p>No hay movimientos de torta registrados</p>
+                <button class="btn-nuevo" (click)="abrirModalCrear()">+ Registrar primer movimiento</button>
+              }
+            </div>
+          </td>
+        </tr>
+      }
+
+      <!-- Filas -->
+      @else {
+        @for (mov of movimientosFiltrados(); track mov.id) {
+          <tr class="tabla__fila">
+
+            <td class="tabla__td tabla__td--id">{{ mov.id }}</td>
+
+            <td class="tabla__td">
+              <span class="badge-tipo" [ngClass]="claseTipo(mov.tipoMovimiento)">
+                <span class="badge-tipo__icono">{{ iconoTipo(mov.tipoMovimiento) }}</span>
+                {{ mov.tipoMovimiento }}
+              </span>
+            </td>
+
+            <td class="tabla__td tabla__td--nombre">{{ mov.torta }}</td>
+
+            <td class="tabla__td tabla__td--num">
+              <span class="cantidad-val" [ngClass]="claseTipo(mov.tipoMovimiento)">
+                {{ iconoTipo(mov.tipoMovimiento) }} {{ formatearNumero(mov.cantidad) }}
+              </span>
+            </td>
+
+            <td class="tabla__td tabla__td--fecha">
+              {{ formatearFechaCorta(mov.fechaMovimiento) }}
+            </td>
+
+            <td class="tabla__td tabla__td--ref">
+              @if (mov.referencia) {
+                <span class="ref-texto">{{ mov.referencia }}</span>
+              } @else {
+                <span class="tabla__td--dim">—</span>
+              }
+            </td>
+
+            <td class="tabla__td tabla__td--fecha">
+              <div class="registrado-wrap">
+                <span>{{ formatearFechaCorta(mov.fechaCreacion) }}</span>
+                <span class="registrado-usuario">{{ mov.usuarioCreacion ?? '—' }}</span>
+              </div>
+            </td>
+
+            <td class="tabla__td tabla__td--centro">
+              <button
+                class="btn-accion btn-accion--editar"
+                (click)="abrirModalEditar(mov.id)"
+                [attr.aria-label]="'Editar movimiento ' + mov.id"
+                title="Editar"
+              >✎</button>
+            </td>
+
+          </tr>
+        }
+      }
+
+    </tbody>
+  </table>
+</div>
+
+<!-- NOTA SIN ELIMINACIÓN ────────────────────────────────────────────────────── -->
+@if (!cargandoTabla() && movimientos().length > 0) {
+  <div class="nota-info">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      style="width:14px;height:14px;flex-shrink:0">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    Los movimientos de torta no se pueden eliminar para mantener la trazabilidad del stock.
+    Solo se permite su edición.
+  </div>
+}
+
+<!-- MODAL ───────────────────────────────────────────────────────────────────── -->
+@if (modalAbierto() && modalInputData()) {
+  <app-movimiento-torta-modal
+    [inputData]="modalInputData()!"
+    (cerrar)="cerrarModal()"
+    (guardado)="onGuardadoExitoso($event)"
+  />
+}

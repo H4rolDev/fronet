@@ -172,7 +172,7 @@ export class AdminRecetaTortaComponent implements OnInit, OnDestroy {
     this.eliminando.set(true);
 
     const peticiones = receta.ingredientes.map(fila =>
-      this.recetaTortaService.eliminarFila(fila.id)
+      this.recetaTortaService.eliminarFila(fila.idTorta)
     );
 
     forkJoin(peticiones)
@@ -185,7 +185,7 @@ export class AdminRecetaTortaComponent implements OnInit, OnDestroy {
         },
         error: (err: Error) => {
           this.cancelarEliminar();
-          this.cargarListado(); // recargar para ver qué filas se eliminaron
+          this.cargarListado();
           this.mostrarNotificacion('error', `Error parcial al eliminar: ${err.message}`);
         },
       });

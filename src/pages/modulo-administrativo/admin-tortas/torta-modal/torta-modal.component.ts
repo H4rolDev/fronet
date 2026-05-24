@@ -65,7 +65,6 @@ export class TortaModalComponent implements OnInit, OnDestroy {
   get idCategoriaTorta(): AbstractControl { return this.formulario.get('idCategoriaTorta')!; }
   get descripcion():      AbstractControl { return this.formulario.get('descripcion')!; }
   get cantidades():       AbstractControl { return this.formulario.get('cantidades')!; }
-  get stockDisponible():  AbstractControl { return this.formulario.get('stockDisponible')!; }
   get precioVenta():      AbstractControl { return this.formulario.get('precioVenta')!; }
   get esPersonalizable(): AbstractControl { return this.formulario.get('esPersonalizable')!; }
 
@@ -125,13 +124,9 @@ export class TortaModalComponent implements OnInit, OnDestroy {
         '',
         [Validators.maxLength(200)],
       ],
-      stockDisponible: [
-        0,
-        [Validators.required, Validators.min(0)],
-      ],
       precioVenta: [
         null,
-        [Validators.min(0)],
+        [Validators.required, Validators.min(0)],
       ],
       esPersonalizable: [false],
     });
@@ -171,7 +166,6 @@ export class TortaModalComponent implements OnInit, OnDestroy {
             idCategoriaTorta: detalle.idCategoriaTorta,
             descripcion:      detalle.descripcion ?? '',
             cantidades:       detalle.cantidades ?? '',
-            stockDisponible:  detalle.stockDisponible,
             precioVenta:      detalle.precioVenta,
             esPersonalizable: detalle.esPersonalizable ?? false,
           });
@@ -265,9 +259,8 @@ export class TortaModalComponent implements OnInit, OnDestroy {
       idCategoriaTorta: Number(this.formulario.value.idCategoriaTorta),
       descripcion:      this.formulario.value.descripcion?.trim() || null,
       cantidades:       this.formulario.value.cantidades?.trim() || null,
-      stockDisponible:  Number(this.formulario.value.stockDisponible),
-      precioVenta:      this.formulario.value.precioVenta !== null && this.formulario.value.precioVenta !== ''
-                          ? Number(this.formulario.value.precioVenta) : null,
+      stockDisponible:  0,
+      precioVenta:      Number(this.formulario.value.precioVenta),
       esPersonalizable: Boolean(this.formulario.value.esPersonalizable),
     };
 

@@ -2,8 +2,9 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { catchError, Observable, throwError } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { CategoriaTortaDetalleDTO, CategoriaTortaListadoDTO, CategoriaTortaRequestDTO } from '../models/categoria-torta-dto';
+import { environment } from '../environments/environment';
 
-const BASE_URL = 'https://localhost:7223/api/CategoriaTorta';
+const BASE_URL = `${environment.apiUrl}/CategoriaTorta`;
 const USUARIO_ACTUAL = 'admin';
 
 @Injectable({
@@ -40,7 +41,7 @@ constructor(private http: HttpClient) {}
    *
    * @param datos - Nombre y abreviatura ingresados en el formulario
    */
-  insertar(datos: { nombre: string; abreviatura: string }): Observable<any> {
+  insertar(datos: { nombre: string }): Observable<any> {
     const payload: CategoriaTortaRequestDTO = {
       id: 0,
       activo: true,

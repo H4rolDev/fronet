@@ -1,0 +1,149 @@
+<!-- admin-proveedor.component.html -->
+<!-- Toast -->
+@if (notificacion()) {
+  <div class="toast" [class.toast--error]="notificacion()!.tipo === 'error'" role="alert">
+    <div class="toast__icono">{{ notificacion()!.tipo === 'success' ? '✓' : '✕' }}</div>
+    <span class="toast__mensaje">{{ notificacion()!.mensaje }}</span>
+    <button class="toast__cerrar" (click)="notificacion.set(null)">✕</button>
+  </div>
+}
+
+<!-- Header -->
+<div class="page-header">
+  <div>
+    <h1 class="page-titulo">Proveedores</h1>
+    <p class="page-subtitulo">Gestión de proveedores de insumos</p>
+  </div>
+  <button class="btn-nuevo" (click)="abrirCrear()">
+    <span class="btn-nuevo__icono">+</span>
+    Nuevo Proveedor
+  </button>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <i class="search-wrap__icono">⌕</i>
+    <input type="text" class="search-wrap__input" placeholder="Buscar proveedor..."
+      [ngModel]="textoBusqueda()" (ngModelChange)="textoBusqueda.set($event)" />
+    @if (textoBusqueda()) {
+      <button class="search-wrap__limpiar" (click)="textoBusqueda.set('')">✕</button>
+    }
+  </div>
+  <div class="count-pill">{{ proveedoresFiltrados().length }} {{ proveedoresFiltrados().length === 1 ? 'proveedor' : 'proveedores' }}</div>
+</div>
+
+<!-- Tabla -->
+<div class="tabla-card">
+  <table class="tabla">
+    <thead class="tabla__head">
+      <tr>
+        <th class="tabla__th" style="width:60px">#</th>
+        <th class="tabla__th">Nombre</th>
+        <th class="tabla__th">RUC</th>
+        <th class="tabla__th">Teléfono</th>
+        <th class="tabla__th">Contacto</th>
+        <th class="tabla__th" style="width:80px">Estado</th>
+        <th class="tabla__th tabla__th--centro" style="width:100px">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      @if (cargando()) {
+        @for (i of [1,2,3,4,5]; track i) {
+          <tr class="tabla__fila">
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--lg"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--md"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+          </tr>
+        }
+      }
+
+      @else if (proveedoresFiltrados().length === 0) {
+        <tr>
+          <td colspan="7" class="tabla__vacia">
+            <div class="estado-vacio">
+              <div class="estado-vacio__icono">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+              @if (textoBusqueda()) {
+                <p>No se encontró proveedores para <strong>"{{ textoBusqueda() }}"</strong></p>
+                <button class="btn-nuevo" style="font-size:12px;padding:7px 14px" (click)="textoBusqueda.set('')">Limpiar</button>
+              } @else {
+                <p>No hay proveedores registrados</p>
+                <button class="btn-nuevo" (click)="abrirCrear()">+ Registrar proveedor</button>
+              }
+            </div>
+          </td>
+        </tr>
+      }
+
+      @else {
+        @for (item of proveedoresFiltrados(); track item.id; let i = $index) {
+          <tr class="tabla__fila">
+            <td class="tabla__td tabla__td--id">{{ i + 1 }}</td>
+            <td class="tabla__td">
+              <span class="nombre-principal">{{ item.nombre }}</span>
+            </td>
+            <td class="tabla__td"><span class="doc-badge">{{ item.ruc || '-' }}</span></td>
+            <td class="tabla__td">{{ item.telefono || '-' }}</td>
+            <td class="tabla__td">{{ item.contacto || '-' }}</td>
+            <td class="tabla__td">
+              <span class="badge" [class.badge--success]="item.activo" [class.badge--peligro]="!item.activo">
+                {{ item.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="tabla__td tabla__td--centro">
+              <div class="acciones">
+                <button class="btn-icon" title="Editar" (click)="abrirEditar(item)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                @if (item.activo) {
+                  <button class="btn-icon btn-icon--peligro" title="Desactivar" (click)="confirmarDesactivar(item)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                    </svg>
+                  </button>
+                }
+                @if (!item.activo) {
+                  <button class="btn-icon btn-icon--success" title="Activar" (click)="confirmarActivar(item)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                      <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
+
+<!-- Modales -->
+@if (mostrarCrear()) {
+  <app-proveedor-crear-modal
+    (cerrar)="mostrarCrear.set(false)"
+    (guardado)="onProveedorGuardado()">
+  </app-proveedor-crear-modal>
+}
+
+@if (mostrarEditar() && proveedorSeleccionado()) {
+  <app-proveedor-editar-modal
+    [proveedor]="proveedorSeleccionado()!"
+    (cerrar)="mostrarEditar.set(false); proveedorSeleccionado.set(null)"
+    (guardado)="onProveedorGuardado()">
+  </app-proveedor-editar-modal>
+}

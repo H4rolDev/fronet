@@ -1,0 +1,230 @@
+<!-- Toast -->
+@if (notificacion()) {
+  <div class="toast" [class.toast--error]="notificacion()!.tipo === 'error'" role="alert">
+    <div class="toast__icono">{{ notificacion()!.tipo === 'exito' ? '✓' : '✕' }}</div>
+    <span class="toast__mensaje">{{ notificacion()!.mensaje }}</span>
+    <button class="toast__cerrar" (click)="cerrarNotificacion()">✕</button>
+  </div>
+}
+
+<!-- Header -->
+<div class="page-header">
+  <div>
+    <h1 class="page-titulo">Personal</h1>
+    <p class="page-subtitulo">Gestión de empleados y usuarios del sistema</p>
+  </div>
+  <button class="btn-nuevo" (click)="abrirModalCrear()">
+    <span class="btn-nuevo__icono">+</span>
+    Nuevo Personal
+  </button>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <i class="search-wrap__icono">⌕</i>
+    <input type="text" class="search-wrap__input" placeholder="Buscar por nombre o documento..."
+      [ngModel]="textoBusqueda()" (ngModelChange)="onBusqueda($event)" />
+    @if (textoBusqueda()) {
+      <button class="search-wrap__limpiar" (click)="limpiarBusqueda()">✕</button>
+    }
+  </div>
+  <div class="count-pill">{{ personalFiltrados().length }} registros</div>
+</div>
+
+<!-- Tabla -->
+<div class="tabla-card">
+  <table class="tabla">
+    <thead class="tabla__head">
+      <tr>
+        <th class="tabla__th" style="width:60px">#</th>
+        <th class="tabla__th">Documento</th>
+        <th class="tabla__th">Apellidos y Nombres</th>
+        <th class="tabla__th">Rol</th>
+        <th class="tabla__th" style="width:80px">Estado</th>
+        <th class="tabla__th tabla__th--centro" style="width:100px">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      @if (cargando()) {
+        @for (i of [1,2,3,4,5]; track i) {
+          <tr class="tabla__fila">
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--md"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--lg"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+          </tr>
+        }
+      }
+
+      @else if (personalFiltrados().length === 0) {
+        <tr>
+          <td colspan="6" class="tabla__vacia">
+            <div class="estado-vacio">
+              <div class="estado-vacio__icono">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                </svg>
+              </div>
+              @if (textoBusqueda()) {
+                <p>No se encontró personal para <strong>"{{ textoBusqueda() }}"</strong></p>
+                <button class="btn-nuevo" style="font-size:12px;padding:7px 14px" (click)="limpiarBusqueda()">Limpiar</button>
+              } @else {
+                <p>No hay personal registrado</p>
+                <button class="btn-nuevo" (click)="abrirModalCrear()">+ Registrar personal</button>
+              }
+            </div>
+          </td>
+        </tr>
+      }
+
+      @else {
+        @for (item of personalFiltrados(); track item.id; let i = $index) {
+          <tr class="tabla__fila">
+            <td class="tabla__td tabla__td--id">{{ i + 1 }}</td>
+            <td class="tabla__td"><span class="doc-badge">{{ item.numeroDocumento }}</span></td>
+            <td class="tabla__td">
+              <div class="nombre-wrap">
+                <span class="nombre-principal">{{ item.apellidoPaterno }} {{ item.apellidoMaterno }} {{ item.nombres }}</span>
+              </div>
+            </td>
+            <td class="tabla__td"><span class="badge badge--info">{{ item.nombreRol }}</span></td>
+            <td class="tabla__td"><span class="badge badge--success">Activo</span></td>
+            <td class="tabla__td tabla__td--centro">
+              <div class="acciones">
+                <button class="btn-icon" title="Editar" (click)="abrirModalEditar(item)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button class="btn-icon btn-icon--peligro" title="Eliminar" (click)="confirmarEliminar(item)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal -->
+@if (modalAbierto()) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-titulo">{{ editando() ? 'Editar' : 'Nuevo' }} Personal</h2>
+        <button class="modal-cerrar" (click)="cerrarModal()">✕</button>
+      </div>
+      <form class="modal-form" (ngSubmit)="guardar()">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="lbl">Username *</label>
+            <input type="text" class="inp" [(ngModel)]="form.username" name="username" [disabled]="editando()" placeholder="Usuario" [class.inp--error]="errores.username" />
+            @if (errores.username) { <span class="msg-error">{{ errores.username }}</span> }
+          </div>
+          <div class="form-group">
+            <label class="lbl">Contraseña *</label>
+            <input type="password" class="inp" [(ngModel)]="form.password" name="password" [placeholder]="editando() ? '••••••••' : 'Mínimo 6 caracteres'" [class.inp--error]="errores.password" />
+            @if (errores.password) { <span class="msg-error">{{ errores.password }}</span> }
+          </div>
+          <div class="form-group">
+            <label class="lbl">Rol {{editando() ? '' : '*'}}</label>
+            <select class="inp" [(ngModel)]="form.idRol" name="idRol" [class.inp--error]="errores.idRol" [disabled]="editando() && form.idRol === 0">
+              <option value="0">Seleccione</option>
+              @for (rol of roles(); track rol.id) {
+                <option [value]="rol.id">{{ rol.nombre }}</option>
+              }
+            </select>
+            @if (errores.idRol) { <span class="msg-error">{{ errores.idRol }}</span> }
+          </div>
+          <div class="form-group">
+            <label class="lbl">Tipo Doc. *</label>
+            <select class="inp" [(ngModel)]="form.idTipoDocumento" name="idTipoDocumento" #tipoDocSelect (change)="onTipoDocumentoChange()">
+              @for (td of tipoDocs(); track td.id) {
+                <option [value]="td.id">{{ td.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="lbl">N° Documento *</label>
+            <div class="input-group">
+              <input type="text" class="inp" [(ngModel)]="form.numeroDocumento" name="numeroDocumento" placeholder="8 dígitos (DNI) o 11 dígitos (RUC)" [class.inp--error]="errores.numeroDocumento" />
+              <button type="button" class="btn-consulta" (click)="consularSunat()" [disabled]="consultandoSunat()" title="Consultar SUNAT">
+                @if (consultandoSunat()) { <span class="spinner"></span> } @else { <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> }
+              </button>
+            </div>
+            @if (errores.numeroDocumento) { <span class="msg-error">{{ errores.numeroDocumento }}</span> }
+          </div>
+          @if (esRuc()) {
+          <div class="form-group">
+            <label class="lbl">Razón Social *</label>
+            <input type="text" class="inp" [(ngModel)]="form.nombres" name="nombres" placeholder="Razón Social" [class.inp--error]="errores.nombres" />
+            @if (errores.nombres) { <span class="msg-error">{{ errores.nombres }}</span> }
+          </div>
+          } @else {
+          <div class="form-group">
+            <label class="lbl">Nombres *</label>
+            <input type="text" class="inp" [(ngModel)]="form.nombres" name="nombres" placeholder="Nombres" [class.inp--error]="errores.nombres" />
+            @if (errores.nombres) { <span class="msg-error">{{ errores.nombres }}</span> }
+          </div>
+          <div class="form-group">
+            <label class="lbl">Apellido Paterno *</label>
+            <input type="text" class="inp" [(ngModel)]="form.apellidoPaterno" name="apellidoPaterno" placeholder="Apellido" [class.inp--error]="errores.apellidoPaterno" />
+            @if (errores.apellidoPaterno) { <span class="msg-error">{{ errores.apellidoPaterno }}</span> }
+          </div>
+          <div class="form-group">
+            <label class="lbl">Apellido Materno</label>
+            <input type="text" class="inp" [(ngModel)]="form.apellidoMaterno" name="apellidoMaterno" placeholder="Apellido" />
+          </div>
+          }
+          <div class="form-group">
+            <label class="lbl">Teléfono</label>
+            <input type="text" class="inp" [(ngModel)]="form.telefono" name="telefono" placeholder="Teléfono" />
+          </div>
+          <div class="form-group">
+            <label class="lbl">Dirección</label>
+            <input type="text" class="inp" [(ngModel)]="form.direccion" name="direccion" placeholder="Dirección" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-sec" (click)="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn-prim" [disabled]="guardando()">
+            {{ guardando() ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- Modal Confirmar Eliminar -->
+@if (idParaEliminar()) {
+  <div class="modal-overlay" (click)="cancelarEliminar()">
+    <div class="modal-content modal-content--sm" (click)="$event.stopPropagation()">
+      <div class="confirm-icono">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <h3 class="confirm-titulo">¿Eliminar personal?</h3>
+      <p class="confirm-msg">Se eliminará a <strong>{{ nombreParaEliminar() }}</strong>. Esta acción no se puede deshacer.</p>
+      <div class="modal-footer">
+        <button class="btn-sec" (click)="cancelarEliminar()">Cancelar</button>
+        <button class="btn-peligro" (click)="ejecutarEliminar()" [disabled]="eliminando()">
+          {{ eliminando() ? 'Eliminando...' : 'Eliminar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

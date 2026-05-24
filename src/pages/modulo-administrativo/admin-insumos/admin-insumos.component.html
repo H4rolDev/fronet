@@ -1,14 +1,18 @@
+<!--
+  admin-insumo.component.html
+  Listado de Insumos — tema Dulce & Co.
+
+  Acciones por fila:
+    Activo   → Editar | Ver lotes | Desactivar
+    Inactivo → Activar
+-->
+
 <!-- TOAST ──────────────────────────────────────────────────────────────────── -->
 @if (notificacion()) {
-  <div
-    class="toast"
-    [class.toast--error]="notificacion()!.tipo === 'error'"
-    role="alert"
-    aria-live="polite"
-  >
-    <div class="toast__icono">{{ notificacion()!.tipo === 'exito' ? '✓' : '✕' }}</div>
-    <span class="toast__mensaje">{{ notificacion()!.mensaje }}</span>
-    <button class="toast__cerrar" (click)="cerrarNotificacion()" aria-label="Cerrar">✕</button>
+  <div class="toast" [class.toast--error]="notificacion()!.tipo==='error'" role="alert" aria-live="assertive">
+    <div class="toast__ico">{{ notificacion()!.tipo==='exito' ? '✓' : '✕' }}</div>
+    <span class="toast__msg">{{ notificacion()!.mensaje }}</span>
+    <button class="toast__x" (click)="cerrarToast()">✕</button>
   </div>
 }
 
@@ -16,85 +20,95 @@
 <div class="page-header">
   <div>
     <h1 class="page-titulo">Insumos</h1>
-    <p class="page-subtitulo">Control de inventario y costos de insumos</p>
+    <p class="page-subtitulo">Catálogo de insumos y control de lotes de stock</p>
   </div>
-  <button class="btn-nuevo" (click)="abrirModalCrear()">
-    <span class="btn-nuevo__icono">+</span>
-    Nuevo Insumo
-  </button>
+  <div class="header-actions">
+    <button class="btn-nuevo btn-nuevo--sec" (click)="abrirEntrada()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      Registrar Entrada
+    </button>
+    <button class="btn-nuevo" (click)="abrirCrear()">
+      <span class="btn-nuevo__ico">+</span>
+      Nuevo Insumo
+    </button>
+  </div>
 </div>
 
-<!-- CARDS DE ESTADÍSTICAS ──────────────────────────────────────────────────── -->
-<!-- <div class="stats-grid">
+<!-- STATS ──────────────────────────────────────────────────────────────────── -->
+<div class="stats-grid">
   <div class="stat-card">
-    <div class="stat-card__label">Total insumos</div>
-    <div class="stat-card__valor">{{ insumos().length }}</div>
-    <div class="stat-card__sub">en el catálogo</div>
+    <div class="stat-card__lbl">Total insumos</div>
+    <div class="stat-card__val">{{ insumos().length }}</div>
+    <div class="stat-card__sub">registrados</div>
   </div>
-  <div class="stat-card stat-card--alerta" [class.stat-card--alerta-activa]="insumosStockBajo() > 0">
-    <div class="stat-card__label">Stock bajo</div>
-    <div class="stat-card__valor">{{ insumosStockBajo() }}</div>
+  <div class="stat-card">
+    <div class="stat-card__lbl">Activos</div>
+    <div class="stat-card__val">{{ totalActivos() }}</div>
+    <div class="stat-card__sub"><span class="dot dot--on"></span> con stock disponible</div>
+  </div>
+  <div class="stat-card" [class.stat-card--alerta]="totalSinStock() > 0">
+    <div class="stat-card__lbl">Sin stock</div>
+    <div class="stat-card__val">{{ totalSinStock() }}</div>
     <div class="stat-card__sub">
-      <span class="stat-dot" [class.stat-dot--warn]="insumosStockBajo() > 0" [class.stat-dot--on]="insumosStockBajo() === 0"></span>
-      {{ insumosStockBajo() > 0 ? 'requieren atención' : 'todo en orden' }}
+      <span class="dot" [class.dot--warn]="totalSinStock()>0" [class.dot--on]="totalSinStock()===0"></span>
+      {{ totalSinStock() > 0 ? 'requieren reposición' : 'todo en orden' }}
     </div>
   </div>
-  <div class="stat-card">
-    <div class="stat-card__label">Costo promedio</div>
-    <div class="stat-card__valor stat-card__valor--sm">{{ formatearMoneda(costoPromedio()) }}</div>
-    <div class="stat-card__sub">por unidad</div>
-  </div>
-</div> -->
+</div>
 
-<!-- TOOLBAR ─────────────────────────────────────────────────────────────────── -->
+<!-- TOOLBAR ────────────────────────────────────────────────────────────────── -->
 <div class="toolbar">
   <div class="search-wrap">
-    <i class="search-wrap__icono">⌕</i>
+    <i class="search-ico">⌕</i>
     <input
       type="text"
-      class="search-wrap__input"
-      placeholder="Buscar por nombre o unidad de medida..."
+      class="search-input"
+      placeholder="Buscar insumo..."
       [ngModel]="textoBusqueda()"
       (ngModelChange)="onBusqueda($event)"
-      aria-label="Buscar insumos"
+      aria-label="Buscar insumo"
     />
     @if (textoBusqueda()) {
-      <button class="search-wrap__limpiar" (click)="limpiarBusqueda()" aria-label="Limpiar">✕</button>
+      <button class="search-clr" (click)="limpiarBusqueda()">✕</button>
     }
   </div>
+
+  <div class="filtros">
+    <button class="filtro-btn" [class.filtro-btn--activo]="filtroEstado()==='todos'"     (click)="setFiltro('todos')">Todos</button>
+    <button class="filtro-btn" [class.filtro-btn--activo]="filtroEstado()==='activos'"   (click)="setFiltro('activos')">Activos</button>
+    <button class="filtro-btn" [class.filtro-btn--activo]="filtroEstado()==='inactivos'" (click)="setFiltro('inactivos')">Inactivos</button>
+  </div>
+
   <div class="count-pill">
-    {{ insumosFiltrados().length }}
-    {{ insumosFiltrados().length === 1 ? 'insumo' : 'insumos' }}
+    {{ insumosFiltrados().length }} {{ insumosFiltrados().length===1 ? 'insumo' : 'insumos' }}
   </div>
 </div>
 
-<!-- TABLA ────────────────────────────────────────────────────────────────────── -->
+<!-- TABLA ──────────────────────────────────────────────────────────────────── -->
 <div class="tabla-card">
   <table class="tabla" aria-label="Listado de insumos">
     <thead class="tabla__head">
       <tr>
-        <th class="tabla__th" style="width:52px">#</th>
-        <th class="tabla__th">Nombre</th>
-        <th class="tabla__th">Unidad</th>
-        <th class="tabla__th tabla__th--num">Stock actual</th>
-        <th class="tabla__th tabla__th--num">Stock mínimo</th>
-        <th class="tabla__th tabla__th--num">Costo unitario</th>
-        <th class="tabla__th tabla__th--centro" style="width:90px">Acciones</th>
+        <th class="th">Nombre</th>
+        <th class="th">Unidad de medida</th>
+        <th class="th th--num">Stock disponible</th>
+        <th class="th">Estado</th>
+        <th class="th th--centro" style="width:130px">Acciones</th>
       </tr>
     </thead>
     <tbody>
 
       <!-- Skeleton -->
-      @if (cargandoTabla()) {
-        @for (i of [1,2,3,4,5]; track i) {
-          <tr class="tabla__fila">
-            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
-            <td class="tabla__td"><span class="skeleton skeleton--lg"></span></td>
-            <td class="tabla__td"><span class="skeleton skeleton--md"></span></td>
-            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
-            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
-            <td class="tabla__td"><span class="skeleton skeleton--md"></span></td>
-            <td class="tabla__td"><span class="skeleton skeleton--sm"></span></td>
+      @if (cargando()) {
+        @for (i of [1,2,3,4]; track i) {
+          <tr class="fila">
+            <td class="td"><span class="sk sk--lg"></span></td>
+            <td class="td"><span class="sk sk--md"></span></td>
+            <td class="td"><span class="sk sk--sm"></span></td>
+            <td class="td"><span class="sk sk--sm"></span></td>
+            <td class="td"><span class="sk sk--md"></span></td>
           </tr>
         }
       }
@@ -102,68 +116,114 @@
       <!-- Vacío -->
       @else if (insumosFiltrados().length === 0) {
         <tr>
-          <td colspan="7" class="tabla__vacia">
+          <td colspan="5" class="td-vacia">
             <div class="estado-vacio">
-              <div class="estado-vacio__icono">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+              <div class="ev-ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7">
+                  <path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
+                  <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
+                </svg>
               </div>
               @if (textoBusqueda()) {
-                <p>No se encontraron insumos para <strong>"{{ textoBusqueda() }}"</strong></p>
+                <p>Sin resultados para <strong>"{{ textoBusqueda() }}"</strong></p>
                 <button class="btn-nuevo" style="font-size:12px;padding:7px 14px" (click)="limpiarBusqueda()">Limpiar búsqueda</button>
               } @else {
                 <p>No hay insumos registrados</p>
-                <button class="btn-nuevo" (click)="abrirModalCrear()">+ Registrar primer insumo</button>
+                <button class="btn-nuevo" (click)="abrirCrear()">+ Crear primer insumo</button>
               }
             </div>
           </td>
         </tr>
       }
 
-      <!-- Filas de datos -->
+      <!-- Filas -->
       @else {
-        @for (insumo of insumosFiltrados(); track insumo.id) {
-          <tr class="tabla__fila">
-            <td class="tabla__td tabla__td--id">{{ insumo.id }}</td>
+        @for (ins of insumosFiltrados(); track ins.id) {
+          <tr class="fila" [class.fila--inactiva]="!ins.activo">
 
-            <td class="tabla__td tabla__td--nombre">{{ insumo.nombre }}</td>
+            <!-- Nombre -->
+            <td class="td td--nombre">{{ ins.nombre }}</td>
 
-            <td class="tabla__td">
+            <!-- Unidad -->
+            <td class="td">
               <span class="badge-unidad">
-                {{ insumo.nombreUnidadMedida }}
-                <span class="badge-unidad__abrev">{{ insumo.abreviatura }}</span>
+                {{ ins.nombreUnidadMedida }}
+                <span class="badge-unidad__abrev">{{ ins.abreviatura }}</span>
               </span>
             </td>
 
-            <td class="tabla__td tabla__td--num">
-              <span class="stock-val" [ngClass]="claseStock(insumo)">
-                {{ formatearNumero(insumo.stockActual) }}
-              </span>
+            <!-- Stock disponible -->
+            <td class="td td--num">
+              @if (ins.stockDisponible > 0) {
+                <span class="stock-chip stock-chip--ok">{{ ins.stockDisponible }}</span>
+              } @else {
+                <span class="stock-chip stock-chip--agotado">0</span>
+              }
             </td>
 
-            <td class="tabla__td tabla__td--num tabla__td--dim">
-              {{ formatearNumero(insumo.stockMinimo) }}
+            <!-- Estado -->
+            <td class="td">
+              @if (ins.activo) {
+                <span class="badge badge--activo"><span class="dot dot--on"></span> Activo</span>
+              } @else {
+                <span class="badge badge--inactivo"><span class="dot dot--off"></span> Inactivo</span>
+              }
             </td>
 
-            <td class="tabla__td tabla__td--num">
-              <span class="costo-val">{{ formatearMoneda(insumo.costoUnitario) }}</span>
-            </td>
-
-            <td class="tabla__td tabla__td--centro">
+            <!-- Acciones -->
+            <td class="td td--centro">
               <div class="acciones">
-                <button
-                  class="btn-accion btn-accion--editar"
-                  (click)="abrirModalEditar(insumo.id)"
-                  [attr.aria-label]="'Editar ' + insumo.nombre"
-                  title="Editar"
-                >✎</button>
-                <button
-                  class="btn-accion btn-accion--eliminar"
-                  (click)="confirmarEliminar(insumo)"
-                  [attr.aria-label]="'Eliminar ' + insumo.nombre"
-                  title="Eliminar"
-                >✕</button>
+                @if (ins.activo) {
+                  <!-- Editar -->
+                  <button
+                    class="btn-acc btn-acc--editar"
+                    (click)="abrirEditar(ins)"
+                    [title]="'Editar ' + ins.nombre"
+                    aria-label="Editar insumo"
+                  >✎</button>
+
+                  <!-- Ver lotes -->
+                  <button
+                    class="btn-acc btn-acc--ver"
+                    (click)="abrirDetalle(ins)"
+                    [title]="'Ver lotes de ' + ins.nombre"
+                    aria-label="Ver lotes"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+
+                  <!-- Desactivar -->
+                  <button
+                    class="btn-acc btn-acc--desact"
+                    (click)="iniciarDesactivar(ins)"
+                    [title]="'Desactivar ' + ins.nombre"
+                    aria-label="Desactivar insumo"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                  </button>
+                } @else {
+                  <!-- Activar -->
+                  <button
+                    class="btn-acc btn-acc--activar"
+                    (click)="iniciarActivar(ins)"
+                    [title]="'Activar ' + ins.nombre"
+                    aria-label="Activar insumo"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Activar
+                  </button>
+                }
               </div>
             </td>
+
           </tr>
         }
       }
@@ -172,56 +232,86 @@
   </table>
 </div>
 
-<!-- LEYENDA STOCK ───────────────────────────────────────────────────────────── -->
-@if (!cargandoTabla() && insumos().length > 0) {
-  <div class="leyenda">
-    <span class="leyenda__item"><span class="stock-val stock--ok">●</span> Normal</span>
-    <span class="leyenda__item"><span class="stock-val stock--alerta">●</span> Alerta (cerca del mínimo)</span>
-    <span class="leyenda__item"><span class="stock-val stock--bajo">●</span> Bajo el mínimo</span>
-    <span class="leyenda__item"><span class="stock-val stock--agotado">●</span> Agotado</span>
-  </div>
-}
-
-<!-- DIÁLOGO CONFIRMACIÓN ELIMINAR ──────────────────────────────────────────── -->
-@if (idParaEliminar()) {
+<!-- ═══════ CONFIRMACIÓN DESACTIVAR INSUMO ═══════ -->
+@if (insumoDesactivar()) {
   <div class="overlay" role="dialog" aria-modal="true">
     <div class="dialogo">
       <div class="dialogo__cuerpo">
-        <div class="dialogo__icono-wrap">
+        <div class="dialogo__ico-wrap dialogo__ico-wrap--warn">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-            <path d="M10 11v6M14 11v6"/>
-            <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
         </div>
-        <h2 class="dialogo__titulo">¿Eliminar insumo?</h2>
-        <p class="dialogo__mensaje">
-          Estás a punto de eliminar <strong>"{{ nombreParaEliminar() }}"</strong>.
-          Esta acción no se puede deshacer.
+        <h2 class="dialogo__titulo">¿Desactivar insumo?</h2>
+        <p class="dialogo__msg">
+          Se desactivará <strong>"{{ insumoDesactivar()!.nombre }}"</strong> y todos sus lotes activos.
+          Esta operación es reversible.
         </p>
       </div>
       <div class="dialogo__footer">
-        <button class="btn-dialogo-cancel" (click)="cancelarEliminar()" [disabled]="eliminando()">
-          Cancelar
-        </button>
-        <button class="btn-dialogo-eliminar" (click)="ejecutarEliminar()" [disabled]="eliminando()">
-          @if (eliminando()) {
-            <span class="spinner"></span> Eliminando...
-          } @else {
-            Sí, eliminar
-          }
+        <button class="btn-dial-cancel" (click)="cancelarDesactivar()" [disabled]="procesando()">Cancelar</button>
+        <button class="btn-dial-warn" (click)="confirmarDesactivar()" [disabled]="procesando()">
+          @if (procesando()) { <span class="spinner"></span> Procesando... }
+          @else { Sí, desactivar }
         </button>
       </div>
     </div>
   </div>
 }
 
-<!-- MODAL ───────────────────────────────────────────────────────────────────── -->
-@if (modalAbierto() && modalInputData()) {
-  <app-insumo-modal
-    [inputData]="modalInputData()!"
-    (cerrar)="cerrarModal()"
-    (guardado)="onGuardadoExitoso($event)"
+<!-- ═══════ CONFIRMACIÓN ACTIVAR INSUMO ═══════ -->
+@if (insumoActivar()) {
+  <div class="overlay" role="dialog" aria-modal="true">
+    <div class="dialogo">
+      <div class="dialogo__cuerpo">
+        <div class="dialogo__ico-wrap dialogo__ico-wrap--ok">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2 class="dialogo__titulo">¿Activar insumo?</h2>
+        <p class="dialogo__msg">
+          Se reactivará <strong>"{{ insumoActivar()!.nombre }}"</strong>.
+          Sus lotes no se reactivarán automáticamente.
+        </p>
+      </div>
+      <div class="dialogo__footer">
+        <button class="btn-dial-cancel" (click)="cancelarActivar()" [disabled]="procesando()">Cancelar</button>
+        <button class="btn-dial-ok" (click)="confirmarActivar()" [disabled]="procesando()">
+          @if (procesando()) { <span class="spinner"></span> Procesando... }
+          @else { Sí, activar }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ═══════ MODALES ═══════ -->
+@if (mostrarCrear()) {
+  <app-insumo-crear-modal
+    (cerrar)="cerrarCrear()"
+    (guardado)="onGuardado($event)"
+  />
+}
+
+@if (mostrarEditar() && insumoSeleccionado()) {
+  <app-insumo-editar-modal
+    [insumo]="insumoSeleccionado()!"
+    (cerrar)="cerrarEditar()"
+    (guardado)="onGuardado($event)"
+  />
+}
+
+@if (mostrarDetalle() && insumoSeleccionado()) {
+  <app-insumo-detalle-lotes
+    [insumo]="insumoSeleccionado()!"
+    (cerrar)="cerrarDetalle()"
+    (cambio)="onDetalleCambio()"
+  />
+}
+
+@if (mostrarEntrada()) {
+  <app-entrada-insumo-modal
+    (cerrar)="cerrarEntrada()"
+    (guardado)="onGuardado($event)"
   />
 }

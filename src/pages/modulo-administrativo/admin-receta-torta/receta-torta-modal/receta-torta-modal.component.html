@@ -149,6 +149,7 @@
                 <tr>
                   <th class="th-insumo">Insumo</th>
                   <th class="th-cant">Cantidad</th>
+                  <th class="th-und">U.M.</th>
                   <th class="th-del"></th>
                 </tr>
               </thead>
@@ -172,7 +173,7 @@
                         >
                           <option [ngValue]="null">— Seleccionar —</option>
                           @for (ins of insumos(); track ins.id) {
-                            <option [ngValue]="ins.id">{{ ins.nombre }}</option>
+                            <option [ngValue]="ins.id">{{ ins.nombre }} ({{ ins.abreviatura }})</option>
                           }
                         </select>
                         @if (fila.esNueva) {
@@ -203,6 +204,11 @@
                       @if (fila.cantidadRequerida !== null && fila.cantidadRequerida <= 0) {
                         <p class="fila-error">Debe ser mayor a 0</p>
                       }
+                    </td>
+
+                    <!-- Unidad de medida -->
+                    <td class="td-und">
+                      <span class="und-badge">{{ fila.abreviatura }}</span>
                     </td>
 
                     <!-- Botón eliminar fila -->

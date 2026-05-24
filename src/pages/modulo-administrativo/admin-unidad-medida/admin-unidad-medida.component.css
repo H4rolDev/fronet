@@ -1,10 +1,3 @@
-/*
- * admin-unidad-medida.component.css
- * Listado principal de Unidades de Medida — tema Dulce & Co.
- *
- * El :host asume que está dentro de .main-wrapper con fondo blanco.
- * No necesita declarar fondo propio; hereda el blanco del contenedor.
- */
 
 :host {
   display: block;

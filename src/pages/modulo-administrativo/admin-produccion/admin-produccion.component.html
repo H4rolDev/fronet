@@ -1,0 +1,244 @@
+
+@if (notificacion()) {
+  <div class="toast" [class.toast--error]="notificacion()!.tipo==='error'" role="alert" aria-live="assertive">
+    <div class="toast__ico">{{ notificacion()!.tipo==='exito' ? '✓' : '✕' }}</div>
+    <span class="toast__msg">{{ notificacion()!.mensaje }}</span>
+    <button class="toast__x" (click)="cerrarToast()">✕</button>
+  </div>
+}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-titulo">Producción de Tortas</h1>
+    <p class="page-subtitulo">Registro histórico inmutable · Las correcciones se hacen con ajustes</p>
+  </div>
+
+  <div class="hdr-btns">
+    <button class="btn-accion btn-accion--crear" (click)="abrirCrear()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nueva Producción
+    </button>
+    <button class="btn-accion btn-accion--insumo" (click)="abrirAjusteIns()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+      Ajustar Insumo
+    </button>
+    <button class="btn-accion btn-accion--torta" (click)="abrirAjusteTorta()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8 6 4 8 4 12h16c0-4-4-6-8-10z"/><rect x="2" y="12" width="20" height="4" rx="1"/><rect x="4" y="16" width="16" height="5" rx="1"/></svg>
+      Ajustar Torta
+    </button>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card__lbl">Este mes</div>
+    <div class="stat-card__val">{{ produccionesEsteMes() }}</div>
+    <div class="stat-card__sub">producciones registradas</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__lbl">Tortas producidas</div>
+    <div class="stat-card__val">{{ totalTortasProducidas() }}</div>
+    <div class="stat-card__sub">unidades en total</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__lbl">Variedades</div>
+    <div class="stat-card__val">{{ tortasDistintas() }}</div>
+    <div class="stat-card__sub">tortas distintas</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__lbl">Última producción</div>
+    @if (ultimaProduccion()) {
+      <div class="stat-card__val stat-card__val--sm">{{ formatFecha(ultimaProduccion()!.fechaProduccion) }}</div>
+      <div class="stat-card__sub">{{ ultimaProduccion()!.nombreTorta }}</div>
+    } @else {
+      <div class="stat-card__val">—</div>
+      <div class="stat-card__sub">sin registros</div>
+    }
+  </div>
+</div>
+
+<div class="nota-inmutable">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+  Las producciones son registros históricos. No se editan ni eliminan. Para corregir stock usa los botones <strong>Ajustar Insumo</strong> o <strong>Ajustar Torta</strong>.
+</div>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <i class="search-ico">⌕</i>
+    <input
+      type="text"
+      class="search-inp"
+      placeholder="Buscar por torta..."
+      [ngModel]="filtros().busqueda"
+      (ngModelChange)="onBusqueda($event)"
+      aria-label="Buscar por torta"
+    />
+    @if (filtros().busqueda) {
+      <button class="search-clr" (click)="onBusqueda('')">✕</button>
+    }
+  </div>
+
+  <div class="fecha-rango">
+    <input
+      type="date"
+      class="fecha-inp"
+      [ngModel]="filtros().fechaDesde"
+      (ngModelChange)="onFechaDesde($event)"
+      aria-label="Fecha desde"
+    />
+    <span class="fecha-sep">—</span>
+    <input
+      type="date"
+      class="fecha-inp"
+      [ngModel]="filtros().fechaHasta"
+      (ngModelChange)="onFechaHasta($event)"
+      aria-label="Fecha hasta"
+    />
+    @if (filtros().fechaDesde || filtros().fechaHasta) {
+      <button class="btn-limpiar" (click)="limpiarFiltros()">Limpiar</button>
+    }
+  </div>
+
+  <div class="count-pill">
+    {{ produccionesFiltradas().length }}
+    {{ produccionesFiltradas().length === 1 ? 'registro' : 'registros' }}
+  </div>
+</div>
+
+<div class="tabla-card">
+  <table class="tabla" aria-label="Historial de producciones">
+    <thead class="tabla__head">
+      <tr>
+        <th class="th">#</th>
+        <th class="th">Torta</th>
+        <th class="th th--num">Cantidad</th>
+        <th class="th">Fecha</th>
+        <th class="th">Usuario</th>
+        <th class="th">Estado</th>
+        <th class="th th--centro" style="width:80px">Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      @if (cargando()) {
+        @for (i of [1,2,3,4,5]; track i) {
+          <tr class="fila">
+            <td class="td"><span class="sk sk--xs"></span></td>
+            <td class="td"><span class="sk sk--lg"></span></td>
+            <td class="td"><span class="sk sk--sm"></span></td>
+            <td class="td"><span class="sk sk--md"></span></td>
+            <td class="td"><span class="sk sk--md"></span></td>
+            <td class="td"><span class="sk sk--sm"></span></td>
+            <td class="td"><span class="sk sk--sm"></span></td>
+          </tr>
+        }
+      }
+
+      @else if (produccionesPagina().length === 0) {
+        <tr>
+          <td colspan="7" class="td-vacia">
+            <div class="estado-vacio">
+              <div class="ev-ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6">
+                  <path d="M12 2C8 6 4 8 4 12h16c0-4-4-6-8-10z"/>
+                  <rect x="2" y="12" width="20" height="4" rx="1"/>
+                  <rect x="4" y="16" width="16" height="5" rx="1"/>
+                </svg>
+              </div>
+              @if (filtros().busqueda || filtros().fechaDesde || filtros().fechaHasta) {
+                <p>Sin resultados con los filtros aplicados</p>
+                <button class="btn-limpiar-vacio" (click)="limpiarFiltros()">Limpiar filtros</button>
+              } @else {
+                <p>No hay producciones registradas</p>
+                <button class="btn-accion btn-accion--crear" (click)="abrirCrear()">+ Registrar primera producción</button>
+              }
+            </div>
+          </td>
+        </tr>
+      }
+
+      @else {
+        @for (prod of produccionesPagina(); track prod.id) {
+          <tr class="fila">
+            <td class="td td--id">{{ prod.id }}</td>
+            <td class="td td--nombre">{{ prod.nombreTorta }}</td>
+            <td class="td td--num">
+              <span class="cant-chip">{{ prod.cantidadProducida }}</span>
+            </td>
+            <td class="td td--dim">{{ formatFecha(prod.fechaProduccion) }}</td>
+            <td class="td td--dim">{{ prod.usuarioCreacion }}</td>
+            <td class="td">
+              <span class="badge badge--activo">
+                <span class="dot dot--on"></span>
+                {{ prod.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="td td--centro">
+              <button
+                class="btn-ver"
+                (click)="abrirDetalle(prod)"
+                [attr.aria-label]="'Ver detalle producción ' + prod.id"
+                title="Ver detalle"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Ver
+              </button>
+            </td>
+          </tr>
+        }
+      }
+
+    </tbody>
+  </table>
+
+  @if (totalPaginas() > 1) {
+    <div class="pag">
+      <button class="pag-btn" (click)="irPagina(paginaActual() - 1)" [disabled]="paginaActual() === 1">‹</button>
+      @for (p of paginasArr(); track p) {
+        <button
+          class="pag-btn"
+          [class.pag-btn--act]="p === paginaActual()"
+          (click)="irPagina(p)"
+        >{{ p }}</button>
+      }
+      <button class="pag-btn" (click)="irPagina(paginaActual() + 1)" [disabled]="paginaActual() === totalPaginas()">›</button>
+      <span class="pag-info">
+        Página {{ paginaActual() }} de {{ totalPaginas() }} ·
+        {{ produccionesFiltradas().length }} registros
+      </span>
+    </div>
+  }
+</div>
+
+@if (mostrarCrear()) {
+  <app-produccion-crear-modal
+    (cerrar)="cerrarCrear()"
+    (creado)="onProduccionCreada($event)"
+  />
+}
+
+@if (mostrarDetalle() && produccionDetalle()) {
+  <app-produccion-detalle-modal
+    [cabecera]="produccionDetalle()!"
+    (cerrar)="cerrarDetalle()"
+  />
+}
+
+@if (mostrarAjusteIns()) {
+  <app-produccion-ajuste-insumo
+    (cerrar)="cerrarAjusteIns()"
+    (ajustado)="onAjusteRealizado($event)"
+  />
+}
+
+@if (mostrarAjusteTorta()) {
+  <app-produccion-ajuste-torta
+    (cerrar)="cerrarAjusteTorta()"
+    (ajustado)="onAjusteRealizado($event)"
+  />
+}

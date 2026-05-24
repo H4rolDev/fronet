@@ -1,0 +1,276 @@
+.carrito-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.carrito-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.carrito-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 24px;
+}
+
+.item-count {
+  background: #f0e9e6;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #666;
+}
+
+.carrito-vacio {
+  text-align: center;
+  padding: 60px 20px;
+  background: #faf8f6;
+  border-radius: 12px;
+}
+
+.carrito-vacio p {
+  color: #888;
+  font-size: 16px;
+  margin: 16px 0 24px;
+}
+
+.btn-seguir {
+  background: #fff;
+  color: #550F26;
+  border: 2px solid #550F26;
+  padding: 12px 32px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-seguir:hover {
+  background: #550F26;
+  color: #fff;
+}
+
+.carrito-items {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.carrito-item {
+  display: grid;
+  grid-template-columns: 80px 1fr auto auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  transition: box-shadow 0.2s;
+}
+
+.carrito-item:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.item-imagen {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #faf8f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item-imagen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sin-imagen {
+  font-size: 32px;
+}
+
+.item-info h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  color: #333;
+}
+
+.item-precio {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.item-cantidad {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-cant {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 6px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-cant:hover:not(:disabled) {
+  background: #550F26;
+  color: #fff;
+  border-color: #550F26;
+}
+
+.btn-cant:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cant-valor {
+  min-width: 32px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.item-subtotal {
+  text-align: right;
+  min-width: 100px;
+}
+
+.subtotal-label {
+  display: block;
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.subtotal-valor {
+  font-size: 16px;
+  font-weight: 700;
+  color: #550F26;
+  font-family: Georgia, serif;
+}
+
+.btn-eliminar {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.btn-eliminar:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.carrito-footer {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.resumen {
+  margin-bottom: 20px;
+}
+
+.resumen-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  color: #666;
+}
+
+.resumen-row.total {
+  border-top: 2px solid #eee;
+  margin-top: 8px;
+  padding-top: 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.total-valor {
+  color: #550F26;
+  font-family: Georgia, serif;
+  font-size: 24px;
+}
+
+.btn-pagar {
+  width: 100%;
+  background: linear-gradient(135deg, #550F26 0%, #7a1f45 100%);
+  color: #fff;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.2s;
+}
+
+.btn-pagar:hover {
+  transform: translateY(-2px);
+}
+
+.btn-seguir {
+  width: 100%;
+  margin-top: 12px;
+  background: #fff;
+  color: #550F26;
+  border: 2px solid #550F26;
+  padding: 12px 32px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-seguir:hover {
+  background: #faf8f6;
+}
+
+@media (max-width: 768px) {
+  .carrito-item {
+    grid-template-columns: 60px 1fr;
+    gap: 12px;
+  }
+  
+  .item-cantidad, .item-subtotal {
+    grid-column: 2;
+  }
+  
+  .btn-eliminar {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+  }
+  
+  .carrito-item {
+    position: relative;
+  }
+}

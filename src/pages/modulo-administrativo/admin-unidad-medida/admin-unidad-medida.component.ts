@@ -43,6 +43,7 @@ export class AdminUnidadMedidaComponent implements OnInit, OnDestroy {
   constructor(private unidadMedidaService: UnidadMedidaService) {}
 
   ngOnInit(): void  { this.cargarListado(); }
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();

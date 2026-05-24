@@ -1,0 +1,275 @@
+<div
+  class="modal-overlay"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-label]="tituloModal"
+  (click)="onOverlayClick($event)"
+>
+  <div class="modal-panel">
+
+    <!-- HEADER ──────────────────────────────────────────────────────────────── -->
+    <header class="modal-panel__header">
+      <div class="modal-panel__header-left">
+        <div class="modal-panel__icon-wrap"
+          [class.modal-panel__icon-wrap--entrada]="esTipoEntrada"
+          [class.modal-panel__icon-wrap--salida]="esTipoSalida"
+        >
+          @if (esTipoEntrada) {
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+              <line x1="12" y1="19" x2="12" y2="5"/>
+              <polyline points="5 12 12 5 19 12"/>
+            </svg>
+          } @else if (esTipoSalida) {
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <polyline points="19 12 12 19 5 12"/>
+            </svg>
+          } @else if (esEditar) {
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          }
+        </div>
+        <div>
+          <h2 class="modal-panel__titulo">{{ tituloModal }}</h2>
+          <p class="modal-panel__subtitulo">
+            {{ esEditar ? 'Modifica los datos del movimiento' : 'Registra una entrada o salida de insumo' }}
+          </p>
+        </div>
+      </div>
+      <button
+        class="modal-panel__cerrar"
+        type="button"
+        (click)="onCerrar()"
+        [disabled]="guardando()"
+        aria-label="Cerrar"
+      >✕</button>
+    </header>
+
+    <!-- Banner visual tipo (cuando hay tipo seleccionado) -->
+    @if (tipoSeleccionado && !cargandoInicial()) {
+      <div class="tipo-banner" [class.tipo-banner--entrada]="esTipoEntrada" [class.tipo-banner--salida]="esTipoSalida">
+        <span class="tipo-banner__icono">{{ esTipoEntrada ? '↑' : esTipoSalida ? '↓' : '↔' }}</span>
+        <span class="tipo-banner__texto">
+          {{ esTipoEntrada ? 'Estás registrando una ENTRADA de insumo al inventario' : '' }}
+          {{ esTipoSalida  ? 'Estás registrando una SALIDA de insumo del inventario' : '' }}
+          {{ !esTipoEntrada && !esTipoSalida ? 'Movimiento de tipo: ' + tipoSeleccionado.nombre : '' }}
+        </span>
+      </div>
+    }
+
+    <!-- SKELETON ──────────────────────────────────────────────────────────── -->
+    @if (cargandoInicial()) {
+      <div class="modal-panel__body">
+        @for (i of [1,2,3,4,5]; track i) {
+          <div class="campo-skeleton">
+            <span class="sk sk--label"></span>
+            <span class="sk sk--input"></span>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- FORMULARIO ──────────────────────────────────────────────────────────── -->
+    @if (!cargandoInicial()) {
+      <form
+        class="modal-panel__body"
+        [formGroup]="formulario"
+        (ngSubmit)="onSubmit()"
+        novalidate
+        autocomplete="off"
+      >
+
+        <!-- Tipo de movimiento ───────────────────────────────────────────── -->
+        <div class="campo" [class.campo--error]="mostrarError('idTipoMovimiento')">
+          <label class="campo__label" for="idTipoMovimiento">
+            Tipo de movimiento <span class="campo__req">*</span>
+          </label>
+
+          <!-- Selector visual de tipo (botones) -->
+          <div class="tipo-selector" [class.disabled]="formulario.disabled">
+            @for (tipo of tiposMovimiento(); track tipo.id) {
+              <button
+                type="button"
+                class="tipo-selector__btn"
+                [class.tipo-selector__btn--activo]="idTipoMovimiento.value == tipo.id"
+                [class.tipo-selector__btn--entrada]="tipo.nombre.toLowerCase().includes('entrada')"
+                [class.tipo-selector__btn--salida]="tipo.nombre.toLowerCase().includes('salida')"
+                [disabled]="formulario.disabled || guardando()"
+                (click)="formulario.get('idTipoMovimiento')!.setValue(tipo.id); formulario.get('idTipoMovimiento')!.markAsTouched()"
+              >
+                <span class="tipo-selector__icono">
+                  {{ tipo.nombre.toLowerCase().includes('entrada') ? '↑' : tipo.nombre.toLowerCase().includes('salida') ? '↓' : '↔' }}
+                </span>
+                <span class="tipo-selector__nombre">{{ tipo.nombre }}</span>
+              </button>
+            }
+          </div>
+
+          <!-- Input hidden para validación reactiva -->
+          <input type="hidden" formControlName="idTipoMovimiento" />
+
+          @if (tiposMovimiento().length === 0) {
+            <p class="campo__hint">No hay tipos de movimiento disponibles.</p>
+          }
+          @if (mostrarError('idTipoMovimiento')) {
+            <p class="campo__error" id="tipo-err" role="alert">{{ mensajeError('idTipoMovimiento') }}</p>
+          }
+        </div>
+
+        <!-- Insumo Lote ─────────────────────────────────────────────────── -->
+        <div class="campo" [class.campo--error]="mostrarError('idInsumoLote')">
+          <label class="campo__label" for="idInsumoLote">
+            Lote de insumo <span class="campo__req">*</span>
+          </label>
+          <select
+            id="idInsumoLote"
+            class="campo__select"
+            formControlName="idInsumoLote"
+            [attr.aria-invalid]="mostrarError('idInsumoLote')"
+            aria-describedby="lote-err"
+          >
+            <option [ngValue]="null" disabled>— Seleccionar lote —</option>
+            @for (lote of insumoLotes(); track lote.id) {
+              <option [ngValue]="lote.id">
+                {{ etiquetaLote(lote) }}{{ !lote.activo ? ' (inactivo)' : '' }}
+              </option>
+            }
+          </select>
+          @if (insumoLotes().length === 0) {
+            <p class="campo__hint">No hay lotes disponibles.</p>
+          }
+          @if (mostrarError('idInsumoLote')) {
+            <p class="campo__error" id="lote-err" role="alert">{{ mensajeError('idInsumoLote') }}</p>
+          }
+        </div>
+
+        <!-- Fila: Cantidad + Fecha movimiento ──────────────────────────── -->
+        <div class="campo-fila">
+
+          <div class="campo" [class.campo--error]="mostrarError('cantidad')">
+            <label class="campo__label" for="cantidad">
+              Cantidad <span class="campo__req">*</span>
+            </label>
+            <div class="campo__input-suffix-wrap">
+              <input
+                id="cantidad"
+                type="number"
+                class="campo__input"
+                formControlName="cantidad"
+                placeholder="0"
+                min="0.01"
+                step="0.01"
+                [attr.aria-invalid]="mostrarError('cantidad')"
+                aria-describedby="cant-err"
+              />
+              @if (esTipoEntrada || esTipoSalida) {
+                <span class="campo__suffix"
+                  [class.campo__suffix--entrada]="esTipoEntrada"
+                  [class.campo__suffix--salida]="esTipoSalida"
+                >{{ esTipoEntrada ? '+' : '−' }}</span>
+              }
+            </div>
+            @if (mostrarError('cantidad')) {
+              <p class="campo__error" id="cant-err" role="alert">{{ mensajeError('cantidad') }}</p>
+            }
+          </div>
+
+          <div class="campo" [class.campo--error]="mostrarError('fechaMovimiento')">
+            <label class="campo__label" for="fechaMovimiento">
+              Fecha del movimiento <span class="campo__req">*</span>
+            </label>
+            <input
+              id="fechaMovimiento"
+              type="datetime-local"
+              class="campo__input"
+              formControlName="fechaMovimiento"
+              [attr.aria-invalid]="mostrarError('fechaMovimiento')"
+              aria-describedby="fecha-err"
+            />
+            @if (mostrarError('fechaMovimiento')) {
+              <p class="campo__error" id="fecha-err" role="alert">{{ mensajeError('fechaMovimiento') }}</p>
+            }
+          </div>
+
+        </div>
+
+        <!-- Referencia ──────────────────────────────────────────────────── -->
+        <div class="campo" [class.campo--error]="mostrarError('referencia')">
+          <label class="campo__label" for="referencia">
+            Referencia
+            <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input
+            id="referencia"
+            type="text"
+            class="campo__input"
+            formControlName="referencia"
+            placeholder="Ej: Ajuste de lote, Pedido #001, Producción torta..."
+            maxlength="300"
+            [attr.aria-invalid]="mostrarError('referencia')"
+            aria-describedby="ref-err"
+          />
+          <p class="campo__hint">
+            Descripción opcional para identificar el motivo del movimiento.
+          </p>
+          @if (mostrarError('referencia')) {
+            <p class="campo__error" id="ref-err" role="alert">{{ mensajeError('referencia') }}</p>
+          }
+        </div>
+
+        <!-- Nota: sin eliminación ───────────────────────────────────────── -->
+        <div class="nota-modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            style="width:13px;height:13px;flex-shrink:0;margin-top:1px">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          Los movimientos no pueden eliminarse para garantizar la trazabilidad del inventario.
+        </div>
+
+        <!-- Error de API ────────────────────────────────────────────────── -->
+        @if (errorApi()) {
+          <div class="alerta-api" role="alert">
+            <div class="alerta-api__icono">✕</div>
+            <p class="alerta-api__texto">{{ errorApi() }}</p>
+          </div>
+        }
+
+        <!-- FOOTER ─────────────────────────────────────────────────────── -->
+        <footer class="modal-panel__footer">
+          <button
+            type="button"
+            class="btn btn--secundario"
+            (click)="onCerrar()"
+            [disabled]="guardando()"
+          >Cancelar</button>
+          <button
+            type="submit"
+            class="btn btn--primario"
+            [class.btn--entrada]="esTipoEntrada"
+            [class.btn--salida]="esTipoSalida"
+            [disabled]="guardando() || cargandoInicial()"
+          >
+            @if (guardando()) {
+              <span class="spinner"></span>
+              {{ esEditar ? 'Guardando...' : 'Registrando...' }}
+            } @else {
+              @if (esTipoEntrada) { ↑ }
+              @if (esTipoSalida)  { ↓ }
+              {{ esEditar ? 'Guardar cambios' : 'Registrar movimiento' }}
+            }
+          </button>
+        </footer>
+
+      </form>
+    }
+
+  </div>
+</div>
