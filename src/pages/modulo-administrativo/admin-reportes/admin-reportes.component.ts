@@ -185,9 +185,8 @@ interface ReporteMeta {
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
             </svg>
             <div>
-              <strong>¿Qué estás viendo aquí?</strong>
-              <p>Este reporte te muestra todo sobre las ventas del negocio: el <strong>total de ingresos</strong> (cuánto dinero ha entrado), la <strong>cantidad de pedidos</strong>, el <strong>ticket promedio</strong> por cliente y las <strong>tortas más vendidas</strong>. Los gráficos te ayudan a identificar los días de mayor movimiento, qué métodos de pago usan tus clientes (efectivo, Yape, Plin, tarjeta), y el estado de los deliveries.</p>
-              <p class="report-desc-use"><strong>¿Para qué te sirve?</strong> Para planificar tu producción según los días más fuertes, saber qué tortas promocionar, decidir si necesitas más personal ciertos días, y ver si las entregas están yendo bien. Usa los filtros de fecha para analizar un período específico como una campaña o temporada.</p>
+              <p><strong>¿Qué muestra?</strong> Los ingresos totales, cantidad de pedidos, ticket promedio por cliente y las tortas más vendidas en el período. Los gráficos muestran la tendencia diaria de ventas, los métodos de pago usados (efectivo, Yape, Plin, tarjeta) y el estado de los deliveries.</p>
+              <p><strong>¿Para qué sirve?</strong> Para planificar producción según los días más fuertes, saber qué tortas promocionar y decidir si necesitas reforzar personal. Usa los filtros de fecha para analizar campañas específicas como Día de la Madre o Navidad.</p>
             </div>
           </div>
           <div class="resumen-cards">
@@ -265,9 +264,8 @@ interface ReporteMeta {
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
             </svg>
             <div>
-              <strong>¿Qué estás viendo aquí?</strong>
-              <p>Este reporte te muestra el estado actual de tu <strong>inventario de insumos</strong> (harina, azúcar, huevos, mantequilla, etc.). Verás el <strong>stock disponible</strong> de cada insumo, su <strong>último costo de compra</strong>, el <strong>valor total del inventario</strong> (cuánto dinero tienes invertido en ingredientes), y una alerta visual en amarillo para los insumos que están por debajo de su <strong>stock mínimo</strong>.</p>
-              <p class="report-desc-use"><strong>¿Para qué te sirve?</strong> Para saber exactamente qué insumos necesitas comprar con urgencia, calcular cuánto dinero necesitas para reponer tu almacén, evitar quedarte sin ingredientes clave para producir tus tortas, y controlar tus costos. Los insumos marcados en amarillo son los que deberías pedir ya a tus proveedores.</p>
+              <p><strong>¿Qué muestra?</strong> El stock actual de cada insumo (harina, azúcar, huevos, etc.), su último costo de compra, el valor total del inventario y una alerta en amarillo para los insumos con stock bajo.</p>
+              <p><strong>¿Para qué sirve?</strong> Para saber qué insumos comprar con urgencia, calcular cuánto dinero necesitas para reponer tu almacén y evitar quedarte sin ingredientes clave. Los insumos marcados en amarillo son los que deberías pedir ya a tus proveedores.</p>
             </div>
           </div>
           <div class="resumen-cards">
@@ -350,10 +348,9 @@ interface ReporteMeta {
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
             </svg>
             <div>
-              <strong>¿Qué estás viendo aquí?</strong>
-              <p>Este reporte te ayuda a entender la <strong>salud financiera</strong> de tu negocio. Compara lo que has <strong>vendido</strong> contra lo que has <strong>gastado en insumos</strong>, y calcula tu <strong>ganancia neta</strong> (el dinero que realmente te queda) y tu <strong>margen de ganancia</strong> (qué tan rentable es tu negocio en porcentaje). La tabla mensual te muestra mes a mes la evolución de ingresos, costos y ganancia.</p>
-              <p class="report-desc-use"><strong>¿Para qué te sirve?</strong> Para saber si tus precios de venta cubren bien tus costos, identificar los meses más rentables y los más flojos, decidir si necesitas ajustar precios o buscar insumos más baratos, y evaluar si el negocio está siendo rentable a lo largo del tiempo.</p>
-              <p class="report-desc-note"><strong>Nota:</strong> Este reporte solo considera los costos de insumos (materia prima). No incluye gastos como alquiler, servicios o sueldos.</p>
+              <p><strong>¿Qué muestra?</strong> Compara los ingresos por ventas contra los costos de insumos, calculando la ganancia neta (lo que realmente queda) y el margen de ganancia. La tabla muestra mes a mes la evolución de ingresos, costos y ganancia.</p>
+              <p><strong>¿Para qué sirve?</strong> Para saber si tus precios cubren bien los costos, identificar los meses más rentables y los más flojos, y decidir si necesitas ajustar precios o buscar insumos más baratos.</p>
+              <p class="report-desc-note"><strong>Nota:</strong> Solo considera costos de insumos (materia prima). No incluye alquiler, servicios ni sueldos.</p>
             </div>
           </div>
           <div class="resumen-cards">
@@ -448,9 +445,8 @@ interface ReporteMeta {
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
             </svg>
             <div>
-              <strong>¿Qué estás viendo aquí?</strong>
-              <p>Este reporte te permite <strong>establecer objetivos de ventas</strong> y hacer seguimiento a su cumplimiento. Tú defines cuánto quieres vender en el año (tu <strong>meta anual</strong>), el sistema divide ese monto en 12 partes iguales, y cada mes podrás ver si estás <strong>cumpliendo</strong> o <strong>atrasado</strong>. La tabla y el gráfico muestran la meta vs lo real mes a mes, con el porcentaje de cumplimiento.</p>
-              <p class="report-desc-use"><strong>¿Para qué te sirve?</strong> Para hacer seguimiento a tus objetivos comerciales, identificar a tiempo si las ventas están por debajo de lo esperado y tomar acciones correctivas, motivar a tu equipo mostrándoles el avance, y ajustar tus metas futuras basándote en datos reales.</p>
+              <p><strong>¿Qué muestra?</strong> Tu meta de ventas anual y el avance real. El sistema divide la meta en 12 partes iguales y compara mes a mes lo real contra lo esperado, mostrando el porcentaje de cumplimiento.</p>
+              <p><strong>¿Para qué sirve?</strong> Para hacer seguimiento a tus objetivos comerciales, detectar a tiempo si las ventas van por debajo de lo esperado, motivar a tu equipo mostrando el avance y ajustar metas futuras con datos reales. Haz clic en "Configurar Meta" para definir o modificar tu objetivo.</p>
             </div>
           </div>
           <div style="text-align: right; margin-bottom: 16px;">
@@ -635,13 +631,12 @@ interface ReporteMeta {
     .badge--warning { background: #fef3c7; color: #b45309; }
     .badge--danger { background: #fee2e2; color: #dc2626; }
     .low-stock { background: #fef3c7; }
-    .report-desc { display: flex; align-items: flex-start; gap: 14px; padding: 18px 20px; background: #f8f4f6; border: 1px solid #e8d5de; border-radius: 12px; margin-bottom: 24px; }
-    .report-desc svg { width: 22px; height: 22px; flex-shrink: 0; margin-top: 2px; color: #550F26; }
-    .report-desc strong { font-size: 14px; color: #550F26; display: block; margin-bottom: 6px; }
-    .report-desc p { margin: 0 0 8px; font-size: 13.5px; color: #374151; line-height: 1.6; }
+    .report-desc { display: flex; align-items: flex-start; gap: 14px; padding: 16px 20px; background: #f9f6f7; border: 1px solid #e8d5de; border-radius: 12px; margin-bottom: 24px; }
+    .report-desc svg { width: 22px; height: 22px; flex-shrink: 0; margin-top: 1px; color: #550F26; }
+    .report-desc p { margin: 0 0 6px; font-size: 13.5px; color: #4b5563; line-height: 1.65; }
     .report-desc p:last-child { margin-bottom: 0; }
-    .report-desc-use { padding: 8px 12px; background: #f0ebed; border-radius: 8px; }
-    .report-desc-note { font-size: 12.5px; color: #6b7280; font-style: italic; }
+    .report-desc strong { color: #550F26; }
+    .report-desc-note { font-size: 12px; color: #9ca3af; font-style: italic; margin-top: 2px; }
   `]
 })
 export class AdminReportesComponent implements OnInit, AfterViewInit {
