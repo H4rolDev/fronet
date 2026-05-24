@@ -180,6 +180,16 @@ interface ReporteMeta {
       <!-- TAB VENTAS -->
       @if (!cargando() && tabActual() === 'ventas' && datosVentas()) {
         <div class="tab-content">
+          <div class="report-desc">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <div>
+              <strong>¿Qué estás viendo aquí?</strong>
+              <p>Este reporte te muestra todo sobre las ventas del negocio: el <strong>total de ingresos</strong> (cuánto dinero ha entrado), la <strong>cantidad de pedidos</strong>, el <strong>ticket promedio</strong> por cliente y las <strong>tortas más vendidas</strong>. Los gráficos te ayudan a identificar los días de mayor movimiento, qué métodos de pago usan tus clientes (efectivo, Yape, Plin, tarjeta), y el estado de los deliveries.</p>
+              <p class="report-desc-use"><strong>¿Para qué te sirve?</strong> Para planificar tu producción según los días más fuertes, saber qué tortas promocionar, decidir si necesitas más personal ciertos días, y ver si las entregas están yendo bien. Usa los filtros de fecha para analizar un período específico como una campaña o temporada.</p>
+            </div>
+          </div>
           <div class="resumen-cards">
             <div class="resumen-card">
               <div class="rc-icon" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
@@ -250,6 +260,16 @@ interface ReporteMeta {
       <!-- TAB INSUMOS -->
       @if (!cargando() && tabActual() === 'insumos' && datosCostos()) {
         <div class="tab-content">
+          <div class="report-desc">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <div>
+              <strong>¿Qué estás viendo aquí?</strong>
+              <p>Este reporte te muestra el estado actual de tu <strong>inventario de insumos</strong> (harina, azúcar, huevos, mantequilla, etc.). Verás el <strong>stock disponible</strong> de cada insumo, su <strong>último costo de compra</strong>, el <strong>valor total del inventario</strong> (cuánto dinero tienes invertido en ingredientes), y una alerta visual en amarillo para los insumos que están por debajo de su <strong>stock mínimo</strong>.</p>
+              <p class="report-desc-use"><strong>¿Para qué te sirve?</strong> Para saber exactamente qué insumos necesitas comprar con urgencia, calcular cuánto dinero necesitas para reponer tu almacén, evitar quedarte sin ingredientes clave para producir tus tortas, y controlar tus costos. Los insumos marcados en amarillo son los que deberías pedir ya a tus proveedores.</p>
+            </div>
+          </div>
           <div class="resumen-cards">
             <div class="resumen-card">
               <div class="rc-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
@@ -325,6 +345,17 @@ interface ReporteMeta {
       <!-- TAB FINANCIERO -->
       @if (!cargando() && tabActual() === 'financiero' && datosFinanciero()) {
         <div class="tab-content">
+          <div class="report-desc">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <div>
+              <strong>¿Qué estás viendo aquí?</strong>
+              <p>Este reporte te ayuda a entender la <strong>salud financiera</strong> de tu negocio. Compara lo que has <strong>vendido</strong> contra lo que has <strong>gastado en insumos</strong>, y calcula tu <strong>ganancia neta</strong> (el dinero que realmente te queda) y tu <strong>margen de ganancia</strong> (qué tan rentable es tu negocio en porcentaje). La tabla mensual te muestra mes a mes la evolución de ingresos, costos y ganancia.</p>
+              <p class="report-desc-use"><strong>¿Para qué te sirve?</strong> Para saber si tus precios de venta cubren bien tus costos, identificar los meses más rentables y los más flojos, decidir si necesitas ajustar precios o buscar insumos más baratos, y evaluar si el negocio está siendo rentable a lo largo del tiempo.</p>
+              <p class="report-desc-note"><strong>Nota:</strong> Este reporte solo considera los costos de insumos (materia prima). No incluye gastos como alquiler, servicios o sueldos.</p>
+            </div>
+          </div>
           <div class="resumen-cards">
             <div class="resumen-card">
               <div class="rc-icon" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
@@ -412,6 +443,16 @@ interface ReporteMeta {
       <!-- TAB METAS -->
       @if (!cargando() && tabActual() === 'meta' && datosMeta()) {
         <div class="tab-content">
+          <div class="report-desc">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <div>
+              <strong>¿Qué estás viendo aquí?</strong>
+              <p>Este reporte te permite <strong>establecer objetivos de ventas</strong> y hacer seguimiento a su cumplimiento. Tú defines cuánto quieres vender en el año (tu <strong>meta anual</strong>), el sistema divide ese monto en 12 partes iguales, y cada mes podrás ver si estás <strong>cumpliendo</strong> o <strong>atrasado</strong>. La tabla y el gráfico muestran la meta vs lo real mes a mes, con el porcentaje de cumplimiento.</p>
+              <p class="report-desc-use"><strong>¿Para qué te sirve?</strong> Para hacer seguimiento a tus objetivos comerciales, identificar a tiempo si las ventas están por debajo de lo esperado y tomar acciones correctivas, motivar a tu equipo mostrándoles el avance, y ajustar tus metas futuras basándote en datos reales.</p>
+            </div>
+          </div>
           <div style="text-align: right; margin-bottom: 16px;">
             <button class="btn-primary" (click)="abrirModalMeta()" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: #550F26; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M6 20v-6M18 20v-4"/></svg>
@@ -594,6 +635,13 @@ interface ReporteMeta {
     .badge--warning { background: #fef3c7; color: #b45309; }
     .badge--danger { background: #fee2e2; color: #dc2626; }
     .low-stock { background: #fef3c7; }
+    .report-desc { display: flex; align-items: flex-start; gap: 14px; padding: 18px 20px; background: #f8f4f6; border: 1px solid #e8d5de; border-radius: 12px; margin-bottom: 24px; }
+    .report-desc svg { width: 22px; height: 22px; flex-shrink: 0; margin-top: 2px; color: #550F26; }
+    .report-desc strong { font-size: 14px; color: #550F26; display: block; margin-bottom: 6px; }
+    .report-desc p { margin: 0 0 8px; font-size: 13.5px; color: #374151; line-height: 1.6; }
+    .report-desc p:last-child { margin-bottom: 0; }
+    .report-desc-use { padding: 8px 12px; background: #f0ebed; border-radius: 8px; }
+    .report-desc-note { font-size: 12.5px; color: #6b7280; font-style: italic; }
   `]
 })
 export class AdminReportesComponent implements OnInit, AfterViewInit {
