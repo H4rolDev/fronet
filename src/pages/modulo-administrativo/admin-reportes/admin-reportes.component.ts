@@ -711,7 +711,9 @@ export class AdminReportesComponent implements OnInit, AfterViewInit {
       next: (data) => {
         this.datosVentas.set(data);
         this.cargando.set(false);
-        setTimeout(() => this.renderChartsVentas(data), 100);
+        if (this.tabActual() === 'ventas') {
+          setTimeout(() => this.renderChartsVentas(data), 100);
+        }
       },
       error: (e) => {
         console.error('Error ventas:', e);
@@ -738,7 +740,9 @@ export class AdminReportesComponent implements OnInit, AfterViewInit {
       next: (data) => {
         this.datosFinanciero.set(data);
         this.cargando.set(false);
-        setTimeout(() => this.renderChartFinanciero(data), 100);
+        if (this.tabActual() === 'financiero') {
+          setTimeout(() => this.renderChartFinanciero(data), 100);
+        }
       },
       error: (e) => {
         console.error('Error financiero:', e);
@@ -752,7 +756,9 @@ export class AdminReportesComponent implements OnInit, AfterViewInit {
       next: (data) => {
         this.datosMeta.set(data);
         this.cargando.set(false);
-        setTimeout(() => this.renderChartMeta(data), 100);
+        if (this.tabActual() === 'meta') {
+          setTimeout(() => this.renderChartMeta(data), 100);
+        }
       },
       error: (e) => {
         console.error('Error meta:', e);
@@ -776,7 +782,7 @@ export class AdminReportesComponent implements OnInit, AfterViewInit {
   renderChartsVentas(data: ReporteVenta): void {
     this.charts.forEach(c => c.destroy());
     this.charts = [];
-    if (!this.Chart) return;
+    if (!this.Chart || !this.chartVentasDiarias?.nativeElement) return;
 
     if (data.ventasPorDia?.length > 0) {
       this.charts.push(new this.Chart(this.chartVentasDiarias.nativeElement, {
@@ -825,7 +831,7 @@ export class AdminReportesComponent implements OnInit, AfterViewInit {
   }
 
   renderChartFinanciero(data: ReporteFinanciero): void {
-    if (!this.Chart || !this.chartFinanciero) return;
+    if (!this.Chart || !this.chartFinanciero?.nativeElement) return;
     this.charts.forEach(c => { if (c.canvas === this.chartFinanciero.nativeElement) c.destroy(); });
 
     this.charts.push(new this.Chart(this.chartFinanciero.nativeElement, {
@@ -843,7 +849,7 @@ export class AdminReportesComponent implements OnInit, AfterViewInit {
   }
 
   renderChartMeta(data: ReporteMeta): void {
-    if (!this.Chart || !this.chartMeta) return;
+    if (!this.Chart || !this.chartMeta?.nativeElement) return;
     this.charts.forEach(c => { if (c.canvas === this.chartMeta.nativeElement) c.destroy(); });
 
     this.charts.push(new this.Chart(this.chartMeta.nativeElement, {
