@@ -302,7 +302,7 @@ interface ReporteMeta {
                     </tr>
                   </thead>
                   <tbody>
-                    @for (c of datosCostos()!.costos.slice(0, 15); track c.insumo) {
+                    @for (c of (datosCostos()!.costos ?? []).slice(0, 15); track c.insumo) {
                       <tr [class.low-stock]="c.estado === 'Bajo Stock'">
                         <td>{{ c.insumo }}</td>
                         <td>{{ c.stockActual }}</td>
@@ -500,7 +500,31 @@ interface ReporteMeta {
           <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#ccc" stroke-width="1.5">
             <path d="M18 20V10M12 20V4M6 20v-6"/>
           </svg>
-          <p>No hay datos para el período seleccionado</p>
+          <p>No hay datos de ventas para el período seleccionado</p>
+        </div>
+      }
+      @if (!cargando() && !datosCostos() && tabActual() === 'insumos') {
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#ccc" stroke-width="1.5">
+            <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4a2 2 0 00-1 1.73v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4a2 2 0 001-1.73z"/>
+          </svg>
+          <p>No hay datos de insumos para el período seleccionado</p>
+        </div>
+      }
+      @if (!cargando() && !datosFinanciero() && tabActual() === 'financiero') {
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#ccc" stroke-width="1.5">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+          </svg>
+          <p>No hay datos financieros para el año seleccionado</p>
+        </div>
+      }
+      @if (!cargando() && !datosMeta() && tabActual() === 'meta') {
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#ccc" stroke-width="1.5">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          <p>No hay datos de metas para el año seleccionado</p>
         </div>
       }
     </div>
@@ -550,7 +574,7 @@ interface ReporteMeta {
     .rc-label { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
     .rc-value { font-size: 24px; font-weight: 700; color: #111; font-family: Georgia, serif; }
 
-    .charts-grid { display: grid; grid-template-columns: repeat(2, 1fr)); gap: 20px; margin-bottom: 24px; }
+    .charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 24px; }
     @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
     
     .chart-card { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 20px; }
@@ -657,8 +681,12 @@ export class AdminReportesComponent implements OnInit, AfterViewInit {
     this.http.get<ReporteCostos>(`${BASE}/Reporte/CostosInsumos?anno=${this.annoSeleccionado}`).subscribe({
       next: (data) => {
         this.datosCostos.set(data);
+        this.cargando.set(false);
       },
-      error: (e) => console.error('Error costos:', e)
+      error: (e) => {
+        console.error('Error costos:', e);
+        this.cargando.set(false);
+      }
     });
   }
 
@@ -666,9 +694,13 @@ export class AdminReportesComponent implements OnInit, AfterViewInit {
     this.http.get<ReporteFinanciero>(`${BASE}/Reporte/Financiero?anno=${this.annoSeleccionado}`).subscribe({
       next: (data) => {
         this.datosFinanciero.set(data);
+        this.cargando.set(false);
         setTimeout(() => this.renderChartFinanciero(data), 100);
       },
-      error: (e) => console.error('Error financiero:', e)
+      error: (e) => {
+        console.error('Error financiero:', e);
+        this.cargando.set(false);
+      }
     });
   }
 
@@ -676,9 +708,13 @@ export class AdminReportesComponent implements OnInit, AfterViewInit {
     this.http.get<ReporteMeta>(`${BASE}/Reporte/MetaVenta?anno=${this.annoSeleccionado}`).subscribe({
       next: (data) => {
         this.datosMeta.set(data);
+        this.cargando.set(false);
         setTimeout(() => this.renderChartMeta(data), 100);
       },
-      error: (e) => console.error('Error meta:', e)
+      error: (e) => {
+        console.error('Error meta:', e);
+        this.cargando.set(false);
+      }
     });
   }
 
