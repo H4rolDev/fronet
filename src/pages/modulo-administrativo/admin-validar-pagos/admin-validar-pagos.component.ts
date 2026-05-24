@@ -390,6 +390,7 @@ interface HistorialItem {
     .btn-limpiar { background: #f3f4f6; color: #374151; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 500; }
     .btn-limpiar:hover { background: #e5e7eb; }
     .badge--success { background: #d1fae5; color: #059669; }
+    .badge--approved { background: #ccfbf1; color: #0f766e; }
     .badge--danger { background: #fee2e2; color: #dc2626; }
     .badge--info { background: #dbeafe; color: #2563eb; }
     .modal-lg { max-width: 600px; }
@@ -493,6 +494,7 @@ export class AdminValidarPagosComponent implements OnInit {
   getBadgeClass(estado: number): string {
     switch (estado) {
       case 4: return 'badge--warning';
+      case 5: return 'badge--approved';
       case 2: return 'badge--success';
       case 6: return 'badge--danger';
       case 3: return 'badge--info';
