@@ -120,46 +120,56 @@ interface MetodoPago {
             </div>
 
             <!-- Comprobante de pago -->
-            <div class="form-seccion">
-              <h3>📸 Comprobante de Pago @if (tipoEntrega === 'delivery') { <span class="req">*</span> } @else { <span class="opcional">(opcional)</span> }</h3>
-              @if (tipoEntrega === 'delivery') {
-              <div class="alert-info-box">
-                <small>1. Realiza tu pago mediante Yape o transferencia</small><br>
-                <small>2. Toma una foto del comprobante</small><br>
-                <small>3. Sube la imagen y proporciona el número de operación</small>
-              </div>
-              } @else {
-              <div class="alert-info-box">
-                <small>El pago lo realizas al momento de recoger en tienda (efectivo o digital).</small><br>
-                <small>Si deseas pagar por adelantado, sube tu comprobante aquí.</small>
-              </div>
-              }
-              
-              @if (!imagenPreview) {
-                <div class="upload-zone" (click)="triggerFileInput()">
-                  <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#aaa" stroke-width="1.5">
-                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
-                  </svg>
-                  <p>Haz clic para subir el comprobante</p>
-                  <small>JPG, PNG (máx 5MB)</small>
+            @if (esEfectivo) {
+              <div class="form-seccion">
+                <h3>💵 Pago en Efectivo</h3>
+                <div class="alert-info-box alert-info-box--verde">
+                  <small>Pagas en efectivo al momento de recibir tu pedido.</small><br>
+                  <small>No necesitas subir ningún comprobante.</small>
                 </div>
-                <input type="file" id="input-comprobante" accept="image/*" (change)="onFileSelected($event)" style="display: none">
-              } @else {
-                <div class="preview-container">
-                  <img [src]="imagenPreview" alt="Comprobante" class="preview-image">
-                  <button type="button" class="btn-remove" (click)="quitarImagen()">✕</button>
+              </div>
+            } @else {
+              <div class="form-seccion">
+                <h3>📸 Comprobante de Pago @if (tipoEntrega === 'delivery') { <span class="req">*</span> } @else { <span class="opcional">(opcional)</span> }</h3>
+                @if (tipoEntrega === 'delivery') {
+                <div class="alert-info-box">
+                  <small>1. Realiza tu pago mediante Yape o transferencia</small><br>
+                  <small>2. Toma una foto del comprobante</small><br>
+                  <small>3. Sube la imagen y proporciona el número de operación</small>
                 </div>
-              }
+                } @else {
+                <div class="alert-info-box">
+                  <small>El pago lo realizas al momento de recoger en tienda (efectivo o digital).</small><br>
+                  <small>Si deseas pagar por adelantado, sube tu comprobante aquí.</small>
+                </div>
+                }
+                
+                @if (!imagenPreview) {
+                  <div class="upload-zone" (click)="triggerFileInput()">
+                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#aaa" stroke-width="1.5">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                      <polyline points="17 8 12 3 7 8"/>
+                      <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <p>Haz clic para subir el comprobante</p>
+                    <small>JPG, PNG (máx 5MB)</small>
+                  </div>
+                  <input type="file" id="input-comprobante" accept="image/*" (change)="onFileSelected($event)" style="display: none">
+                } @else {
+                  <div class="preview-container">
+                    <img [src]="imagenPreview" alt="Comprobante" class="preview-image">
+                    <button type="button" class="btn-remove" (click)="quitarImagen()">✕</button>
+                  </div>
+                }
 
-              @if (subiendoImagen()) {
-                <div class="subiendo-msg">
-                  <span class="spinner-border spinner-border-sm me-2"></span>
-                  Subiendo imagen...
-                </div>
-              }
-            </div>
+                @if (subiendoImagen()) {
+                  <div class="subiendo-msg">
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    Subiendo imagen...
+                  </div>
+                }
+              </div>
+            }
 
             <!-- Campos para Yape -->
             @if (mostrarQR && metodoSeleccionado) {
@@ -339,6 +349,7 @@ interface MetodoPago {
     .vuelto-calculo strong { color: #166534; font-size: 18px; }
     
     .alert-info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #1e40af; line-height: 1.8; }
+    .alert-info-box--verde { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
     .upload-zone { border: 2px dashed #ccc; border-radius: 10px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.2s; }
     .upload-zone:hover { border-color: #550F26; background: #fdf8f8; }
     .upload-zone p { margin: 10px 0 5px; color: #666; }
@@ -538,12 +549,17 @@ export class PagoComponent implements OnInit, OnDestroy {
     return this.subtotal + (this.tipoEntrega === 'delivery' ? this.costoDelivery : 0);
   }
 
+  get esEfectivo(): boolean {
+    const metodo = this.metodosPago.find(m => m.id === this.metodoSeleccionado);
+    return metodo?.nombre.toLowerCase().includes('efectivo') ?? false;
+  }
+
   get puedeConfirmar(): boolean {
     if (!this.idPersona) return false;
     if (!this.metodoSeleccionado) return false;
     if (this.tipoEntrega === 'delivery') {
-      if (!this.imagenFile) return false;
       if (!this.direccion.trim() || !this.telefono.trim()) return false;
+      if (!this.esEfectivo && !this.imagenFile) return false;
       if (this.mostrarQR && !this.numeroOperacion.trim()) return false;
     }
     return true;
@@ -567,12 +583,12 @@ export class PagoComponent implements OnInit, OnDestroy {
 
     try {
       let imagenUrl: string | null = null;
-      if (this.tipoEntrega === 'delivery') {
+      if (this.tipoEntrega === 'delivery' && !this.esEfectivo) {
         imagenUrl = await this.subirImagen();
         if (!imagenUrl) {
           throw new Error('Error al subir la imagen del comprobante');
         }
-      } else if (this.imagenFile) {
+      } else if (!this.esEfectivo && this.imagenFile) {
         imagenUrl = await this.subirImagen();
       }
 

@@ -29,9 +29,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule }  from '@angular/forms';
 import { forkJoin, Subject } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
 import { FilaDetalle, FilaPago, MetodoPagoDTO, PersonaComboDTO, RegistrarVentaDTO, RepartidorDTO, TipoComprobanteDTO, TortaVentaDTO } from '../../../../models/venta-dto';
 import { VentaService } from '../../../../services/venta.service';
+import { environment } from '../../../../environments/environment';
 
+const BASE = environment.apiUrl;
 
 let uid = 0;
 const nextUid = () => ++uid;
@@ -70,12 +73,18 @@ const nextUid = () => ++uid;
       </div>
       <div class="campo" [class.campo--err]="validado() && !idPersona()">
         <label class="lbl" for="v-persona">Persona / Cliente <span class="req">*</span></label>
-        <select id="v-persona" class="sel" [ngModel]="idPersona()" (ngModelChange)="idPersona.set(+$event || null)">
-          <option [ngValue]="null">— Seleccionar cliente —</option>
-          @for (p of personas(); track p.id) {
-            <option [ngValue]="p.id">{{ p.nombre }} · {{ p.numeroDocumento }}</option>
-          }
-        </select>
+        <div class="cliente-row">
+          <select id="v-persona" class="sel" [ngModel]="idPersona()" (ngModelChange)="idPersona.set(+$event || null)">
+            <option [ngValue]="null">— Seleccionar cliente —</option>
+            @for (p of personas(); track p.id) {
+              <option [ngValue]="p.id">{{ p.nombre }} · {{ p.numeroDocumento }}</option>
+            }
+          </select>
+          <button type="button" class="btn-cliente-nuevo" (click)="abrirRegistroCliente()" [disabled]="guardando()" title="Registrar cliente rápido">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuevo
+          </button>
+        </div>
         @if (validado() && !idPersona()) { <p class="err-msg">Selecciona un cliente.</p> }
       </div>
     </div>
@@ -319,6 +328,80 @@ const nextUid = () => ++uid;
   </footer>
   }
 
+  <!-- ══ SUB-MODAL: REGISTRO RÁPIDO DE CLIENTE ══ -->
+  @if (clienteModalAbierto()) {
+    <div class="sub-overlay">
+      <div class="sub-panel">
+        <div class="sub-h">
+          <span class="sub-h-t">Registro rápido</span>
+          <button class="px" type="button" (click)="cerrarRegistroCliente()">✕</button>
+        </div>
+        <div class="sub-body">
+          <div class="sub-campos">
+            <div class="sub-campo sub-campo--doc">
+              <label class="lbl">Tipo</label>
+              <select class="sel" [(ngModel)]="clienteForm.idTipoDocumento" (change)="onTipoDocClienteChange()">
+                <option [value]="1">DNI</option>
+                <option [value]="2">RUC</option>
+              </select>
+            </div>
+            <div class="sub-campo sub-campo--num">
+              <label class="lbl">N° Documento</label>
+              <div class="cliente-doc-row">
+                <input class="inp" type="text" [(ngModel)]="clienteForm.numeroDocumento" placeholder="Número" maxlength="11" />
+                <button type="button" class="btn-sunat" (click)="consultarSunatCliente()" [disabled]="clienteConsultandoSunat()" title="Consultar SUNAT">
+                  @if (clienteConsultandoSunat()) { <span class="spinner-sm"></span> }
+                  @else {
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+          @if (esRucCliente()) {
+            <div class="sub-campo">
+              <label class="lbl">Razón Social</label>
+              <input class="inp" type="text" [(ngModel)]="clienteForm.nombres" placeholder="Razón Social" />
+            </div>
+          } @else {
+            <div class="sub-campos">
+              <div class="sub-campo">
+                <label class="lbl">Nombres</label>
+                <input class="inp" type="text" [(ngModel)]="clienteForm.nombres" placeholder="Nombres" />
+              </div>
+            </div>
+            <div class="sub-campos">
+              <div class="sub-campo">
+                <label class="lbl">Ap. Paterno</label>
+                <input class="inp" type="text" [(ngModel)]="clienteForm.apellidoPaterno" placeholder="Apellido" />
+              </div>
+              <div class="sub-campo">
+                <label class="lbl">Ap. Materno</label>
+                <input class="inp" type="text" [(ngModel)]="clienteForm.apellidoMaterno" placeholder="(opcional)" />
+              </div>
+            </div>
+          }
+          <div class="sub-campo">
+            <label class="lbl">Teléfono <span class="dim">(opcional)</span></label>
+            <input class="inp" type="tel" [(ngModel)]="clienteForm.telefono" placeholder="999 888 777" />
+          </div>
+          @if (clienteError()) {
+            <div class="alerta-err" style="margin:0">
+              <p class="ae-txt">{{ clienteError() }}</p>
+            </div>
+          }
+        </div>
+        <div class="sub-f">
+          <button type="button" class="btn btn-sec" (click)="cerrarRegistroCliente()">Cancelar</button>
+          <button type="button" class="btn btn-pri" (click)="guardarCliente()" [disabled]="clienteGuardando()">
+            @if (clienteGuardando()) { <span class="spinner"></span> Guardando... }
+            @else { Guardar Cliente }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
 </div>
 </div>`,
   styles: [`
@@ -414,6 +497,32 @@ const nextUid = () => ++uid;
 .btn-sec{background:#fff;color:var(--mid);border:1px solid var(--borde)}.btn-sec:hover:not(:disabled){border-color:#ddd4cd;color:var(--txt)}
 .spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+/* cliente row */
+.cliente-row{display:flex;gap:8px}
+.cliente-row .sel{flex:1}
+.btn-cliente-nuevo{display:inline-flex;align-items:center;gap:4px;padding:8px 12px;background:var(--crema);border:1px solid var(--borde);border-radius:var(--r);font-size:11px;font-weight:600;color:var(--vino);cursor:pointer;font-family:inherit;transition:all .12s;white-space:nowrap;flex-shrink:0}
+.btn-cliente-nuevo:hover{background:var(--vino);color:#fff;border-color:var(--vino)}
+.btn-cliente-nuevo:disabled{opacity:.5;cursor:not-allowed}
+.btn-cliente-nuevo svg{flex-shrink:0}
+/* sub-overlay (registro rápido) */
+.sub-overlay{position:fixed;inset:0;background:rgba(44,24,16,.35);z-index:300;display:flex;align-items:center;justify-content:center;padding:1rem;animation:fi .2s ease}
+.sub-panel{background:#fff;border:1px solid var(--borde);border-radius:16px;width:100%;max-width:400px;box-shadow:0 10px 50px rgba(85,15,38,.18);animation:pi .25s cubic-bezier(.34,1.56,.64,1);max-height:90vh;display:flex;flex-direction:column}
+.sub-h{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--borde);background:var(--crema);border-radius:16px 16px 0 0}
+.sub-h-t{font-size:13px;font-weight:700;color:var(--txt);font-family:Georgia,serif}
+.sub-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.sub-campos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sub-campo{display:flex;flex-direction:column;gap:4px}
+.sub-campo--doc{grid-column:1}
+.sub-campo--num{grid-column:2}
+.sub-f{display:flex;gap:10px;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--borde);background:var(--crema);border-radius:0 0 16px 16px}
+.cliente-doc-row{display:flex;gap:6px}
+.cliente-doc-row .inp{flex:1}
+.btn-sunat{display:flex;align-items:center;justify-content:center;width:36px;height:36px;background:var(--vino);color:#fff;border:none;border-radius:var(--r);cursor:pointer;flex-shrink:0;transition:background .12s}
+.btn-sunat:hover{background:var(--vino-h)}
+.btn-sunat:disabled{opacity:.6;cursor:not-allowed}
+.spinner-sm{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite}
+.dim{font-weight:400;color:var(--dim);font-size:10px}
+.sub-err{margin:0}
 @media(max-width:580px){.overlay{align-items:flex-end;padding:0}.panel{border-radius:16px 16px 0 0;max-height:95vh}.campo-g{grid-template-columns:1fr}.panel__footer{flex-direction:column;align-items:stretch}.footer-btns{flex-direction:column-reverse}.btn{justify-content:center}}
   `],
 })
@@ -456,7 +565,126 @@ export class VentaCrearModalComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private svc: VentaService) {}
+  // ── Registro rápido de cliente ─────────────────────────────────────────────
+  clienteModalAbierto     = signal(false);
+  clienteGuardando        = signal(false);
+  clienteConsultandoSunat = signal(false);
+  clienteError            = signal<string | null>(null);
+  clienteForm: any = {
+    idTipoDocumento: 1,
+    numeroDocumento: '',
+    nombres: '',
+    apellidoPaterno: '',
+    apellidoMaterno: '',
+    telefono: '',
+  };
+
+  abrirRegistroCliente(): void {
+    this.clienteForm = { idTipoDocumento: 1, numeroDocumento: '', nombres: '', apellidoPaterno: '', apellidoMaterno: '', telefono: '' };
+    this.clienteError.set(null);
+    this.clienteModalAbierto.set(true);
+  }
+
+  cerrarRegistroCliente(): void {
+    this.clienteModalAbierto.set(false);
+    this.clienteError.set(null);
+  }
+
+  esRucCliente(): boolean {
+    return this.clienteForm.idTipoDocumento === 2;
+  }
+
+  onTipoDocClienteChange(): void {
+    this.clienteForm.numeroDocumento = '';
+    this.clienteForm.nombres = '';
+    this.clienteForm.apellidoPaterno = '';
+    this.clienteForm.apellidoMaterno = '';
+  }
+
+  private validarDocCliente(): string | null {
+    const doc = this.clienteForm.numeroDocumento?.trim();
+    if (!doc) return 'Número de documento requerido';
+    if (this.clienteForm.idTipoDocumento === 1 && doc.length !== 8) return 'DNI debe tener 8 dígitos';
+    if (this.clienteForm.idTipoDocumento === 2 && doc.length !== 11) return 'RUC debe tener 11 dígitos';
+    return null;
+  }
+
+  consultarSunatCliente(): void {
+    const err = this.validarDocCliente();
+    if (err) { this.clienteError.set(err); return; }
+    this.clienteError.set(null);
+    this.clienteConsultandoSunat.set(true);
+    const doc = this.clienteForm.numeroDocumento.trim();
+    const esRuc = this.esRucCliente();
+    const url = esRuc ? `${BASE}/Sunat/ruc?numero=${doc}` : `${BASE}/Sunat/dni?numero=${doc}`;
+    this.http.get<any>(url).subscribe({
+      next: res => {
+        this.clienteConsultandoSunat.set(false);
+        if (res.success && res.data) {
+          const data = res.data;
+          if (esRuc) {
+            this.clienteForm.nombres = data.razon_social || data.razonSocial || '';
+          } else {
+            this.clienteForm.nombres = data.first_name || '';
+            this.clienteForm.apellidoPaterno = data.first_last_name || '';
+            this.clienteForm.apellidoMaterno = data.second_last_name || '';
+          }
+        } else {
+          this.clienteError.set(res.mensaje || 'No se encontró información');
+        }
+      },
+      error: () => {
+        this.clienteConsultandoSunat.set(false);
+        this.clienteError.set('Error al consultar SUNAT');
+      },
+    });
+  }
+
+  guardarCliente(): void {
+    this.clienteError.set(null);
+    const doc = this.clienteForm.numeroDocumento?.trim();
+    if (!doc) { this.clienteError.set('Número de documento requerido'); return; }
+    if (!this.clienteForm.nombres?.trim()) { this.clienteError.set('Nombre o Razón Social requerido'); return; }
+    if (!this.esRucCliente() && !this.clienteForm.apellidoPaterno?.trim()) { this.clienteError.set('Apellido paterno requerido'); return; }
+
+    this.clienteGuardando.set(true);
+    const payload = {
+      username: doc,
+      password: 'cliente123',
+      idTipoDocumento: this.clienteForm.idTipoDocumento,
+      numeroDocumento: doc,
+      nombres: this.clienteForm.nombres.trim(),
+      apellidoPaterno: this.clienteForm.apellidoPaterno?.trim() || '',
+      apellidoMaterno: this.clienteForm.apellidoMaterno?.trim() || '',
+      telefono: this.clienteForm.telefono?.trim() || '',
+      direccion: '',
+      usuarioRegistra: 'admin',
+      usuarioModifica: 'admin',
+    };
+
+    this.http.post<any>(`${BASE}/Cliente/Insertar`, payload).subscribe({
+      next: res => {
+        this.clienteGuardando.set(false);
+        if (res.success) {
+          this.clienteModalAbierto.set(false);
+          this.clienteError.set(null);
+          this.svc.obtenerClientes().subscribe(personas => {
+            this.personas.set(personas);
+            const nuevo = personas.find(p => p.numeroDocumento === doc);
+            if (nuevo) this.idPersona.set(nuevo.id);
+          });
+        } else {
+          this.clienteError.set(res.message || 'Error al crear cliente');
+        }
+      },
+      error: () => {
+        this.clienteGuardando.set(false);
+        this.clienteError.set('Error al crear cliente');
+      },
+    });
+  }
+
+  constructor(private svc: VentaService, private http: HttpClient) {}
 
   ngOnInit(): void {
     this.cargando.set(true);

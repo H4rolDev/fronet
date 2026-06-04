@@ -14,7 +14,8 @@
  *  2 = Delivery          (requiere dirección, teléfono, repartidor, costo)
  *
  * ─── ESTADOS DE VENTA ────────────────────────────────────────────────────────
- *  1 = Pendiente  2 = Completado  3 = Cancelado
+ *  1 = Pendiente  2 = Esperando Validación  3 = Aprobada
+ *  4 = Rechazada  5 = Pagada  6 = Cancelada
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -24,10 +25,11 @@
 /** Fila del listado principal (GET /Listado) */
 export interface VentaListadoDTO {
   id: number;
-  fechaVenta: string;       // ISO date
+  fechaVenta: string;
   total: number;
-  idEstadoVenta: number;    // 1=Pendiente 2=Completado 3=Cancelado
-  idTipoEntrega: number;    // 1=Recojo 2=Delivery
+  idEstadoVenta: number;
+  idTipoEntrega: number;
+  usuarioCreacion?: string;
 }
 
 /** Detalle completo de una venta (GET /Detalle?idVenta=X) */
@@ -224,8 +226,11 @@ export interface FilaPago {
 
 export const ESTADO_LABEL: Record<number, string> = {
   1: 'Pendiente',
-  2: 'Completado',
-  3: 'Cancelado',
+  2: 'Esperando Validación',
+  3: 'Aprobada',
+  4: 'Rechazada',
+  5: 'Pagada',
+  6: 'Cancelada',
 };
 
 export const ENTREGA_LABEL: Record<number, string> = {
@@ -235,6 +240,9 @@ export const ENTREGA_LABEL: Record<number, string> = {
 
 export const ESTADO_CLASE: Record<number, string> = {
   1: 'badge--pendiente',
-  2: 'badge--completado',
-  3: 'badge--cancelado',
+  2: 'badge--esperando',
+  3: 'badge--aprobada',
+  4: 'badge--rechazada',
+  5: 'badge--pagada',
+  6: 'badge--cancelada',
 };
