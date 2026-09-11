@@ -19,6 +19,18 @@ import {
   TipoComprobanteDTO,
   RepartidorDTO,
 } from '../models/venta-dto';
+
+export interface EmitirComprobanteDTO {
+  idVenta: number;
+  idTipoComprobante: number;
+  usuario: string;
+}
+
+export interface ComprobanteEmitidoResponse {
+  success: boolean;
+  message: string;
+  comprobante: any;
+}
 import { AuthService } from './auth.service';
 import { environment } from '../environments/environment';
 
@@ -48,6 +60,12 @@ export class VentaService {
       .pipe(catchError(this.err));
   }
 
+  subirImagen(imagenBase64: string): Observable<{ url: string }> {
+    return this.http
+      .post<{ url: string }>(`${BASE}/Venta/SubirImagen`, { imagenBase64 }, { headers: this.getHeaders() })
+      .pipe(catchError(this.err));
+  }
+
   // ── 2. Listado de ventas ───────────────────────────────────────────────────
   obtenerListado(): Observable<VentaListadoDTO[]> {
     return this.http
@@ -55,11 +73,27 @@ export class VentaService {
       .pipe(catchError(this.err));
   }
 
+  obtenerMisPedidos(idPersona: number): Observable<any[]> {
+    const params = new HttpParams().set('idPersona', idPersona.toString());
+    return this.http.get<any[]>(`${BASE}/Venta/MisPedidos`, { params, headers: this.getHeaders() }).pipe(catchError(this.err));
+  }
+
+  obtenerMisPedidosPaginado(idPersona: number, pagina = 1, tamanioPagina = 6): Observable<any> {
+    const params = new HttpParams()
+      .set('idPersona', idPersona.toString())
+      .set('pagina', pagina.toString())
+      .set('tamanioPagina', tamanioPagina.toString());
+    return this.http.get<any>(`${BASE}/Venta/MisPedidosPaginado`, {
+      params,
+      headers: this.getHeaders()
+    }).pipe(catchError(this.err));
+  }
+
   // ── 3. Detalle de venta ────────────────────────────────────────────────────
   obtenerDetalle(idVenta: number): Observable<VentaDetalleDTO> {
     const params = new HttpParams().set('idVenta', idVenta);
     return this.http
-      .get<VentaDetalleDTO>(`${BASE}/Venta/Detalle`, { params })
+      .get<VentaDetalleDTO>(`${BASE}/Venta/Detalle`, { params, headers: this.getHeaders() })
       .pipe(catchError(this.err));
   }
 
@@ -67,7 +101,7 @@ export class VentaService {
   obtenerComprobante(idVenta: number): Observable<ComprobanteDTO> {
     const params = new HttpParams().set('idVenta', idVenta);
     return this.http
-      .get<ComprobanteDTO>(`${BASE}/Venta/Comprobante`, { params })
+      .get<ComprobanteDTO>(`${BASE}/Venta/Comprobante`, { params, headers: this.getHeaders() })
       .pipe(catchError(this.err));
   }
 
@@ -118,9 +152,13 @@ export class VentaService {
   }
 
   // ── 11. Listado de Deliveries ──────────────────────────────────────────────
-  obtenerListadoDeliveries(): Observable<any[]> {
+  obtenerListadoDeliveries(pagina = 1, tamanioPagina = 6, idEstadoEntrega = 0): Observable<any> {
+    const params = new HttpParams()
+      .set('pagina', pagina.toString())
+      .set('tamanioPagina', tamanioPagina.toString())
+      .set('idEstadoEntrega', idEstadoEntrega.toString());
     return this.http
-      .get<any[]>(`${BASE}/Venta/ListadoDeliveries`)
+      .get<any>(`${BASE}/Venta/ListadoDeliveries`, { params, headers: this.getHeaders() })
       .pipe(catchError(this.err));
   }
 
@@ -130,7 +168,17 @@ export class VentaService {
       .set('idDelivery', idDelivery.toString())
       .set('idEstadoEntrega', idEstadoEntrega.toString())
       .set('usuario', 'admin');
-    return this.http.put(`${BASE}/Venta/ActualizarEstadoDelivery`, null, { params })
+    return this.http.put(`${BASE}/Venta/ActualizarEstadoDelivery`, null, { params, headers: this.getHeaders() })
+      .pipe(catchError(this.err));
+  }
+
+  completarEntrega(idDelivery: number, montoCobrado = 0, idMetodoPago = 1): Observable<any> {
+    const params = new HttpParams()
+      .set('idDelivery', idDelivery.toString())
+      .set('usuario', 'admin')
+      .set('montoCobrado', montoCobrado.toString())
+      .set('idMetodoPago', idMetodoPago.toString());
+    return this.http.post(`${BASE}/Venta/CompletarEntrega`, null, { params, headers: this.getHeaders() })
       .pipe(catchError(this.err));
   }
 
@@ -163,7 +211,7 @@ obtenerComboDrivers(): Observable<RepartidorDTO[]> {
 
   obtenerComboEstadoEntrega(): Observable<any[]> {
     return this.http
-      .get<any[]>(`${BASE}/EntregaDelivery/ObtenerCombo`)
+      .get<any[]>(`${BASE}/Venta/ComboEstadoEntrega`, { headers: this.getHeaders() })
       .pipe(catchError(this.err));
   }
 
@@ -204,6 +252,33 @@ obtenerComboDrivers(): Observable<RepartidorDTO[]> {
   obtenerHistorial(idVenta: number): Observable<any[]> {
     const params = new HttpParams().set('id', idVenta.toString());
     return this.http.get<any[]>(`${BASE}/Venta/ObtenerHistorial`, { params, headers: this.getHeaders() })
+      .pipe(catchError(this.err));
+  }
+
+  marcarEntregado(idVenta: number): Observable<any> {
+    const params = new HttpParams().set('idVenta', idVenta.toString()).set('usuario', USUARIO);
+    return this.http.post<any>(`${BASE}/Venta/MarcarEntregado`, null, { params, headers: this.getHeaders() })
+      .pipe(catchError(this.err));
+  }
+
+  obtenerHistorialRepartidor(idPersona: number, pagina = 1, tamanioPagina = 8): Observable<any> {
+    const params = new HttpParams()
+      .set('idPersona', idPersona.toString())
+      .set('pagina', pagina.toString())
+      .set('tamanioPagina', tamanioPagina.toString());
+    return this.http.get<any>(`${BASE}/Venta/HistorialRepartidor`, { params, headers: this.getHeaders() })
+      .pipe(catchError(this.err));
+  }
+
+  obtenerGananciasRepartidor(idPersona: number): Observable<any> {
+    const params = new HttpParams().set('idPersona', idPersona.toString());
+    return this.http.get<any>(`${BASE}/Venta/GananciasRepartidor`, { params, headers: this.getHeaders() })
+      .pipe(catchError(this.err));
+  }
+
+  emitirComprobante(dto: EmitirComprobanteDTO): Observable<ComprobanteEmitidoResponse> {
+    return this.http
+      .post<ComprobanteEmitidoResponse>(`${BASE}/Venta/EmitirComprobante`, dto, { headers: this.getHeaders() })
       .pipe(catchError(this.err));
   }
 

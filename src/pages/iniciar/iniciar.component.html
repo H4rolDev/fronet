@@ -1,89 +1,31 @@
-<div class="auth-container">
-  <div class="auth-box">
-    <h2 class="auth-title">
-      {{ isRegisterMode ? 'Crear cuenta' : 'Bienvenido de nuevo' }}
-    </h2>
+<main class="auth-shell">
+  <section class="auth-showcase">
+    <a class="brand" routerLink="/"><img src="assets/logotienda.png" alt="Tortas Yani"><span>Tortas Yani</span></a>
+    <div class="showcase-copy"><span class="eyebrow">Repostería artesanal · Cusco</span><h1>Un dulce momento empieza con una buena elección.</h1><p>Guarda tus favoritos, personaliza tu torta y sigue tu pedido desde un solo lugar.</p><div class="showcase-points"><span>✦ Catálogo actualizado</span><span>✦ Delivery dentro de Cusco</span><span>✦ Atención cercana</span></div></div>
+    <div class="showcase-orbit"><span>♡</span><span>✦</span><span>♢</span></div>
+  </section>
 
-    <form [formGroup]="isRegisterMode ? registerForm : loginForm" (ngSubmit)="isRegisterMode ? register() : login()"
-      class="auth-form">
-      
-      @if (isRegisterMode) {
-        <div class="form-row">
-          <div class="form-group">
-            <label for="nombres">Nombres <span class="req">*</span></label>
-            <input type="text" id="nombres" formControlName="nombres" placeholder="Juan" />
-          </div>
-          <div class="form-group">
-            <label for="apellidoPaterno">Apellido Paterno <span class="req">*</span></label>
-            <input type="text" id="apellidoPaterno" formControlName="apellidoPaterno" placeholder="Pérez" />
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label for="apellidoMaterno">Apellido Materno</label>
-            <input type="text" id="apellidoMaterno" formControlName="apellidoMaterno" placeholder="García" />
-          </div>
-          <div class="form-group">
-            <label for="idTipoDocumento">Tipo Doc <span class="req">*</span></label>
-            <select id="idTipoDocumento" formControlName="idTipoDocumento">
-              <option [value]="1">DNI</option>
-              <option [value]="2">RUC</option>
-              <option [value]="3">Carnet Extranjería</option>
-              <option [value]="4">Pasaporte</option>
-            </select>
-          </div>
-        </div>
+  <section class="auth-panel">
+    <div class="auth-card">
+      <div class="mobile-brand"><img src="assets/logotienda.png" alt="Tortas Yani"><span>Tortas Yani</span></div>
+      <span class="eyebrow">{{ isRegisterMode ? 'Comienza tu experiencia' : 'Qué gusto verte' }}</span>
+      <h2>{{ isRegisterMode ? 'Crea tu cuenta' : 'Bienvenido de nuevo' }}</h2>
+      <p class="auth-intro">{{ isRegisterMode ? 'Regístrate para guardar tus datos y seguir tus pedidos.' : 'Ingresa para continuar con tus pedidos y favoritos.' }}</p>
 
-        <div class="form-group">
-          <label for="numeroDocumento">Número de Documento <span class="req">*</span></label>
-          <input type="text" id="numeroDocumento" formControlName="numeroDocumento" placeholder="12345678" />
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="telefono">Teléfono</label>
-            <input type="tel" id="telefono" formControlName="telefono" placeholder="999 888 777" />
-          </div>
-          <div class="form-group">
-            <label for="direccion">Dirección</label>
-            <input type="text" id="direccion" formControlName="direccion" placeholder="Av. Principal 123" />
-          </div>
-        </div>
-      }
-
-      <div class="form-group">
-        <label for="username">Usuario <span class="req">*</span></label>
-        <input type="text" id="username" formControlName="username" placeholder="Tu usuario" />
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="password">Contraseña <span class="req">*</span></label>
-          <input type="password" id="password" formControlName="password" placeholder="••••••••" />
-        </div>
+      <form [formGroup]="isRegisterMode ? registerForm : loginForm" (ngSubmit)="isRegisterMode ? register() : login()" class="auth-form">
         @if (isRegisterMode) {
-          <div class="form-group">
-            <label for="confirmarPassword">Confirmar <span class="req">*</span></label>
-            <input type="password" id="confirmarPassword" formControlName="confirmarPassword" placeholder="••••••••" />
-          </div>
+          <div class="form-row"><div class="form-group"><label for="nombres">Nombres <span>*</span></label><input type="text" id="nombres" formControlName="nombres" placeholder="Tu nombre"></div><div class="form-group"><label for="apellidoPaterno">Apellido paterno <span>*</span></label><input type="text" id="apellidoPaterno" formControlName="apellidoPaterno" placeholder="Tu apellido"></div></div>
+          <div class="form-row"><div class="form-group"><label for="apellidoMaterno">Apellido materno</label><input type="text" id="apellidoMaterno" formControlName="apellidoMaterno" placeholder="Opcional"></div><div class="form-group"><label for="idTipoDocumento">Documento <span>*</span></label><select id="idTipoDocumento" formControlName="idTipoDocumento"><option [value]="1">DNI</option><option [value]="2">RUC</option><option [value]="3">Carnet de extranjería</option><option [value]="4">Pasaporte</option></select></div></div>
+          <div class="form-group"><label for="numeroDocumento">Número de documento <span>*</span></label><input type="text" id="numeroDocumento" formControlName="numeroDocumento" placeholder="12345678"></div>
+          <div class="form-row"><div class="form-group"><label for="telefono">Teléfono</label><input type="tel" id="telefono" formControlName="telefono" placeholder="999 888 777"></div><div class="form-group"><label for="direccion">Dirección</label><input type="text" id="direccion" formControlName="direccion" placeholder="Tu dirección"></div></div>
         }
-      </div>
-
-      <button type="submit" class="submit-btn" [disabled]="isLoading">
-        <span *ngIf="!isLoading">{{ isRegisterMode ? 'Registrarse' : 'Ingresar' }}</span>
-        <span *ngIf="isLoading">Cargando...</span>
-      </button>
-    </form>
-
-    <div class="toggle-mode">
-      <span (click)="toggleMode()">
-        {{ isRegisterMode ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate' }}
-      </span>
+        <div class="form-group"><label for="username">Usuario o correo <span>*</span></label><div class="input-wrap"><span>✉</span><input type="text" id="username" formControlName="username" placeholder="tu@correo.com"></div></div>
+        <div class="form-row"><div class="form-group"><label for="password">Contraseña <span>*</span></label><div class="input-wrap"><span>⌑</span><input type="password" id="password" formControlName="password" placeholder="••••••••"></div></div>@if (isRegisterMode) {<div class="form-group"><label for="confirmarPassword">Confirmar contraseña <span>*</span></label><input type="password" id="confirmarPassword" formControlName="confirmarPassword" placeholder="••••••••"></div>}</div>
+        <button type="submit" class="submit-btn" [disabled]="isLoading"><span *ngIf="!isLoading">{{ isRegisterMode ? 'Crear mi cuenta' : 'Ingresar a mi cuenta' }}</span><span *ngIf="isLoading">Validando...</span><b *ngIf="!isLoading">→</b></button>
+      </form>
+      <p *ngIf="message" class="auth-message" [class.error]="message.includes('Error') || message.includes('no')">{{ message }}</p>
+      <div class="toggle-mode"><span>{{ isRegisterMode ? '¿Ya tienes cuenta?' : '¿Primera vez aquí?' }}</span><button type="button" (click)="toggleMode()">{{ isRegisterMode ? 'Inicia sesión' : 'Crea una cuenta' }}</button></div>
+      <a class="back-home" routerLink="/">← Volver al inicio</a>
     </div>
-
-    <div *ngIf="message" class="auth-message" [class.error]="message.includes('Error') || message.includes('no')">
-      {{ message }}
-    </div>
-  </div>
-</div>
+  </section>
+</main>

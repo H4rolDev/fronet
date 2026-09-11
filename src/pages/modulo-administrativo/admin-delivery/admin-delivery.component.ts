@@ -20,6 +20,21 @@ interface DeliveryItem {
   fechaAsignacion: string | null;
   fechaEntrega: string | null;
   idPersonalRepartidor: number | null;
+  repartidorNombre?: string | null;
+  subtotal?: number;
+  total?: number;
+  montoPagado?: number;
+  saldoPendiente?: number;
+  productos?: any[];
+  latitud?: number | null;
+  longitud?: number | null;
+  fechaAceptacion?: string | null;
+  fechaInicio?: string | null;
+  fechaUltimaActualizacion?: string | null;
+  usuarioAsignacion?: string | null;
+  idEstadoVenta: number;
+  estadoVenta: string;
+  puedeGestionar: boolean;
 }
 
 interface EstadoEntrega {
@@ -69,6 +84,16 @@ interface EstadoEntrega {
         </button>
       </div>
 
+      @if (!cargando() && totalRegistros() > 0) {
+        <div class="paginacion">
+          <span>{{ totalRegistros() }} pedidos · Página {{ paginaActual() }} de {{ totalPaginas() }}</span>
+          <div>
+            <button class="btn-page" (click)="cambiarPagina(paginaActual() - 1)" [disabled]="paginaActual() <= 1">Anterior</button>
+            <button class="btn-page" (click)="cambiarPagina(paginaActual() + 1)" [disabled]="paginaActual() >= totalPaginas()">Siguiente</button>
+          </div>
+        </div>
+      }
+
       @if (cargando()) {
         <div class="loading">
           <div class="spinner"></div>
@@ -91,11 +116,12 @@ interface EstadoEntrega {
           }
 
           @for (d of deliveries(); track d.id) {
-            <div class="delivery-card" [class.entregado]="d.idEstadoEntrega === 3" [class.cancelado]="d.idEstadoEntrega === 4" [class.en-camino]="d.idEstadoEntrega === 2">
+            <div class="delivery-card" [class.entregado]="d.idEstadoEntrega === 5" [class.cancelado]="d.idEstadoEntrega === 6" [class.en-camino]="d.idEstadoEntrega === 4">
               <div class="card-header">
                 <div class="card-id">
                   <span class="badge-estado" [class]="getEstadoClase(d.idEstadoEntrega)">{{ d.estado }}</span>
-                  <span class="venta-id">Venta #{{ d.idVenta }}</span>
+                   <span class="venta-id">Venta #{{ d.idVenta }}</span>
+                   @if (d.idEstadoVenta === 2) { <span class="pago-pendiente">Pago por validar</span> }
                 </div>
                 <span class="fecha">{{ formatFecha(d.fechaVenta) }}</span>
               </div>
@@ -143,17 +169,49 @@ interface EstadoEntrega {
                   </div>
                 }
 
-                <div class="info-row costo">
+                 <div class="info-row costo">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="1" x2="12" y2="23"/>
                     <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
                   </svg>
-                  <span>Costo delivery: <strong>S/. {{ d.costoDelivery.toFixed(2) }}</strong></span>
-                </div>
+                   <span>Costo delivery: <strong>S/. {{ (d.costoDelivery || 0).toFixed(2) }}</strong></span>
+                 </div>
+
+                 <div class="delivery-finanzas">
+                   <div><small>Subtotal</small><strong>S/. {{ (d.subtotal || 0).toFixed(2) }}</strong></div>
+                   <div><small>Total</small><strong>S/. {{ (d.total || 0).toFixed(2) }}</strong></div>
+                   <div><small>Adelanto</small><strong class="pagado">S/. {{ (d.montoPagado || 0).toFixed(2) }}</strong></div>
+                   <div><small>Por cobrar</small><strong class="saldo">S/. {{ (d.saldoPendiente || 0).toFixed(2) }}</strong></div>
+                 </div>
+
+                 @if (d.repartidorNombre) {
+                   <div class="tracking-pill">Repartidor: <strong>{{ d.repartidorNombre }}</strong></div>
+                 }
+                 @if (d.productos?.length) {
+                   <div class="products-mini">
+                     <strong>Productos enviados</strong>
+                     @for (producto of d.productos; track producto.idTorta) {
+                        <div class="product-line"><span>{{ producto.cantidad }} x {{ producto.producto }}</span><b>S/. {{ (producto.subtotal || 0).toFixed(2) }}</b></div>
+                        @if (producto.tamanio || producto.sabor || producto.relleno || producto.pisos || producto.colorDecoracion || producto.mensaje) {
+                          <div class="customization-line">
+                            @if (producto.tamanio) { <span>Tamaño: {{ producto.tamanio }}</span> }
+                            @if (producto.sabor) { <span>Sabor: {{ producto.sabor }}</span> }
+                            @if (producto.relleno) { <span>Relleno: {{ producto.relleno }}</span> }
+                            @if (producto.pisos) { <span>Pisos: {{ producto.pisos }}</span> }
+                            @if (producto.colorDecoracion) { <span>Color: {{ producto.colorDecoracion }}</span> }
+                            @if (producto.mensaje) { <span>Mensaje: {{ producto.mensaje }}</span> }
+                          </div>
+                        }
+                     }
+                   </div>
+                 }
+                 @if (d.latitud != null && d.longitud != null) {
+                   <button class="map-button" (click)="abrirMapa(d.latitud!, d.longitud!)">Cómo llegar en Google Maps</button>
+                 }
               </div>
 
               <div class="card-actions">
-                @if (d.idEstadoEntrega === 1 && d.idPersonalRepartidor) {
+                 @if (d.idEstadoEntrega === 1 && d.idPersonalRepartidor && d.puedeGestionar) {
                   <button class="btn-accion btn-iniciar" (click)="avanzarEstado(d.id, 2)" title="Iniciar delivery">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                       <polygon points="5 3 19 12 5 21 5 3"/>
@@ -169,7 +227,7 @@ interface EstadoEntrega {
                     Cancelar
                   </button>
                 }
-                @if (d.idEstadoEntrega === 1 && !d.idPersonalRepartidor) {
+                 @if (d.idEstadoEntrega === 1 && !d.idPersonalRepartidor && d.puedeGestionar) {
                   <button class="btn-accion btn-asignar" (click)="abrirModalRepartidor(d.id)" title="Asignar repartidor">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
@@ -186,12 +244,12 @@ interface EstadoEntrega {
                     Cancelar
                   </button>
                 }
-                @if (d.idEstadoEntrega === 2) {
-                  <button class="btn-accion btn-entregar" (click)="avanzarEstado(d.id, 3)" title="Marcar como entregado">
+                 @if (d.idEstadoEntrega === 2 && d.puedeGestionar) {
+                  <button class="btn-accion btn-entregar" (click)="avanzarEstado(d.id, 3)" title="Aceptar delivery">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
-                    Entregado
+                    Aceptar
                   </button>
                   <button class="btn-accion btn-cancelar" (click)="cancelarEntrega(d.id)" title="Cancelar pedido">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -202,10 +260,21 @@ interface EstadoEntrega {
                     Cancelar
                   </button>
                 }
-                @if (d.idEstadoEntrega === 3) {
+                 @if (d.idEstadoEntrega === 3 && d.puedeGestionar) {
+                  <button class="btn-accion btn-iniciar" (click)="avanzarEstado(d.id, 4)" title="Iniciar delivery">Iniciar delivery</button>
+                }
+                 @if (d.idEstadoEntrega === 4 && d.puedeGestionar) {
+                  <button class="btn-accion btn-entregar" (click)="abrirCompletar(d)" title="Marcar como entregado">
+                    ✓ Marcar entregado
+                  </button>
+                 }
+                 @if (!d.puedeGestionar) {
+                   <span class="estado-validacion">Esperando validación del pago</span>
+                 }
+                @if (d.idEstadoEntrega === 5) {
                   <span class="estado-final">✓ Entregado</span>
                 }
-                @if (d.idEstadoEntrega === 4) {
+                @if (d.idEstadoEntrega === 6) {
                   <span class="estado-cancelado">✕ Cancelado</span>
                 }
               </div>
@@ -237,7 +306,7 @@ interface EstadoEntrega {
       </div>
     }
 
-    @if (showRepartidorModal()) {
+     @if (showRepartidorModal()) {
       <div class="modal-overlay" (click)="cerrarModalRepartidor()">
         <div class="modal-content" (click)="$event.stopPropagation()">
           <div class="modal-header">
@@ -252,7 +321,22 @@ interface EstadoEntrega {
                 <option [ngValue]="null">-- Selecciona un repartidor --</option>
                 @for (d of drivers(); track d.id) {
                   <option [ngValue]="d.id">{{ d.nombre }}</option>
-                }
+     }
+
+     @if (showCompleteModal()) {
+       <div class="modal-overlay" (click)="cerrarCompletar()">
+         <div class="modal-content" (click)="$event.stopPropagation()">
+           <div class="modal-header"><h3>Confirmar entrega</h3><button class="modal-cerrar" (click)="cerrarCompletar()">✕</button></div>
+           <div class="modal-body">
+             <p>Confirma el cobro pendiente antes de cerrar este pedido.</p>
+             <div class="cobro-alert">Saldo a cobrar: <strong>S/. {{ saldoCompletar().toFixed(2) }}</strong></div>
+             <div class="form-group"><label class="lbl">Monto cobrado</label><input class="inp" type="number" min="0" step="0.01" [(ngModel)]="montoCobrado" /></div>
+             <div class="form-group"><label class="lbl">Método de pago</label><select class="sel" [(ngModel)]="metodoCobro"><option [ngValue]="1">Efectivo</option><option [ngValue]="2">Yape</option><option [ngValue]="3">Plin</option></select></div>
+           </div>
+           <div class="modal-footer"><button class="btn-sec" (click)="cerrarCompletar()">Cancelar</button><button class="btn-primary" (click)="confirmarCompletar()">Confirmar entrega</button></div>
+         </div>
+       </div>
+     }
               </select>
             </div>
           </div>
@@ -278,7 +362,11 @@ interface EstadoEntrega {
     .lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #888; letter-spacing: 0.5px; }
     .sel { padding: 8px 32px 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; background: #fff; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b6e65' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
     .btn-refresh { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #fff; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; cursor: pointer; color: #555; }
-    .btn-refresh:hover { border-color: #550F26; color: #550F26; }
+     .btn-refresh:hover { border-color: #550F26; color: #550F26; }
+     .paginacion { display:flex; justify-content:space-between; align-items:center; margin:0 0 18px; color:#756660; font-size:12px; }
+     .paginacion > div { display:flex; gap:8px; }
+     .btn-page { padding:7px 12px; border:1px solid #ddd; border-radius:7px; background:#fff; color:#550F26; cursor:pointer; font-size:12px; }
+     .btn-page:disabled { opacity:.45; cursor:not-allowed; }
 
     .loading { display: flex; flex-direction: column; align-items: center; padding: 60px; color: #888; }
     .spinner { width: 32px; height: 32px; border: 3px solid #f0e9e6; border-top-color: #550F26; border-radius: 50%; animation: spin 0.8s linear infinite; }
@@ -302,7 +390,8 @@ interface EstadoEntrega {
     .badge-estado.entregado { background: #dcfce7; color: #16a34a; }
     .badge-estado.cancelado { background: #fee2e2; color: #dc2626; }
     .venta-id { font-size: 13px; font-weight: 600; color: #333; }
-    .fecha { font-size: 12px; color: #888; }
+     .fecha { font-size: 12px; color: #888; }
+     .pago-pendiente { font-size:10px; color:#b45309; background:#fef3c7; border-radius:12px; padding:4px 7px; }
 
     .card-body { padding: 16px; }
     .info-row { display: flex; gap: 10px; margin-bottom: 12px; color: #555; font-size: 13px; }
@@ -313,7 +402,17 @@ interface EstadoEntrega {
     .info-row .tel { color: #666; font-size: 12px; }
     .info-row .ref { color: #888; font-size: 12px; font-style: italic; }
     .info-row.costo { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #eee; }
-    .info-row.costo strong { color: #550F26; font-size: 14px; }
+     .info-row.costo strong { color: #550F26; font-size: 14px; }
+     .delivery-finanzas { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin:14px 0; padding:12px; background:#fffaf7; border:1px solid #f3e8e2; border-radius:10px; }
+     .delivery-finanzas div { display:flex; flex-direction:column; gap:2px; }
+     .delivery-finanzas small { color:#9a8580; font-size:10px; text-transform:uppercase; font-weight:700; }
+     .delivery-finanzas strong { color:#3f2930; font-size:13px; }
+     .delivery-finanzas .pagado { color:#16845b; }.delivery-finanzas .saldo { color:#c2410c; }
+     .tracking-pill { padding:8px 10px; border-radius:8px; background:#f1f5f9; color:#475569; font-size:12px; margin-bottom:10px; }
+     .products-mini { padding:10px 0; border-top:1px dashed #eee; border-bottom:1px dashed #eee; margin-bottom:10px; font-size:12px; }
+      .products-mini > strong { display:block; margin-bottom:6px; color:#550F26; }.products-mini .product-line { display:flex; justify-content:space-between; padding:3px 0; color:#5b4a4a; }.products-mini b { color:#333; }.customization-line { display:flex; flex-wrap:wrap; gap:4px 8px; padding:2px 0 6px 18px; color:#8b6f68; font-size:11px; line-height:1.4; }.customization-line span:not(:last-child)::after { content:' ·'; color:#c5a99d; }
+     .map-button { border:1px solid #dbeafe; color:#2563eb; background:#eff6ff; border-radius:7px; padding:7px 10px; font-size:11px; cursor:pointer; width:100%; }
+     .cobro-alert { background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; padding:12px; border-radius:8px; margin-bottom:14px; }
 
     .card-actions { padding: 12px 16px; background: #faf8f6; border-top: 1px solid #eee; display: flex; gap: 8px; flex-wrap: wrap; }
     .btn-accion { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
@@ -326,7 +425,8 @@ interface EstadoEntrega {
     .btn-asignar { background: #7c3aed; color: #fff; }
     .btn-asignar:hover { background: #6d28d9; }
     .estado-final { color: #16a34a; font-weight: 600; font-size: 13px; }
-    .estado-cancelado { color: #dc2626; font-weight: 600; font-size: 13px; }
+     .estado-cancelado { color: #dc2626; font-weight: 600; font-size: 13px; }
+     .estado-validacion { color:#b45309; font-size:12px; font-weight:600; }
 
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
     .modal-content { background: #fff; border-radius: 12px; width: 100%; max-width: 420px; }
@@ -353,6 +453,10 @@ export class AdminDeliveryComponent implements OnInit {
   estadosEntrega = signal<EstadoEntrega[]>([]);
   cargando = signal(false);
   filtroEstado = signal(0);
+  paginaActual = signal(1);
+  totalPaginas = signal(1);
+  totalRegistros = signal(0);
+  readonly tamanioPagina = 6;
 
   showCancelModal = signal(false);
   idCancelando = signal<number | null>(null);
@@ -362,6 +466,10 @@ export class AdminDeliveryComponent implements OnInit {
   idDeliveryAsignando = signal<number | null>(null);
   drivers = signal<RepartidorDTO[]>([]);
   repartidorSeleccionado = signal<number | null>(null);
+  showCompleteModal = signal(false);
+  deliveryCompletando = signal<DeliveryItem | null>(null);
+  montoCobrado = 0;
+  metodoCobro = 1;
 
   constructor(private svc: VentaService) {}
 
@@ -379,12 +487,16 @@ export class AdminDeliveryComponent implements OnInit {
 
   cargarDeliveries(): void {
     this.cargando.set(true);
-    this.svc.obtenerListadoDeliveries().subscribe({
+    this.svc.obtenerListadoDeliveries(this.paginaActual(), this.tamanioPagina, this.filtroEstado()).subscribe({
       next: (data) => {
-        const filtered = this.filtroEstado() === 0 
-          ? data 
-          : data.filter((d: DeliveryItem) => d.idEstadoEntrega === this.filtroEstado());
-        this.deliveries.set(filtered);
+        const items = data?.items || [];
+        this.deliveries.set(items.map((d: DeliveryItem) => ({
+          ...d,
+          puedeGestionar: [3, 5, 7].includes(d.idEstadoVenta)
+        })));
+        this.paginaActual.set(data?.paginaActual || 1);
+        this.totalPaginas.set(data?.totalPaginas || 1);
+        this.totalRegistros.set(data?.totalRegistros || 0);
         this.cargando.set(false);
       },
       error: (e) => {
@@ -402,6 +514,36 @@ export class AdminDeliveryComponent implements OnInit {
         alert('Error al actualizar el estado');
       }
     });
+  }
+
+  saldoCompletar(): number { return this.deliveryCompletando()?.saldoPendiente || 0; }
+
+  abrirCompletar(delivery: DeliveryItem): void {
+    this.deliveryCompletando.set(delivery);
+    this.montoCobrado = delivery.saldoPendiente || 0;
+    this.metodoCobro = 1;
+    this.showCompleteModal.set(true);
+  }
+
+  cerrarCompletar(): void { this.showCompleteModal.set(false); this.deliveryCompletando.set(null); }
+
+  confirmarCompletar(): void {
+    const delivery = this.deliveryCompletando();
+    if (!delivery) return;
+    this.svc.completarEntrega(delivery.id, Number(this.montoCobrado) || 0, this.metodoCobro).subscribe({
+      next: () => { this.cerrarCompletar(); this.cargarDeliveries(); },
+      error: (e) => { console.error('Error completando entrega:', e); alert(e.message || 'Error al completar la entrega'); }
+    });
+  }
+
+  cambiarPagina(pagina: number): void {
+    if (pagina < 1 || pagina > this.totalPaginas()) return;
+    this.paginaActual.set(pagina);
+    this.cargarDeliveries();
+  }
+
+  abrirMapa(latitud: number, longitud: number): void {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${latitud},${longitud}`, '_blank', 'noopener');
   }
 
   cancelarEntrega(id: number): void {
@@ -436,8 +578,10 @@ export class AdminDeliveryComponent implements OnInit {
     switch (idEstado) {
       case 1: return 'pendiente';
       case 2: return 'en-camino';
-      case 3: return 'entregado';
-      case 4: return 'cancelado';
+      case 3: return 'aceptado';
+      case 4: return 'en-camino';
+      case 5: return 'entregado';
+      case 6: return 'cancelado';
       default: return 'pendiente';
     }
   }

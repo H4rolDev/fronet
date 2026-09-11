@@ -1,1 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
+@import 'leaflet/dist/leaflet.css';
+
+/* Fixed customer avatar: profile data can be edited, the identity mark cannot. */
+.avatar-note { display: block; margin-top: .35rem; color: #9a8479; font-size: .68rem; font-weight: 500; }
+.preview-arrow { margin-left: auto; color: #b95743; font-size: 1.25rem; font-weight: 700; }

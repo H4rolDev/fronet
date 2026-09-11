@@ -294,6 +294,14 @@ app-admin-layout .breadcrumb-text {
 
 app-admin-layout .header-right { display: flex; align-items: center; gap: 14px; }
 
+app-admin-layout .notification-wrap { position: relative; }
+app-admin-layout .notification-button { width: 35px; height: 35px; border: 1px solid #FFE4EC; border-radius: 50%; background: #FFF5F7; color: #7D1F3E; cursor: pointer; position: relative; display: grid; place-items: center; }
+app-admin-layout .notification-button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+app-admin-layout .notification-count { position: absolute; top: -5px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 10px; background: #D4476E; color: white; font-size: 10px; font-weight: 700; display: grid; place-items: center; }
+app-admin-layout .notification-panel { position: absolute; right: 0; top: 44px; width: 320px; max-height: 360px; overflow-y: auto; background: white; border: 1px solid #FFE4EC; border-radius: 14px; box-shadow: 0 15px 35px rgba(80,10,30,.18); z-index: 300; padding: 8px; }
+app-admin-layout .notification-heading { display: flex; justify-content: space-between; padding: 10px; color: #7D1F3E; font-size: 13px; }.notification-heading span { color: #b090a0; font-size: 11px; }
+app-admin-layout .notification-item { width: 100%; display: flex; align-items: flex-start; gap: 9px; padding: 11px 9px; border: 0; border-top: 1px solid #FFF0F4; background: white; color: #321b29; text-align: left; cursor: pointer; }.notification-item:hover { background: #FFF5F7; }.notification-item b,.notification-item small { display: block; }.notification-item b { font-size: 12px; }.notification-item small { margin-top: 3px; color: #9c8790; font-size: 11px; }.notification-dot { width: 7px; height: 7px; margin-top: 4px; border-radius: 50%; background: #D4476E; flex: 0 0 auto; }.notification-arrow { margin-left: auto; color: #D4476E; font-size: 20px; line-height: 14px; }.notification-empty { padding: 20px 10px; color: #9c8790; font-size: 12px; text-align: center; }
+
 /* Fecha */
 app-admin-layout .header-date {
   display: flex; align-items: center; gap: 6px;

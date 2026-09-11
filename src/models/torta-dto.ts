@@ -17,6 +17,8 @@ export interface TortaListadoDTO {
   esPersonalizable: boolean | null;
   stockDisponible: number;
   activo: string;
+  relleno: string | null;     // NUEVO: Sabor de relleno
+  colorDecoracion: string | null; // NUEVO: Color de decoración
   fechaCreacion: string;
   usuarioCreacion: string;
   fechaModificacion: string;
@@ -35,6 +37,8 @@ export interface TortaDetalleDTO {
   imagenUrl: string | null;
   imagenPublicId: string | null;
   activo: boolean;
+  relleno: string | null;     // NUEVO
+  colorDecoracion: string | null; // NUEVO
   usuarioCreacion: string;
   usuarioModificacion: string;
   fechaCreacion: string;
@@ -57,6 +61,8 @@ export interface TortaRequestDTO {
   imagenUrl: string | null;
   imagenPublicId: string | null;
   activo: boolean;
+  relleno: string | null;     // NUEVO: para crear torta con relleno/color
+  colorDecoracion: string | null; // NUEVO
   usuarioCreacion: string;
   usuarioModificacion: string;
   fechaCreacion: string;

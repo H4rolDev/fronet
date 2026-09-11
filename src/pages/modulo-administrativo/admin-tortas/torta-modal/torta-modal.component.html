@@ -281,6 +281,23 @@
           </div>
         </div>
 
+        <div class="opciones-config">
+          <div class="separador"><span class="separador__linea"></span><span class="separador__texto">Opciones configurables</span><span class="separador__linea"></span></div>
+          @if (!esEditar) {
+            <p class="campo__hint">Guarda la torta primero y luego podrás agregar sabores, tamaños, rellenos, colores y pisos.</p>
+          } @else {
+            <div class="opciones-form">
+              <select [(ngModel)]="nuevaOpcion.tipo" [ngModelOptions]="{standalone:true}"><option value="sabor">Sabor</option><option value="tamanio">Tamaño</option><option value="relleno">Relleno</option><option value="color">Color</option><option value="pisos">Pisos</option></select>
+              <input [(ngModel)]="nuevaOpcion.valor" [ngModelOptions]="{standalone:true}" placeholder="Valor (ej. Chocolate)">
+              <input type="number" [(ngModel)]="nuevaOpcion.precioExtra" [ngModelOptions]="{standalone:true}" min="0" step="0.01" placeholder="Extra S/">
+              <button type="button" class="btn btn--primario" (click)="agregarOpcion()">Agregar</button>
+            </div>
+            <div class="opciones-lista" *ngIf="opciones().length">
+              @for (option of opciones(); track option.id) { <span class="opcion-chip"><b>{{ option.tipo }}</b> {{ option.valor }} <small>+S/ {{ option.precioExtra | number:'1.2-2' }}</small><button type="button" (click)="eliminarOpcion(option)">×</button></span> }
+            </div>
+          }
+        </div>
+
         <!-- Error de API ────────────────────────────────────────────────────── -->
         @if (errorApi()) {
           <div class="alerta-api" role="alert">

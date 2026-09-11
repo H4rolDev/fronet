@@ -10,6 +10,7 @@ import { VentaService } from '../../services/venta.service';
 import { AuthService } from '../../services/auth.service';
 import { MetodoPagoDTO } from '../../models/venta-dto';
 import { environment } from '../../environments/environment';
+import { DeliveryConfigurationService } from '../../services/delivery-configuration.service';
 
 interface MetodoPago {
   id: string;
@@ -120,7 +121,7 @@ interface MetodoPago {
             </div>
 
             <!-- Comprobante de pago -->
-            @if (esEfectivo) {
+            @if (esEfectivo && tipoEntrega !== 'delivery') {
               <div class="form-seccion">
                 <h3>💵 Pago en Efectivo</h3>
                 <div class="alert-info-box alert-info-box--verde">
@@ -131,10 +132,14 @@ interface MetodoPago {
             } @else {
               <div class="form-seccion">
                 <h3>📸 Comprobante de Pago @if (tipoEntrega === 'delivery') { <span class="req">*</span> } @else { <span class="opcional">(opcional)</span> }</h3>
-                @if (tipoEntrega === 'delivery') {
-                <div class="alert-info-box">
-                  <small>1. Realiza tu pago mediante Yape o transferencia</small><br>
-                  <small>2. Toma una foto del comprobante</small><br>
+                 @if (tipoEntrega === 'delivery') {
+                 <div class="alert-info-box">
+                   @if (esEfectivo) {
+                   <small>1. Deposita el 50% del total por banca móvil o Yape</small><br>
+                   } @else {
+                   <small>1. Realiza tu pago mediante Yape o transferencia</small><br>
+                   }
+                   <small>2. Toma una foto del comprobante</small><br>
                   <small>3. Sube la imagen y proporciona el número de operación</small>
                 </div>
                 } @else {
@@ -207,6 +212,12 @@ interface MetodoPago {
                   <span>Total a pagar:</span>
                   <strong>S/. {{ totalPagar.toFixed(2) }}</strong>
                 </div>
+                @if (tipoEntrega === 'delivery') {
+                  <div class="alert-info-box">
+                    <small>Para delivery con efectivo debes depositar el 50% por banca móvil o Yape.</small><br>
+                    <small>Adelanto requerido: S/. {{ montoInicial.toFixed(2) }}. Saldo contra entrega: S/. {{ (totalPagar - montoInicial).toFixed(2) }}.</small>
+                  </div>
+                }
                 <div class="campo">
                   <label>Monto con el que paga (opcional)</label>
                   <input type="number" [(ngModel)]="montoRecibido" placeholder="Ej: 50.00" min="0" step="0.50" />
@@ -250,6 +261,12 @@ interface MetodoPago {
                 <span>Total a pagar</span>
                 <span>S/. {{ totalPagar.toFixed(2) }}</span>
               </div>
+              @if (tipoEntrega === 'delivery' && esEfectivo) {
+                <div class="rt-row">
+                  <span>Adelanto requerido</span>
+                  <span>S/. {{ montoInicial.toFixed(2) }}</span>
+                </div>
+              }
             </div>
             @if (error) {
               <div class="error-msg">{{ error }}</div>
@@ -396,8 +413,9 @@ export class PagoComponent implements OnInit, OnDestroy {
     private router: Router,
     private http: HttpClient,
     private carritoService: CarritoService,
-    private ventaService: VentaService,
-    private authService: AuthService
+  private ventaService: VentaService,
+    private authService: AuthService,
+    private deliveryConfigurationService: DeliveryConfigurationService
   ) {}
 
   onFileSelected(event: any) {
@@ -469,6 +487,14 @@ export class PagoComponent implements OnInit, OnDestroy {
     this.verificarClienteLogueado();
     this.cargarPersonas();
     this.cargarMetodosPago();
+    this.cargarConfiguracionDelivery();
+  }
+
+  private cargarConfiguracionDelivery(): void {
+    this.deliveryConfigurationService.obtener().subscribe({
+      next: config => this.costoDelivery = config.costoBase,
+      error: () => this.costoDelivery = 5.00,
+    });
   }
 
   private verificarClienteLogueado(): void {
@@ -554,13 +580,20 @@ export class PagoComponent implements OnInit, OnDestroy {
     return metodo?.nombre.toLowerCase().includes('efectivo') ?? false;
   }
 
+  get montoInicial(): number {
+    return this.tipoEntrega === 'delivery' && this.esEfectivo
+      ? this.totalPagar * 0.5
+      : this.totalPagar;
+  }
+
   get puedeConfirmar(): boolean {
     if (!this.idPersona) return false;
     if (!this.metodoSeleccionado) return false;
     if (this.tipoEntrega === 'delivery') {
+      if (this.esEfectivo) return false;
       if (!this.direccion.trim() || !this.telefono.trim()) return false;
-      if (!this.esEfectivo && !this.imagenFile) return false;
-      if (this.mostrarQR && !this.numeroOperacion.trim()) return false;
+      if (!this.imagenFile) return false;
+      if (!this.numeroOperacion.trim()) return false;
     }
     return true;
   }
@@ -583,7 +616,7 @@ export class PagoComponent implements OnInit, OnDestroy {
 
     try {
       let imagenUrl: string | null = null;
-      if (this.tipoEntrega === 'delivery' && !this.esEfectivo) {
+      if (this.tipoEntrega === 'delivery') {
         imagenUrl = await this.subirImagen();
         if (!imagenUrl) {
           throw new Error('Error al subir la imagen del comprobante');
@@ -610,7 +643,7 @@ export class PagoComponent implements OnInit, OnDestroy {
         })),
         pagos: [{
           idMetodoPago: idMetodoPago,
-          monto: this.totalPagar,
+          monto: this.montoInicial,
           numeroOperacion: this.numeroOperacion
         }],
         entrega: this.tipoEntrega === 'delivery' ? {

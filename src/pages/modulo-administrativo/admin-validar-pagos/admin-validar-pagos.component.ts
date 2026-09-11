@@ -13,6 +13,9 @@ interface VentaValidacion {
   imagenComprobante: string | null;
   estado: string;
   idEstadoVenta: number;
+  montoPagado: number;
+  saldoPendiente: number;
+  requiereAnticipo: boolean;
   detalles: VentaDetalle[];
 }
 
@@ -151,6 +154,12 @@ interface HistorialItem {
                     <span>Total</span>
                     <strong class="total-amount">S/. {{ v.total.toFixed(2) }}</strong>
                   </div>
+                  @if (v.requiereAnticipo) {
+                    <div class="info-row">
+                      <span>Adelanto recibido: <strong>S/. {{ v.montoPagado.toFixed(2) }}</strong></span>
+                      <span>Saldo pendiente: <strong>S/. {{ v.saldoPendiente.toFixed(2) }}</strong></span>
+                    </div>
+                  }
                 </div>
 
                 @if (v.numeroOperacion) {

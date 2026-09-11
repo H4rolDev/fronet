@@ -10,16 +10,21 @@ export const routes: Routes = [
     component: PrincipalClientComponent,
     children: [
 
-      { path: '', loadComponent: () => import('../bienvenida/bienvenida.component').then(m => m.BienvenidaComponent) },
+      { path: '', loadComponent: () => import('../pages/customer-home/customer-home.component').then(m => m.CustomerHomeComponent) },
 
-      { path: 'home', loadComponent: () => import('../pages/home/home.component').then(m => m.HomeComponent) },
+      { path: 'home', loadComponent: () => import('../pages/customer-home/customer-home.component').then(m => m.CustomerHomeComponent) },
       { path: 'about', loadComponent: () => import('../pages/about/about.component').then(m => m.AboutComponent) },
+      { path: 'sobre-nosotros', loadComponent: () => import('../pages/about/about.component').then(m => m.AboutComponent) },
       { path: 'contact', loadComponent: () => import('../pages/contact/contact.component').then(m => m.ContactComponent) },
-      { path: 'products', loadComponent: () => import('../pages/products/products.component').then(m => m.ProductsComponent) },
+      { path: 'ubicanos', loadComponent: () => import('../pages/ubicanos/ubicanos.component').then(m => m.UbicanosComponent) },
+      { path: 'products', loadComponent: () => import('../pages/customer-home/customer-home.component').then(m => m.CustomerHomeComponent) },
 
       { path: 'lista', loadComponent: () => import('../pages/productos/lista-productos.component').then(m => m.ProductosComponent) },
 
-      { path: 'pagar', loadComponent: () => import('./pago/pago.component').then(m => m.PagoComponent) },
+      { path: 'pagar', redirectTo: 'checkout', pathMatch: 'full' },
+      { path: 'cart', loadComponent: () => import('../pages/customer-cart/customer-cart.component').then(m => m.CustomerCartComponent) },
+      { path: 'checkout', loadComponent: () => import('../pages/customer-checkout/customer-checkout.component').then(m => m.CustomerCheckoutComponent) },
+      { path: 'chat', loadComponent: () => import('../pages/customer-chat/customer-chat.component').then(m => m.CustomerChatComponent) },
       { path: 'pagoyape', loadComponent: () => import('../pages/pagoyape/pagoyape.component').then(m => m.PagoyapeComponent) },
 
       { path: 'password', loadComponent: () => import('../widgets/form-password/form-password').then(m => m.PasswordComponent) },
@@ -32,6 +37,7 @@ export const routes: Routes = [
       { path: 'registrarse', loadComponent: () => import('../pages/registrarse/registrarse.component').then(m => m.RegistrarseComponent) },
 
       { path: 'cuenta', loadComponent: () => import('../pages/cliente-cuenta/cliente-cuenta.component').then(m => m.ClienteCuentaComponent) },
+      { path: 'profile', loadComponent: () => import('../pages/cliente-cuenta/cliente-cuenta.component').then(m => m.ClienteCuentaComponent) },
       { path: 'pedidos', loadComponent: () => import('../pages/cliente-pedidos/cliente-pedidos.component').then(m => m.ClientePedidosComponent) },
     ]
   },
@@ -134,7 +140,12 @@ export const routes: Routes = [
         path: 'delivery',
         loadComponent: () =>
           import('../pages/modulo-administrativo/admin-delivery/admin-delivery.component')
-            .then(m => m.AdminDeliveryComponent),
+             .then(m => m.AdminDeliveryComponent),
+      },
+      {
+        path: 'configuracion-delivery',
+        loadComponent: () => import('../pages/modulo-administrativo/admin-configuracion-delivery/admin-configuracion-delivery.component')
+          .then(m => m.AdminConfiguracionDeliveryComponent),
       },
       {
 path: 'validar-pagos',

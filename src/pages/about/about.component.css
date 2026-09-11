@@ -1,0 +1,19 @@
+:host { --cream:#fffaf2; --ivory:#fffdf9; --cocoa:#3e2922; --muted:#765f53; --terracotta:#b95743; --gold:#c99032; --line:#eadbca; display:block; background:var(--cream); color:var(--cocoa); }
+.about-page { max-width: 1180px; margin: 0 auto; padding: 3.5rem 1.5rem 5rem; }
+.about-hero { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; margin-bottom: 5rem; }
+.hero-copy h1 { max-width: 620px; margin: .8rem 0 1.3rem; font: 700 clamp(2.4rem, 5vw, 4.4rem)/1.05 'Playfair Display', Georgia, serif; color: var(--cocoa); letter-spacing: -.04em; }
+.hero-copy p { max-width: 590px; color: var(--muted); line-height: 1.75; margin: 0 0 1rem; }
+.hero-copy .lead { font-size: 1.1rem; color: var(--cocoa); }
+.eyebrow, .section-label { color: var(--terracotta); font-size: .75rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+.primary-action { display: inline-block; margin-top: 1rem; padding: .85rem 1.25rem; border-radius: 999px; background: var(--terracotta); color: #fff; text-decoration: none; font-weight: 700; box-shadow: 0 8px 20px #b9574330; }
+.primary-action:hover { background: #964331; }
+.hero-visual { position: relative; padding: 0 0 1.5rem 1.5rem; }
+.hero-visual::before { content: ''; position: absolute; inset: 1.5rem 1.5rem 0 0; border: 1px solid #e9c4cf; border-radius: 1.5rem; }
+.hero-visual img { position: relative; display: block; width: 100%; height: 430px; object-fit: cover; border-radius: 1.5rem; box-shadow: 0 18px 40px #550f2620; }
+.experience-badge { position: absolute; left: 0; bottom: 0; display: flex; flex-direction: column; gap: .25rem; padding: 1rem 1.2rem; border-radius: .9rem; background: #fff; box-shadow: 0 10px 25px #550f2620; }
+.experience-badge strong { color: #550f26; }.experience-badge span { color: #8d746b; font-size: .8rem; }
+.philosophy { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; padding: 3rem; margin-bottom: 5rem; border-radius: 1.5rem; background: #f6e6c9; }
+.philosophy h2, .values h2, .about-cta h2 { color: #550f26; font: 700 2rem/1.2 Georgia, serif; margin: .7rem 0; }.philosophy p, .value-grid p, .about-cta p { color: #7d665d; line-height: 1.65; }
+.values { margin-bottom: 5rem; }.section-heading { text-align: center; margin-bottom: 2rem; }.value-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }.value-grid article { padding: 2rem 1.5rem; border: 1px solid #eadbd5; border-radius: 1rem; background: #fff; }.value-icon { color: #c34f78; font-size: 2rem; }.value-grid h3 { color: #550f26; margin: 1rem 0 .5rem; }
+.about-cta { padding: 3.5rem 2rem; border-radius: 1.5rem; text-align: center; background: linear-gradient(135deg, #f8e3e9, #fff5e9); }.about-cta p { max-width: 520px; margin: 0 auto; }
+@media (max-width: 800px) { .about-page { padding-top: 2rem; }.about-hero, .philosophy { grid-template-columns: 1fr; gap: 2rem; }.about-hero { margin-bottom: 3rem; }.hero-visual img { height: 330px; }.value-grid { grid-template-columns: 1fr; } }

@@ -1,10 +1,13 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { CommonModule, NgIf } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { AuthService } from '../../../services/auth.service';
 import { PermisoService, ModuloPermiso } from '../../../services/permiso.service';
 import { RolEnum } from '../../../enums';
+import { AdminDashboardService } from '../../../services/admin-dashboard.service';
+import { Subscription, timer } from 'rxjs';
+import { exhaustMap } from 'rxjs/operators';
 
 @Component({
   standalone: true,
@@ -14,7 +17,7 @@ import { RolEnum } from '../../../enums';
   encapsulation: ViewEncapsulation.None,
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, NgIf],
 })
-export class AdminLayoutComponent implements OnInit {
+export class AdminLayoutComponent implements OnInit, OnDestroy {
   sidebarCollapsed = false;
   userName = '';
   userInitials = '';
@@ -22,6 +25,9 @@ export class AdminLayoutComponent implements OnInit {
   currentPageTitle = 'Dashboard';
   currentDate = '';
   modulosPermitidos: ModuloPermiso[] = [];
+  alerts: Array<{ id: number; title: string; body: string; read: boolean }> = [];
+  notificationsOpen = false;
+  private alertsRefresh?: Subscription;
 
   private pageTitles: Record<string, string> = {
     '/admin/dashboard':          'Dashboard',
@@ -37,6 +43,7 @@ export class AdminLayoutComponent implements OnInit {
     '/admin/categoria-torta':    'Categoría Torta',
     '/admin/venta':       'Venta de Tortas',
     '/admin/delivery':           'Delivery',
+    '/admin/configuracion-delivery': 'Configuración de delivery',
     '/admin/personal':           'Personal',
     '/admin/clientes':           'Clientes',
     '/admin/roles':            'Roles',
@@ -49,8 +56,9 @@ export class AdminLayoutComponent implements OnInit {
 
   constructor(
     private router: Router, 
-    private auth: AuthService,
-    private permisoService: PermisoService
+    public auth: AuthService,
+    private permisoService: PermisoService,
+    private dashboardService: AdminDashboardService
   ) {}
 
   ngOnInit(): void {
@@ -58,6 +66,58 @@ export class AdminLayoutComponent implements OnInit {
     this.setCurrentDate();
     this.trackRoute();
     this.modulosPermitidos = this.permisoService.obtenerModulosPermitidos();
+    this.startAlertsPolling();
+  }
+
+  ngOnDestroy(): void { this.alertsRefresh?.unsubscribe(); }
+
+  get unreadAlerts(): number { return this.alerts.filter(alert => !alert.read).length; }
+
+  toggleNotifications(): void {
+    this.notificationsOpen = !this.notificationsOpen;
+    if (this.notificationsOpen) this.alerts = this.alerts.map(alert => ({ ...alert, read: true }));
+  }
+
+  openAlert(alert: { id: number }): void {
+    this.notificationsOpen = false;
+    this.router.navigate(['/admin/venta'], { queryParams: { pedido: alert.id } });
+  }
+
+  private startAlertsPolling(): void {
+    // Deja que el dashboard termine su carga inicial antes de consultar alertas.
+    this.alertsRefresh = timer(10000, 60000)
+      .pipe(exhaustMap(() => this.dashboardService.cargarAlertas()))
+      .subscribe({ next: data => this.detectNewOrders(data.ventas ?? []) });
+  }
+
+  private detectNewOrders(ventas: any[]): void {
+    const ids = ventas.map(venta => Number(venta.id ?? venta.idVenta)).filter(id => id > 0);
+    const storedValue = localStorage.getItem('admin-seen-orders');
+    const stored = JSON.parse(storedValue ?? '[]') as number[];
+    if (storedValue === null) {
+      localStorage.setItem('admin-seen-orders', JSON.stringify(ids));
+      return;
+    }
+
+    const newIds = ids.filter(id => !stored.includes(id));
+    if (!newIds.length) return;
+    this.alerts = [
+      ...newIds.map(id => ({ id, title: 'Nuevo pedido recibido', body: `Un cliente realizó el pedido #${id}.`, read: false })),
+      ...this.alerts,
+    ].slice(0, 20);
+    localStorage.setItem('admin-seen-orders', JSON.stringify([...new Set([...stored, ...newIds])].slice(-200)));
+
+    for (const id of newIds) {
+      this.dashboardService.detalleVenta(id).subscribe({
+        next: detail => {
+          const name = detail?.cliente?.nombre;
+          if (!name) return;
+          this.alerts = this.alerts.map(alert => alert.id === id
+            ? { ...alert, body: `El cliente ${name} hizo el pedido #${id}.` }
+            : alert);
+        },
+      });
+    }
   }
 
   private loadUserData(): void {

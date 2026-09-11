@@ -12,7 +12,8 @@ export enum EstadoVentaEnum {
   Aprobada = 3,
   Rechazada = 4,
   Pagada = 5,
-  Cancelada = 6
+  Cancelada = 6,
+  Entregado = 7
 }
 
 export enum EstadoEntregaEnum {
@@ -92,5 +93,6 @@ export const ESTADO_VENTA_NOMBRES: Record<EstadoVentaEnum, string> = {
   [EstadoVentaEnum.Aprobada]: 'Aprobada',
   [EstadoVentaEnum.Rechazada]: 'Rechazada',
   [EstadoVentaEnum.Pagada]: 'Pagada',
-  [EstadoVentaEnum.Cancelada]: 'Cancelada'
+  [EstadoVentaEnum.Cancelada]: 'Cancelada',
+  [EstadoVentaEnum.Entregado]: 'Entregado'
 };

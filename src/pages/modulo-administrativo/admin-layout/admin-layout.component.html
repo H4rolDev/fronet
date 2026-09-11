@@ -27,6 +27,14 @@
 
     <nav class="sidebar-nav">
 
+      <a class="nav-item dashboard-link" *ngIf="tieneAcceso('/admin/dashboard')" routerLink="/admin/dashboard"
+         routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}"
+         [title]="sidebarCollapsed ? 'Dashboard' : ''">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+        <span class="nav-label">Dashboard</span><span class="nav-dot"></span>
+      </a>
+      <div class="nav-divider"></div>
+
       <!-- ─ PRODUCTOS ─ -->
       <span class="nav-section" *ngIf="!sidebarCollapsed && tieneAcceso('/admin/tortas')">Productos</span>
       <a class="nav-item" *ngIf="tieneAcceso('/admin/tortas')" routerLink="/admin/tortas"
@@ -273,6 +281,12 @@
         <span class="nav-dot"></span>
       </a>
 
+      <a class="nav-item" *ngIf="auth.isAdmin()" routerLink="/admin/configuracion-delivery"
+         routerLinkActive="active" [title]="sidebarCollapsed ? 'Configurar delivery' : ''">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 000-6l-1.2-.4a6.8 6.8 0 00-.7-1.2l.2-1.3a1.7 1.7 0 00-5.1-2.5l-1.1.7a6.8 6.8 0 00-1.4 0L9 3.6a1.7 1.7 0 00-5.1 2.5l.2 1.3a6.8 6.8 0 00-.7 1.2L2.6 9a1.7 1.7 0 000 6l1.2.4a6.8 6.8 0 00.7 1.2l-.2 1.3a1.7 1.7 0 005.1 2.5l1.1-.7a6.8 6.8 0 001.4 0l1.1.7a1.7 1.7 0 005.1-2.5l-.2-1.3a6.8 6.8 0 00.7-1.2z"/></svg></span>
+        <span class="nav-label">Configurar delivery</span><span class="nav-dot"></span>
+      </a>
+
       <a class="nav-item" *ngIf="tieneAcceso('/admin/clientes')" routerLink="/admin/clientes"
          routerLinkActive="active"
          [title]="sidebarCollapsed ? 'Clientes' : ''">
@@ -334,6 +348,19 @@
         <span class="breadcrumb-text">{{ currentPageTitle }}</span>
       </div>
       <div class="header-right">
+        <div class="notification-wrap">
+          <button class="notification-button" (click)="toggleNotifications()" aria-label="Notificaciones">
+            <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+            <span class="notification-count" *ngIf="unreadAlerts > 0">{{ unreadAlerts }}</span>
+          </button>
+          <div class="notification-panel" *ngIf="notificationsOpen">
+            <div class="notification-heading"><b>Notificaciones</b><span>{{ alerts.length }}</span></div>
+            <div class="notification-empty" *ngIf="!alerts.length">No hay pedidos nuevos.</div>
+            <button class="notification-item" *ngFor="let alert of alerts" (click)="openAlert(alert)">
+              <span class="notification-dot"></span><span><b>{{ alert.title }}</b><small>{{ alert.body }}</small></span><span class="notification-arrow">›</span>
+            </button>
+          </div>
+        </div>
         <div class="header-date">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.8" stroke-linecap="round" class="date-icon">

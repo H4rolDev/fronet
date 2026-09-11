@@ -7,6 +7,7 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -16,7 +17,7 @@ import { takeUntil } from 'rxjs/operators';
   selector: 'app-iniciar',
   templateUrl: './iniciar.component.html',
   styleUrls: ['./iniciar.component.css'],
-  imports: [ReactiveFormsModule, CommonModule],
+  imports: [ReactiveFormsModule, CommonModule, RouterModule],
 })
 export class IniciarComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();

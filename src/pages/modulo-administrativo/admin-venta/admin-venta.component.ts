@@ -21,11 +21,12 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule }  from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Subject }      from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
 
-import { VentaService }  from '../../../services/venta.service';
-import { VentaListadoDTO, FiltroVentas, Notificacion, ESTADO_LABEL, ENTREGA_LABEL, ESTADO_CLASE } from '../../../models/venta-dto';
+import { VentaService, EmitirComprobanteDTO }  from '../../../services/venta.service';
+import { VentaListadoDTO, FiltroVentas, Notificacion, ESTADO_LABEL, ENTREGA_LABEL, ESTADO_CLASE, TipoComprobanteDTO } from '../../../models/venta-dto';
 import { VentaCrearModalComponent } from './venta-crear-modal/venta-crear-modal.component';
 import { VentaComprobanteModalComponent, VentaDetalleModalComponent } from './venta-comprobante-modal/venta-comprobante-modal.component';
 
@@ -58,7 +59,13 @@ export class AdminVentaComponent implements OnInit, OnDestroy {
   mostrarCrear        = signal<boolean>(false);
   mostrarDetalle      = signal<boolean>(false);
   mostrarComprobante  = signal<boolean>(false);
+  mostrarEmitirComprobante = signal<boolean>(false);
   ventaSeleccionada   = signal<VentaListadoDTO | null>(null);
+
+  // Emitir comprobante
+  tiposComprobante    = signal<TipoComprobanteDTO[]>([]);
+  tipoComprobanteSeleccionado = signal<number>(1);
+  emitiendoComprobante = signal<boolean>(false);
 
   // Cancelación
   ventaCancelar  = signal<VentaListadoDTO | null>(null);
@@ -76,7 +83,7 @@ export class AdminVentaComponent implements OnInit, OnDestroy {
       String(v.id).includes(txt)
     );
     if (f !== 'todos') {
-      const mapa: Record<FiltroVentas, number> = { todos: 0, pendiente: 1, completado: 2, cancelado: 3 };
+      const mapa: Record<FiltroVentas, number> = { todos: 0, pendiente: 1, esperandoValidacion: 2, pagada: 5, entregado: 7, cancelado: 6 };
       lista = lista.filter(v => v.idEstadoVenta === mapa[f]);
     }
     return lista;
@@ -121,7 +128,7 @@ export class AdminVentaComponent implements OnInit, OnDestroy {
   });
 
   pendientes  = computed(() => this.ventas().filter(v => v.idEstadoVenta === 1).length);
-  canceladas  = computed(() => this.ventas().filter(v => v.idEstadoVenta === 3).length);
+  canceladas  = computed(() => this.ventas().filter(v => v.idEstadoVenta === 6).length);
 
   // ── Helpers públicos (para template) ──────────────────────────────────────
   readonly ESTADO_LABEL  = ESTADO_LABEL;
@@ -131,9 +138,9 @@ export class AdminVentaComponent implements OnInit, OnDestroy {
   private destroy$   = new Subject<void>();
   private toastTimer: any = null;
 
-  constructor(private svc: VentaService) {}
+  constructor(private svc: VentaService, private route: ActivatedRoute) {}
 
-  ngOnInit(): void  { this.cargar(); }
+ngOnInit(): void  { this.cargar(); }
   ngOnDestroy(): void {
     this.destroy$.next(); this.destroy$.complete();
     if (this.toastTimer) clearTimeout(this.toastTimer);
@@ -145,8 +152,21 @@ export class AdminVentaComponent implements OnInit, OnDestroy {
     this.svc.obtenerListado()
       .pipe(takeUntil(this.destroy$), finalize(() => this.cargando.set(false)))
       .subscribe({
-        next: d => { this.ventas.set(d); this.paginaActual.set(1); },
+        next: d => {
+          this.ventas.set(d);
+          this.paginaActual.set(1);
+          const requestedId = Number(this.route.snapshot.queryParamMap.get('pedido'));
+          const requested = d.find(v => v.id === requestedId);
+          if (requested) this.abrirDetalle(requested);
+        },
         error: (e: Error) => this.toast('error', e.message),
+      });
+    // Cargar tipos de comprobante
+    this.svc.obtenerTiposComprobante()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: t => this.tiposComprobante.set(t),
+        error: () => this.tiposComprobante.set([{ id: 1, nombre: 'Boleta' }, { id: 2, nombre: 'Factura' }]),
       });
   }
 
@@ -215,6 +235,55 @@ export class AdminVentaComponent implements OnInit, OnDestroy {
       });
   }
 
+marcarEntregado(v: VentaListadoDTO): void {
+    if (v.idEstadoVenta === 7) return;
+    this.procesando.set(true);
+    this.svc.marcarEntregado(v.id)
+      .pipe(takeUntil(this.destroy$), finalize(() => this.procesando.set(false)))
+      .subscribe({
+        next: () => { this.cargar(); this.toast('exito', `Pedido #${v.id} marcado como entregado.`); },
+        error: (e: Error) => this.toast('error', e.message),
+      });
+  }
+
+  // ── Emitir Comprobante ──────────────────────────────────────────────────────
+  abrirEmitirComprobante(v: VentaListadoDTO): void {
+    this.ventaSeleccionada.set(v);
+    this.tipoComprobanteSeleccionado.set(this.tiposComprobante()[0]?.id ?? 1);
+    this.mostrarEmitirComprobante.set(true);
+  }
+  cerrarEmitirComprobante(): void { this.mostrarEmitirComprobante.set(false); this.ventaSeleccionada.set(null); }
+
+  confirmarEmitirComprobante(): void {
+    const v = this.ventaSeleccionada();
+    if (!v) return;
+    this.emitiendoComprobante.set(true);
+    const dto: EmitirComprobanteDTO = {
+      idVenta: v.id,
+      idTipoComprobante: this.tipoComprobanteSeleccionado(),
+      usuario: 'admin',
+    };
+    this.svc.emitirComprobante(dto)
+      .pipe(takeUntil(this.destroy$), finalize(() => this.emitiendoComprobante.set(false)))
+      .subscribe({
+        next: res => {
+          this.cerrarEmitirComprobante();
+          this.cargar();
+          this.toast('exito', `Comprobante ${res.comprobante?.serie}-${res.comprobante?.numero} emitido correctamente.`);
+        },
+        error: (e: Error) => this.toast('error', e.message),
+      });
+  }
+
+  puedeEmitirComprobante(v: VentaListadoDTO): boolean {
+    // Se puede emitir si está pagada (5), aprobada (3) o entregada (7) y no tiene comprobante
+    return [3, 5, 7].includes(v.idEstadoVenta);
+  }
+
+  onOverlayEmitir(e: MouseEvent): void {
+    if ((e.target as HTMLElement).classList.contains('overlay')) this.cerrarEmitirComprobante();
+  }
+
   // ── Toast ──────────────────────────────────────────────────────────────────
   toast(tipo: Notificacion['tipo'], mensaje: string): void {
     if (this.toastTimer) clearTimeout(this.toastTimer);
@@ -238,7 +307,8 @@ export class AdminVentaComponent implements OnInit, OnDestroy {
   }
 
   esCancelable(v: VentaListadoDTO): boolean { return v.idEstadoVenta === 1; }
-  esImprimible(v: VentaListadoDTO): boolean { return v.idEstadoVenta !== 3; }
+  esImprimible(v: VentaListadoDTO): boolean { return v.idEstadoVenta === 7; }
+  puedeMarcarEntregado(v: VentaListadoDTO): boolean { return v.idEstadoVenta === 5 || v.idEstadoVenta === 3; }
 
   trackById(_: number, v: VentaListadoDTO): number { return v.id; }
 }

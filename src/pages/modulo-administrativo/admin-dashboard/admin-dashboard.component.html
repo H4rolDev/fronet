@@ -1,47 +1,25 @@
-<div class="dashboard">
+<section class="dashboard">
   <div class="welcome-banner">
-    <div class="welcome-text">
-      <h1>¡Bienvenido, <span>{{ userName }}</span>! 🎂</h1>
-      <p>Aquí tienes un resumen de tu pastelería hoy.</p>
+    <div>
+      <p class="eyebrow">CENTRO DE CONTROL</p>
+      <h1>Buenos días, {{ userName }}</h1>
+      <p>Resumen operativo de Tortas Yane. Se actualiza automáticamente.</p>
     </div>
-    <div class="welcome-deco">✨</div>
+    <div class="date-badge">{{ resumen.ventasHoy ?? 0 }} pedidos hoy</div>
   </div>
 
-  <div class="stats-grid">
-    <div class="stat-card" routerLink="/admin/tortas">
-      <div class="stat-icon pink">🎂</div>
-      <div class="stat-info">
-        <span class="stat-label">Tortas</span>
-        <span class="stat-hint">Gestionar catálogo</span>
-      </div>
-      <div class="stat-arrow">→</div>
-    </div>
+  <p class="loading" *ngIf="loading">Cargando indicadores...</p>
+  <p class="error" *ngIf="error">{{ error }}</p>
 
-    <div class="stat-card" routerLink="/admin/recetas">
-      <div class="stat-icon rose">📋</div>
-      <div class="stat-info">
-        <span class="stat-label">Recetas</span>
-        <span class="stat-hint">Ver recetas</span>
-      </div>
-      <div class="stat-arrow">→</div>
-    </div>
-
-    <div class="stat-card" routerLink="/admin/produccion">
-      <div class="stat-icon caramel">🏭</div>
-      <div class="stat-info">
-        <span class="stat-label">Producción</span>
-        <span class="stat-hint">Control de producción</span>
-      </div>
-      <div class="stat-arrow">→</div>
-    </div>
-
-    <div class="stat-card" routerLink="/admin/insumos">
-      <div class="stat-icon choco">📦</div>
-      <div class="stat-info">
-        <span class="stat-label">Insumos</span>
-        <span class="stat-hint">Stock de insumos</span>
-      </div>
-      <div class="stat-arrow">→</div>
-    </div>
+  <div class="stats-grid" *ngIf="!loading">
+    <a class="stat-card accent" routerLink="/admin/venta"><span class="icon">S/</span><span><b>Ventas de hoy</b><strong>S/ {{ moneyToday | number:'1.2-2' }}</strong><small>{{ resumen.ventasHoy ?? 0 }} operaciones</small></span></a>
+    <a class="stat-card" routerLink="/admin/validar-pagos"><span class="icon">✓</span><span><b>Pagos pendientes</b><strong>{{ pendingCount }}</strong><small>Requieren validación</small></span></a>
+    <a class="stat-card warning" routerLink="/admin/insumos"><span class="icon">!</span><span><b>Insumos por agotar</b><strong>{{ lowStock.length }}</strong><small>Revisar inventario</small></span></a>
+    <a class="stat-card" routerLink="/admin/produccion"><span class="icon">⚙</span><span><b>Producción de hoy</b><strong>{{ produccionesHoy.length }}</strong><small>Registros realizados</small></span></a>
   </div>
-</div>
+
+  <div class="content-grid" *ngIf="!loading">
+    <article class="panel"><div class="panel-title"><h2>Últimas ventas</h2><a routerLink="/admin/venta">Ver todas</a></div><div class="empty" *ngIf="!ventas.length">No hay ventas registradas.</div><div class="row" *ngFor="let venta of ventas"><span class="avatar">{{ (venta.cliente ?? 'C').charAt(0) }}</span><span class="row-main"><b>Pedido #{{ venta.id }}</b><small>{{ venta.cliente ?? 'Cliente' }} · {{ (venta.fecha ?? venta.fechaVenta) | date:'short' }}</small></span><strong>S/ {{ venta.total | number:'1.2-2' }}</strong></div></article>
+    <article class="panel"><div class="panel-title"><h2>Alertas de inventario</h2><a routerLink="/admin/insumos">Gestionar</a></div><div class="empty" *ngIf="!lowStock.length">Inventario en niveles normales.</div><div class="row alert-row" *ngFor="let item of lowStock"><span class="alert-icon">!</span><span class="row-main"><b>{{ item.nombre }}</b><small>Stock disponible: {{ item.cantidad }} {{ item.unidadMedida ?? item.nombreUnidadMedida ?? item.abreviatura ?? '' }}</small></span><span class="pill">Bajo</span></div></article>
+  </div>
+</section>

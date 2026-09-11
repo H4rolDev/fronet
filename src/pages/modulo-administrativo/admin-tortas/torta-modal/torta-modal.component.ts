@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -22,11 +23,12 @@ import { TortaDetalleDTO, ModalInputData } from '../../../../models/torta-dto';
 import { CategoriaTortaListadoDTO } from '../../../../models/torta-dto';
 import { TortaService } from '../../../../services/torta.service';
 import { CategoriaTortaService } from '../../../../services/categoria-torta.service';
+import { TortaOpcion, TortaOpcionesService } from '../../../../services/torta-opciones.service';
 
 @Component({
   selector: 'app-torta-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './torta-modal.component.html',
   styleUrls: ['./torta-modal.component.css'],
 })
@@ -40,6 +42,8 @@ export class TortaModalComponent implements OnInit, OnDestroy {
   cargandoInicial = signal<boolean>(false);
   guardando       = signal<boolean>(false);
   errorApi        = signal<string | null>(null);
+  opciones = signal<TortaOpcion[]>([]);
+  nuevaOpcion = { tipo: 'sabor' as TortaOpcion['tipo'], valor: '', precioExtra: 0, maximo: null as number | null };
 
   /** Combo de categorías para el <select> */
   categorias = signal<CategoriaTortaListadoDTO[]>([]);
@@ -87,6 +91,7 @@ export class TortaModalComponent implements OnInit, OnDestroy {
     private fb:                   FormBuilder,
     private tortaService:         TortaService,
     private categoriaTortaService: CategoriaTortaService,
+    private opcionesService: TortaOpcionesService,
   ) {}
 
   // ── Ciclo de vida ──────────────────────────────────────────────────────────
@@ -142,7 +147,8 @@ export class TortaModalComponent implements OnInit, OnDestroy {
 
       forkJoin({
         categorias: this.categoriaTortaService.obtenerListado(),
-        detalle:    this.tortaService.obtenerPorId(this.inputData.id),
+          detalle:    this.tortaService.obtenerPorId(this.inputData.id),
+          opciones:   this.opcionesService.obtenerAdmin(this.inputData.id),
       })
       .pipe(
         takeUntil(this.destroy$),
@@ -152,8 +158,9 @@ export class TortaModalComponent implements OnInit, OnDestroy {
         })
       )
       .subscribe({
-        next: ({ categorias, detalle }) => {
+        next: ({ categorias, detalle, opciones }) => {
           this.categorias.set(categorias);
+          this.opciones.set(opciones);
           this.detalleOriginal = detalle;
 
           // Si tiene imagen, cargarla en el estado
@@ -281,6 +288,21 @@ export class TortaModalComponent implements OnInit, OnDestroy {
         },
         error: (err: Error) => this.errorApi.set(err.message),
       });
+  }
+
+  agregarOpcion(): void {
+    const valor = this.nuevaOpcion.valor.trim();
+    if (!this.esEditar || !this.inputData.id || !valor) return;
+    this.opcionesService.guardar({
+      id: 0, idTorta: this.inputData.id, tipo: this.nuevaOpcion.tipo,
+      valor, precioExtra: Number(this.nuevaOpcion.precioExtra) || 0,
+      maximo: this.nuevaOpcion.maximo, activo: true, orden: this.opciones().length,
+    }).subscribe({ next: option => { this.opciones.update(items => [...items, option]); this.nuevaOpcion.valor = ''; this.nuevaOpcion.precioExtra = 0; } });
+  }
+
+  eliminarOpcion(option: TortaOpcion): void {
+    if (!option.id) return;
+    this.opcionesService.eliminar(option.id).subscribe({ next: () => this.opciones.update(items => items.filter(item => item.id !== option.id)) });
   }
 
   onCerrar(): void { this.cerrar.emit(); }

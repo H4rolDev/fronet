@@ -29,13 +29,15 @@
     <!-- Links desktop -->
     <nav class="nav-links d-none d-lg-flex">
       <a class="nl" routerLink="/"         routerLinkActive="nl--active" [routerLinkActiveOptions]="{exact:true}">Inicio</a>
-      <a class="nl" routerLink="/about"    routerLinkActive="nl--active">Acerca de</a>
-      <a class="nl" routerLink="/contact"  routerLinkActive="nl--active">Contacto</a>
+      <a class="nl" routerLink="/sobre-nosotros" routerLinkActive="nl--active">Sobre nosotros</a>
+      <a class="nl" routerLink="/ubicanos" routerLinkActive="nl--active">Ubícanos</a>
       <a class="nl" routerLink="/products" routerLinkActive="nl--active">Productos</a>
+      <a class="nl" routerLink="/chat" routerLinkActive="nl--active">Yani AI</a>
     </nav>
 
     <!-- Acciones -->
     <div class="nav-actions">
+      <a class="cart-link" routerLink="/cart">Carrito ({{ cartCount }})</a>
       <a *ngIf="!isLoggedIn()" class="btn-session" routerLink="/iniciar">Iniciar Sesión</a>
 
       <div *ngIf="isLoggedIn()" class="user-menu">
@@ -91,7 +93,8 @@
 
     <a class="mn-link" routerLink="/"         routerLinkActive="mn-link--active" [routerLinkActiveOptions]="{exact:true}" (click)="menuMobileOpen=false">🏠 Inicio</a>
     <a class="mn-link" routerLink="/products" routerLinkActive="mn-link--active" (click)="menuMobileOpen=false">🎂 Productos</a>
-    <a class="mn-link" routerLink="/about"    routerLinkActive="mn-link--active" (click)="menuMobileOpen=false">ℹ️ Acerca de</a>
+    <a class="mn-link" routerLink="/sobre-nosotros" routerLinkActive="mn-link--active" (click)="menuMobileOpen=false">ℹ️ Sobre nosotros</a>
+    <a class="mn-link" routerLink="/ubicanos" routerLinkActive="mn-link--active" (click)="menuMobileOpen=false">📍 Ubícanos</a>
     <a class="mn-link" routerLink="/contact"  routerLinkActive="mn-link--active" (click)="menuMobileOpen=false">📞 Contacto</a>
     <div class="mn-divider"></div>
     <a *ngIf="!isLoggedIn()" class="mn-link mn-link--cta" routerLink="/iniciar" (click)="menuMobileOpen=false">🔑 Iniciar Sesión</a>

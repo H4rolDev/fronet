@@ -27,6 +27,7 @@ interface SunatData {
 @Component({
   selector: "app-registrarse",
   templateUrl: './registrarse.component.html',
+  styleUrl: './registrarse.component.css',
   standalone: true,
   imports: [ReactiveFormsModule, CommonModule]
 })

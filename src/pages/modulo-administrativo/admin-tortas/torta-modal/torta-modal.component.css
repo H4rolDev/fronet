@@ -404,3 +404,4 @@
   .imagen-preview__acciones { flex-direction: column; }
   .btn-imagen { width: 100%; justify-content: center; }
 }
+.opciones-config{margin-top:18px}.opciones-form{display:grid;grid-template-columns:1fr 1.5fr .8fr auto;gap:8px;align-items:center}.opciones-form select,.opciones-form input{min-width:0;padding:9px;border:1px solid #eadbca;border-radius:8px;background:#fff}.opciones-lista{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.opcion-chip{display:inline-flex;align-items:center;gap:5px;padding:7px 9px;border-radius:999px;background:#fff5e8;border:1px solid #eadbca;color:#5f4438;font-size:12px}.opcion-chip b{text-transform:capitalize;color:#b95743}.opcion-chip small{color:#765f53}.opcion-chip button{border:0;background:transparent;color:#a33f35;cursor:pointer;font-size:16px}@media(max-width:700px){.opciones-form{grid-template-columns:1fr 1fr}.opciones-form button{grid-column:1/-1}}

@@ -1,20 +1,17 @@
-import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { HttpClient } from '@angular/common/http';
+import { RouterModule } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
-import { environment } from '../../environments/environment';
-import { EstadoVentaEnum, EstadoEntregaEnum } from '../../enums';
+import { VentaService } from '../../services/venta.service';
+import { ESTADO_LABEL, ComprobanteDTO } from '../../models/venta-dto';
 
 interface Pedido {
   id: number;
   fecha: string;
   total: number;
   estadoPago: string;
-  idEstadoVenta?: number;
-  idEstadoEntrega?: number;
+  idEstadoVenta: number;
   productos: string;
   cantidad: number;
   tipoEntrega: string;
@@ -22,471 +19,202 @@ interface Pedido {
   deliveryDireccion?: string;
   deliveryTelefono?: string;
   metodoPago: string;
+  montoPagado?: number;
+  saldoPendiente?: number;
 }
 
-interface EstadoInfo {
-  key: string;
-  label: string;
-  desc: string;
-  icono: string;
-  badgeClass: string;
+interface PedidoDetalle {
+  venta: any;
+  cliente: any;
+  detalles: any[];
+  pagos: any[];
+  delivery: any;
+  comprobante: any;
+  imagenComprobante?: string | null;
 }
 
-type FiltroPedido = 'todos' | 'pendiente' | 'proceso' | 'listo' | 'cancelado';
+interface HistorialItem {
+  id: number;
+  idEstadoAnterior?: number | null;
+  idEstadoNuevo: number;
+  accion: string;
+  observacion?: string;
+  usuario: string;
+  fecha: string;
+}
 
 @Component({
   selector: 'app-cliente-pedidos',
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <div class="pedidos-page">
-      <div class="page-inner">
-
-        <!-- HEADER -->
-        <div class="page-header">
+    <main class="orders-page">
+      <div class="orders-shell">
+        <header class="orders-hero">
           <div>
-            <h1 class="page-title">Mis Pedidos</h1>
-            <p class="page-sub">Historial y seguimiento de tus compras</p>
+            <span class="eyebrow">Tu cuenta · seguimiento</span>
+            <h1>Historial de pedidos</h1>
+            <p>Revisa tus compras y conoce cada actualización en tiempo real.</p>
           </div>
-          <a class="btn-outline" routerLink="/products">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nuevo Pedido
-          </a>
-        </div>
+          <a class="hero-action" routerLink="/products"><span>＋</span> Nuevo pedido</a>
+        </header>
 
-        @if (!isLoggedIn()) {
-          <div class="empty-state">
-            <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-            <h3>Inicia sesión para ver tus pedidos</h3>
-            <p>Accede a tu historial de compras y sigue el estado de tus entregas.</p>
-            <a class="btn-primary" routerLink="/iniciar">Iniciar Sesión</a>
-          </div>
-        } @else if (cargando()) {
-          <div class="loading-state">
-            @for (i of [1,2,3]; track i) {
-              <div class="sk-card"><div class="sk sk-h"></div><div class="sk-body"><div class="sk sk-l"></div><div class="sk sk-m"></div><div class="sk sk-s"></div></div></div>
-            }
-          </div>
-        } @else {
+        <section class="summary-row" *ngIf="!loading && isLoggedIn">
+          <div class="summary-card summary-card--accent"><span class="summary-icon">▣</span><div><strong>{{ totalRegistros }}</strong><small>Pedidos realizados</small></div></div>
+          <div class="summary-card"><span class="summary-icon">◷</span><div><strong>{{ paginaActual }} / {{ totalPaginas }}</strong><small>Página actual</small></div></div>
+          <div class="summary-card"><span class="summary-icon">↗</span><div><strong>Más recientes</strong><small>Ordenados por fecha</small></div></div>
+        </section>
 
-          <!-- CONTADOR -->
-          <div class="stats-bar">
-            <div class="stat-item"><span class="stat-num">{{ pedidos().length }}</span> total</div>
-            <div class="stat-item"><span class="stat-num">{{ contarPorEstado('pendiente') }}</span> pendientes</div>
-            <div class="stat-item"><span class="stat-num">{{ contarPorEstado('proceso') }}</span> en proceso</div>
-            <div class="stat-item"><span class="stat-num">{{ contarPorEstado('listo') }}</span> listos</div>
-          </div>
+        <section class="login-card" *ngIf="!isLoggedIn">
+          <div class="empty-mark">◌</div><h2>Inicia sesión para ver tus pedidos</h2>
+          <p>Accede a tu historial, comprobantes y seguimiento detallado.</p>
+          <a class="primary-button" routerLink="/iniciar">Iniciar sesión</a>
+        </section>
 
-          <!-- FILTROS -->
-          <div class="filtros">
-            @for (f of filtros; track f.valor) {
-              <button class="filtro-btn" [class.act]="filtroActivo() === f.valor" (click)="setFiltro(f.valor)">
-                @if (f.icono) { <span [innerHTML]="f.icono"></span> }
-                {{ f.label }}
-              </button>
-            }
-          </div>
+        <section class="loading-grid" *ngIf="isLoggedIn && loading">
+          <div class="skeleton-card" *ngFor="let item of [1,2,3]"><i></i><b></b><em></em></div>
+        </section>
 
-          @if (pedidosFiltrados().length === 0) {
-            <div class="empty-state">
-              <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
-              <h3>No hay pedidos aquí</h3>
-              <p>{{ filtroActivo() === 'todos' ? 'Aún no has realizado ningún pedido.' : 'Ningún pedido coincide con este filtro.' }}</p>
-              @if (filtroActivo() !== 'todos') {
-                <button class="btn-outline" (click)="setFiltro('todos')">Ver todos</button>
-              } @else {
-                <a class="btn-primary" routerLink="/products">Ver Productos</a>
-              }
-            </div>
-          } @else {
-            <div class="pedidos-list">
-              @for (p of pedidosFiltrados(); track p.id) {
-                @let est = getEstado(p);
-                <div class="pedido-card">
-                  <!-- HEADER -->
-                  <div class="card-h">
-                    <div class="card-h-l">
-                      <span class="card-h-id">#{{ p.id }}</span>
-                      <span class="card-h-fecha">{{ formatFecha(p.fecha) }}</span>
-                    </div>
-                    <span class="badge-estado {{ est.badgeClass }}">
-                      <span class="estado-icono" [innerHTML]="est.icono"></span>
-                      {{ est.label }}
-                    </span>
-                  </div>
+        <ng-container *ngIf="isLoggedIn && !loading">
+          <div class="error-card" *ngIf="errorMessage"><strong>No pudimos cargar tus pedidos.</strong><span>{{ errorMessage }}</span><button (click)="cargarPedidos()">Intentar nuevamente</button></div>
+          <section class="empty-card" *ngIf="!errorMessage && pedidos.length === 0"><div class="empty-mark">♡</div><h2>Aún no tienes pedidos</h2><p>Cuando realices tu primera compra aparecerá aquí.</p><a class="primary-button" routerLink="/products">Ver catálogo</a></section>
 
-                  <!-- BODY -->
-                  <div class="card-b">
-                    <div class="card-row">
-                      <div class="card-prod">
-                        <span class="card-prod-nombre">{{ p.productos }}</span>
-                        <span class="card-prod-cant">x{{ p.cantidad }}</span>
-                      </div>
-                      <span class="card-tipo">
-                        <span class="tipo-dot" [class.tipo-dot--d]="p.tipoEntrega === 'Delivery'"></span>
-                        {{ p.tipoEntrega }}
-                      </span>
-                    </div>
+          <section class="orders-list" *ngIf="!errorMessage && pedidos.length > 0">
+            <div class="list-heading"><div><span class="eyebrow">Últimas compras</span><h2>Todos tus pedidos</h2></div><span class="result-count">{{ totalRegistros }} resultados</span></div>
+            <article class="order-card" *ngFor="let pedido of pedidos; trackBy: trackPedido">
+              <div class="order-card__top"><div><span class="order-number">Pedido #{{ pedido.id }}</span><time>{{ formatDate(pedido.fecha) }}</time></div><span class="status" [class]="statusClass(pedido.idEstadoVenta)">{{ estadoLabel(pedido) }}</span></div>
+              <div class="order-card__body"><div class="product-summary"><span class="cake-mark">✦</span><div><strong>{{ pedido.productos || 'Pedido personalizado' }}</strong><small>{{ pedido.cantidad }} producto(s) · {{ pedido.tipoEntrega }}</small></div></div><div class="order-total"><small>Total</small><strong>S/ {{ pedido.total | number:'1.2-2' }}</strong></div></div>
+              <div class="order-card__meta"><span><small>Pago</small>{{ pedido.metodoPago || 'Pendiente' }}</span><span><small>Estado</small>{{ estadoDescription(pedido) }}</span><button class="detail-button" (click)="verDetalle(pedido)">Ver detalle <b>→</b></button></div>
+            </article>
+          </section>
 
-                    <div class="card-detalles">
-                      <div class="card-det">
-                        <span class="det-label">Pago</span>
-                        <span class="det-val">{{ p.metodoPago }}</span>
-                      </div>
-                      <div class="card-det">
-                        <span class="det-label">Estado</span>
-                        <span class="det-val">{{ est.desc }}</span>
-                      </div>
-                      @if (p.deliveryDireccion) {
-                        <div class="card-det card-det--full">
-                          <span class="det-label">Dirección</span>
-                          <span class="det-val">{{ p.deliveryDireccion }}</span>
-                        </div>
-                      }
-                    </div>
-
-                    <!-- PROGRESS DELIVERY -->
-                    @if (p.tipoEntrega === 'Delivery') {
-                      <div class="progress-track">
-                        @for (step of deliverySteps; track step.key) {
-                          @let st = getStep(p, step.key);
-                          <div class="progress-step" [class.done]="st === 'done'" [class.act]="st === 'active'">
-                            <div class="step-dot">
-                              @if (st === 'done') {
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                              } @else if (st === 'active') {
-                                <div class="step-pulse"></div>
-                              }
-                            </div>
-                            <span class="step-label">{{ step.label }}</span>
-                          </div>
-                        }
-                      </div>
-                    }
-
-                    <!-- INFO EXTRA -->
-                    <div class="card-extra">
-                      @if (est.key === 'esperando') {
-                        <div class="extra-banner extra-banner--azul">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                          Estamos revisando tu comprobante de pago. Te notificaremos cuando sea aprobado.
-                        </div>
-                      }
-                      @if (est.key === 'rechazado') {
-                        <div class="extra-banner extra-banner--rojo">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                          Tu comprobante fue rechazado. Contacta con atención al cliente.
-                        </div>
-                      }
-                      @if (est.key === 'listo-recoger') {
-                        <div class="extra-banner extra-banner--verde">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                          Tu pedido está listo para recoger en Av. Los Geranios 456, Lima.
-                        </div>
-                      }
-                      @if (est.key === 'entregado') {
-                        <div class="extra-banner extra-banner--verde">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                          Pedido entregado con éxito. ¡Gracias por tu compra!
-                        </div>
-                      }
-                    </div>
-                  </div>
-
-                  <!-- FOOTER -->
-                  <div class="card-f">
-                    <div class="card-f-total">
-                      <span>Total pagado</span>
-                      <strong>S/ {{ p.total.toFixed(2) }}</strong>
-                    </div>
-                  </div>
-                </div>
-              }
-            </div>
-          }
-        }
+          <nav class="pagination" *ngIf="totalPaginas > 1" aria-label="Paginación de pedidos">
+            <button (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1">← Anterior</button>
+            <div><button *ngFor="let page of paginas" [class.active]="page === paginaActual" (click)="cambiarPagina(page)">{{ page }}</button></div>
+            <button (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual === totalPaginas">Siguiente →</button>
+          </nav>
+        </ng-container>
       </div>
-    </div>
+
+      <div class="modal-backdrop" *ngIf="selectedOrder" (click)="cerrarDetalle()">
+        <section class="detail-modal" (click)="$event.stopPropagation()">
+          <button class="modal-close" (click)="cerrarDetalle()" aria-label="Cerrar">×</button>
+          <div class="detail-heading"><span class="eyebrow">Detalle completo</span><h2>Pedido #{{ selectedOrder.id }}</h2><p>{{ formatDate(selectedOrder.fecha) }} · {{ estadoLabel(selectedOrder) }}</p></div>
+          <div class="detail-loading" *ngIf="detailLoading">Cargando información del pedido...</div>
+          <div *ngIf="!detailLoading && detail" class="detail-content">
+            <div class="detail-total"><span>Total del pedido</span><strong>S/ {{ detail.venta.total | number:'1.2-2' }}</strong><small>Creado el {{ formatDate(detail.venta.fechaVenta) }}</small></div>
+            <section class="detail-section"><h3>Productos</h3><div class="detail-product" *ngFor="let item of detail.detalles"><div><strong>{{ item.torta }}</strong><small>x{{ item.cantidad }} <span *ngIf="item.tamanio">· {{ item.tamanio }}</span><span *ngIf="item.sabor">· {{ item.sabor }}</span><span *ngIf="item.relleno">· {{ item.relleno }}</span></small></div><b>S/ {{ item.subTotal | number:'1.2-2' }}</b></div></section>
+            <div class="detail-columns"><section class="detail-section"><h3>Pago</h3><div class="info-line" *ngFor="let pago of detail.pagos"><span>{{ pago.nombreMetodo }}<small *ngIf="pago.numeroOperacion">Operación {{ pago.numeroOperacion }}</small></span><b>S/ {{ pago.monto | number:'1.2-2' }}</b></div></section><section class="detail-section"><h3>Entrega</h3><div class="info-line"><span>Modalidad</span><b>{{ detail.venta.idTipoEntrega === 2 ? 'Delivery' : 'Recojo en tienda' }}</b></div><div class="info-line" *ngIf="detail.delivery"><span>Dirección</span><b>{{ detail.delivery.direccion }}</b></div><div class="info-line" *ngIf="detail.delivery"><span>Teléfono</span><b>{{ detail.delivery.telefonoContacto || detail.delivery.telefono }}</b></div></section></div>
+             <section class="receipt-box" *ngIf="detail.imagenComprobante"><div><span class="receipt-icon">▤</span><div><strong>Comprobante de pago</strong><small>Imagen enviada para validación</small></div></div><a [href]="detail.imagenComprobante" target="_blank" rel="noopener">Ver comprobante ↗</a></section>
+             <section class="receipt-box receipt-box--official" *ngIf="detail.venta.idEstadoVenta === 7"><div><span class="receipt-icon">✓</span><div><strong>Comprobante de compra</strong><small>Disponible porque tu pedido fue entregado</small></div></div><button (click)="verComprobante()">Ver comprobante</button></section>
+            <section class="timeline-section"><h3>Seguimiento del pedido</h3><div class="timeline" *ngIf="history.length; else noHistory"><div class="timeline-item" *ngFor="let event of history; let last = last" [class.last]="last"><span class="timeline-dot" [class]="statusClass(event.idEstadoNuevo)"></span><div><div class="timeline-title"><strong>{{ event.accion || estadoLabelById(event.idEstadoNuevo) }}</strong><time>{{ formatDate(event.fecha) }}</time></div><p *ngIf="event.idEstadoAnterior">{{ estadoLabelById(event.idEstadoAnterior) }} <b>→</b> {{ estadoLabelById(event.idEstadoNuevo) }}</p><p *ngIf="event.observacion">{{ event.observacion }}</p><small>Actualizado por {{ event.usuario || 'Administración' }}</small></div></div></div><ng-template #noHistory><p class="muted">Aún no hay movimientos registrados para este pedido.</p></ng-template></section>
+          </div>
+          <div class="detail-error" *ngIf="detailError">{{ detailError }}</div>
+       </section>
+      </div>
+      <div class="modal-backdrop" *ngIf="receipt" (click)="cerrarComprobante()">
+        <section class="receipt-modal" (click)="$event.stopPropagation()">
+          <button class="modal-close" (click)="cerrarComprobante()" aria-label="Cerrar">×</button>
+          <div class="receipt-brand"><span>✦</span><div><small>COMPROBANTE DE COMPRA</small><h2>{{ receipt.empresa.nombre }}</h2></div></div>
+          <div class="receipt-company"><span>RUC {{ receipt.empresa.ruc }}</span><span>{{ receipt.empresa.direccion }}</span><span>{{ receipt.empresa.telefono }}</span></div>
+          <div class="receipt-meta"><span><small>{{ receipt.tipoComprobante }}</small><strong>{{ receipt.serieNumero }}</strong></span><span><small>Fecha</small><strong>{{ formatDate(receipt.fecha) }}</strong></span><span><small>Cliente</small><strong>{{ receipt.cliente }}</strong></span></div>
+           <div class="receipt-items"><div class="receipt-item" *ngFor="let item of receipt.detalles"><span><strong>{{ item.torta }}</strong><small>{{ item.cantidad }} x S/ {{ item.precioUnitario | number:'1.2-2' }}</small><small *ngIf="item.tamanio || item.sabor || item.relleno || item.pisos || item.colorDecoracion || item.mensaje">{{ item.tamanio }} · {{ item.sabor }} · {{ item.relleno }}<span *ngIf="item.pisos"> · {{ item.pisos }} piso(s)</span><span *ngIf="item.colorDecoracion"> · {{ item.colorDecoracion }}</span><span *ngIf="item.mensaje"> · {{ item.mensaje }}</span></small></span><b>S/ {{ item.subTotal | number:'1.2-2' }}</b></div></div>
+           <div class="receipt-breakdown"><span>Subtotal</span><b>S/ {{ receipt.subTotal | number:'1.2-2' }}</b><span>Delivery</span><b>S/ {{ (receipt.total - (receipt.subTotal || 0)) | number:'1.2-2' }}</b></div><div class="receipt-total"><span>Total pagado</span><strong>S/ {{ receipt.total | number:'1.2-2' }}</strong></div>
+          <p class="receipt-thanks">Gracias por elegirnos. Tu celebracion merece algo dulce.</p>
+        </section>
+      </div>
+    </main>
   `,
   styles: [`
-    :host{display:block;background:#f5f2ef;min-height:100vh;font-family:system-ui,-apple-system,sans-serif;color:#2c1810}
-    .pedidos-page{padding:2rem 1rem}
-    .page-inner{max-width:800px;margin:0 auto}
-    .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.25rem;gap:1rem;flex-wrap:wrap}
-    .page-title{font-size:1.6rem;font-weight:700;font-family:Georgia,serif;color:#550F26;margin:0;letter-spacing:-.3px}
-    .page-sub{font-size:.85rem;color:#8b6e65;margin:4px 0 0}
-    .btn-primary,.btn-outline{display:inline-flex;align-items:center;gap:6px;padding:.6rem 1.2rem;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;text-decoration:none}
-    .btn-primary{background:#550F26;color:#fff;border:none}
-    .btn-primary:hover{background:#6d1430}
-    .btn-outline{background:#fff;color:#550F26;border:1px solid #ede8e3}
-    .btn-outline:hover{border-color:#550F26}
-    /* Skeleton */
-    .loading-state{display:flex;flex-direction:column;gap:1rem}
-    .sk-card{border-radius:12px;overflow:hidden;background:#fff;border:1px solid #ede8e3}
-    .sk{background:linear-gradient(90deg,#f0ebe7 25%,#f8f5f3 50%,#f0ebe7 75%);background-size:200% 100%;border-radius:4px;animation:shimmer 1.4s infinite}
-    .sk-h{height:52px}
-    .sk-body{padding:1rem;display:flex;flex-direction:column;gap:8px}
-    .sk-l{height:16px;width:60%}.sk-m{height:13px;width:80%}.sk-s{height:11px;width:40%}
-    @keyframes shimmer{to{background-position:-200% 0}}
-    /* Stats bar */
-    .stats-bar{display:flex;gap:16px;margin-bottom:1rem;flex-wrap:wrap}
-    .stat-item{font-size:.75rem;color:#8b6e65;display:flex;align-items:center;gap:4px}
-    .stat-num{font-weight:700;font-size:.9rem;color:#550F26;font-family:Georgia,serif}
-    /* Filtros */
-    .filtros{display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap}
-    .filtro-btn{display:inline-flex;align-items:center;gap:5px;padding:.45rem .9rem;background:#fff;border:1px solid #ede8e3;border-radius:999px;font-size:.78rem;font-weight:500;color:#8b6e65;cursor:pointer;font-family:inherit;transition:all .15s}
-    .filtro-btn:hover{border-color:#c4b5ad;color:#550F26}
-    .filtro-btn.act{background:#550F26;color:#fff;border-color:#550F26}
-    .filtro-btn.act:hover{background:#6d1430;color:#fff}
-    /* Empty */
-    .empty-state{text-align:center;padding:4rem 2rem;background:#fff;border-radius:16px;border:1px solid #ede8e3}
-    .empty-icon{width:56px;height:56px;margin:0 auto 1rem;color:#c4b5ad;opacity:.6}
-    .empty-icon svg{width:100%;height:100%}
-    .empty-state h3{font-size:1.1rem;color:#2c1810;margin:0 0 .4rem}
-    .empty-state p{font-size:.85rem;color:#8b6e65;margin:0 0 1.2rem}
-    /* Cards */
-    .pedidos-list{display:flex;flex-direction:column;gap:1rem}
-    .pedido-card{background:#fff;border-radius:14px;overflow:hidden;border:1px solid #ede8e3;transition:box-shadow .2s}
-    .pedido-card:hover{box-shadow:0 4px 20px rgba(85,15,38,.08)}
-    /* Header */
-    .card-h{background:linear-gradient(135deg,#550F26 0%,#7a1f45 100%);padding:.9rem 1.2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
-    .card-h-l{display:flex;align-items:center;gap:12px}
-    .card-h-id{font-weight:700;font-size:.95rem;color:#fff;font-family:monospace}
-    .card-h-fecha{font-size:.75rem;color:rgba(255,255,255,.75)}
-    .badge-estado{display:inline-flex;align-items:center;gap:4px;padding:.3rem .65rem;border-radius:999px;font-size:.7rem;font-weight:600;white-space:nowrap;flex-shrink:0}
-    .estado-icono{display:inline-flex;width:12px;height:12px}
-    .estado-icono svg{width:100%;height:100%}
-    .badge-pendiente{background:rgba(255,255,255,.2);color:#fff}
-    .badge-espera{background:rgba(254,243,199,.9);color:#92400e}
-    .badge-proceso{background:rgba(254,243,199,.9);color:#92400e}
-    .badge-camino{background:rgba(254,215,170,.9);color:#9a3412}
-    .badge-listo{background:rgba(220,252,231,.9);color:#166534}
-    .badge-entregado{background:rgba(219,234,254,.9);color:#1e40af}
-    .badge-rechazado{background:rgba(254,202,202,.9);color:#991b1b}
-    .badge-cancelado{background:rgba(239,235,232,.9);color:#6b5b54}
-    /* Body */
-    .card-b{padding:1rem 1.2rem}
-    .card-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;gap:8px}
-    .card-prod{display:flex;align-items:center;gap:8px;min-width:0}
-    .card-prod-nombre{font-size:.9rem;font-weight:600;color:#2c1810;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .card-prod-cant{font-size:.75rem;background:#f5f2ef;color:#8b6e65;padding:2px 8px;border-radius:999px;flex-shrink:0}
-    .card-tipo{display:flex;align-items:center;gap:5px;font-size:.75rem;color:#8b6e65;flex-shrink:0}
-    .tipo-dot{width:6px;height:6px;border-radius:50%;background:#22c55e}
-    .tipo-dot--d{background:#f59e0b}
-    /* Detalles */
-    .card-detalles{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:.75rem}
-    .card-det{display:flex;flex-direction:column;gap:2px}
-    .card-det--full{grid-column:1/-1}
-    .det-label{font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#b8a9a0}
-    .det-val{font-size:.8rem;color:#2c1810}
-    /* Banners extra */
-    .card-extra{margin-bottom:.5rem}
-    .extra-banner{display:flex;align-items:flex-start;gap:8px;padding:.6rem .8rem;border-radius:8px;font-size:.75rem;line-height:1.5}
-    .extra-banner svg{flex-shrink:0;margin-top:2px}
-    .extra-banner--azul{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe}
-    .extra-banner--verde{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
-    .extra-banner--rojo{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
-    /* Progress */
-    .progress-track{display:flex;justify-content:space-between;margin:.75rem 0 .25rem;padding:0 4px;position:relative}
-    .progress-track::before{content:'';position:absolute;top:9px;left:12%;right:12%;height:2px;background:#ede8e3;z-index:0}
-    .progress-step{display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;z-index:1;flex:1}
-    .step-dot{width:20px;height:20px;border-radius:50%;background:#ede8e3;display:flex;align-items:center;justify-content:center;font-size:8px;transition:all .3s}
-    .progress-step.done .step-dot{background:#550F26;color:#fff}
-    .progress-step.act .step-dot{background:#f59e0b;border:2px solid #fbbf24;animation:pulse 1.5s infinite}
-    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.4)}50%{box-shadow:0 0 0 6px rgba(245,158,11,0)}}
-    .step-pulse{width:8px;height:8px;border-radius:50%;background:#fff}
-    .step-label{font-size:.6rem;color:#8b6e65;text-align:center;font-weight:500;line-height:1.2}
-    .progress-step.done .step-label{color:#550F26;font-weight:600}
-    .progress-step.act .step-label{color:#92400e;font-weight:600}
-    /* Footer */
-    .card-f{padding:.8rem 1.2rem;border-top:1px solid #f5f2ef;display:flex;justify-content:flex-end}
-    .card-f-total{display:flex;align-items:center;gap:10px}
-    .card-f-total span{font-size:.8rem;color:#8b6e65}
-    .card-f-total strong{font-size:1.15rem;color:#550F26;font-family:Georgia,serif}
-    @media(max-width:600px){
-      .pedidos-page{padding:1rem}
-      .card-detalles{grid-template-columns:1fr}
-      .progress-track{flex-wrap:wrap;gap:4px}
-      .progress-track::before{display:none}
-      .progress-step{flex-direction:row;gap:6px;flex:1 1 45%}
-      .filtros{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
-      .page-title{font-size:1.3rem}
-      .stats-bar{font-size:.7rem;gap:10px}
-    }
-  `]
+    :host{display:block;background:#fffaf2;min-height:100vh;color:#3e2922}.orders-page{padding:3rem 1.25rem 5rem}.orders-shell{max-width:1000px;margin:auto}.orders-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:1.5rem;margin-bottom:2rem}.eyebrow{display:block;color:#b95743;text-transform:uppercase;letter-spacing:.13em;font-size:.67rem;font-weight:800;margin-bottom:.5rem}.orders-hero h1{font:700 clamp(2rem,5vw,3.2rem)/1.05 Georgia,serif;color:#3e2922;margin:0}.orders-hero p{color:#765f53;margin:.65rem 0 0}.hero-action,.primary-button{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;background:#b95743;color:#fff;border:0;border-radius:999px;padding:.8rem 1.2rem;text-decoration:none;font-weight:700;box-shadow:0 8px 18px #b9574330}.hero-action span{font-size:1.2rem}.summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem;margin-bottom:2.3rem}.summary-card{display:flex;align-items:center;gap:.75rem;padding:1rem 1.1rem;border:1px solid #eadbca;border-radius:1rem;background:#fffdf9}.summary-card--accent{background:#3e2922;color:#fff;border-color:#3e2922}.summary-icon{display:grid;place-items:center;width:2.25rem;height:2.25rem;border-radius:.75rem;background:#f8eee2;color:#b95743;font-size:1.1rem}.summary-card--accent .summary-icon{background:#b95743;color:#fff}.summary-card strong,.summary-card small{display:block}.summary-card strong{font:700 1.05rem Georgia,serif}.summary-card small{font-size:.72rem;opacity:.72;margin-top:.2rem}.list-heading{display:flex;justify-content:space-between;align-items:end;margin-bottom:1rem}.list-heading h2{font:700 1.55rem Georgia,serif;margin:0}.result-count{font-size:.75rem;color:#765f53}.orders-list{display:grid;gap:1rem}.order-card{background:#fffdf9;border:1px solid #eadbca;border-radius:1.25rem;overflow:hidden;box-shadow:0 10px 25px #3e29220b;transition:.2s}.order-card:hover{transform:translateY(-2px);box-shadow:0 14px 30px #3e292218}.order-card__top{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;background:#fdf5eb;border-bottom:1px solid #f0e2d2}.order-number{font-weight:800;font-family:monospace;color:#3e2922;display:block}.order-card time{font-size:.72rem;color:#765f53}.status{display:inline-flex;padding:.35rem .7rem;border-radius:999px;font-size:.7rem;font-weight:800}.status--pending,.status--waiting{background:#fff1cf;color:#986313}.status--success{background:#e5f6e9;color:#23733a}.status--danger{background:#fde8e7;color:#a33f35}.status--neutral{background:#eee9e4;color:#765f53}.order-card__body{display:flex;justify-content:space-between;align-items:center;padding:1.25rem}.product-summary{display:flex;align-items:center;gap:.75rem}.cake-mark{display:grid;place-items:center;width:2.5rem;height:2.5rem;border-radius:.8rem;background:#f8e8d7;color:#b95743;font-size:1.2rem}.product-summary strong,.product-summary small{display:block}.product-summary small{font-size:.76rem;color:#765f53;margin-top:.25rem}.order-total{text-align:right}.order-total small{display:block;color:#765f53;font-size:.7rem}.order-total strong{font:700 1.35rem Georgia,serif;color:#b95743}.order-card__meta{display:flex;align-items:center;gap:1.5rem;padding:.85rem 1.25rem;border-top:1px solid #f0e2d2;color:#765f53;font-size:.78rem}.order-card__meta span{display:grid;gap:.2rem}.order-card__meta small{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:#9a8479}.detail-button{margin-left:auto;background:none;border:0;color:#b95743;font-weight:800;cursor:pointer}.detail-button b{font-size:1.1rem}.pagination{display:flex;justify-content:center;align-items:center;gap:1rem;margin-top:2rem}.pagination>div{display:flex;gap:.35rem}.pagination button{border:1px solid #eadbca;background:#fffdf9;color:#765f53;padding:.55rem .8rem;border-radius:.6rem;cursor:pointer;font:inherit;font-size:.78rem}.pagination button.active{background:#b95743;color:#fff;border-color:#b95743}.pagination button:disabled{opacity:.4;cursor:not-allowed}.login-card,.empty-card{text-align:center;background:#fffdf9;border:1px solid #eadbca;border-radius:1.25rem;padding:4rem 1rem}.empty-mark{font-size:2.8rem;color:#c99032;margin-bottom:.7rem}.login-card h2,.empty-card h2{font:700 1.45rem Georgia,serif;margin:.2rem 0}.login-card p,.empty-card p{color:#765f53;margin:.5rem 0 1.4rem}.loading-grid{display:grid;gap:1rem}.skeleton-card{height:155px;border-radius:1.25rem;background:linear-gradient(100deg,#fffdf9 30%,#f8eee2 50%,#fffdf9 70%);background-size:200% 100%;animation:shimmer 1.3s infinite;border:1px solid #eadbca}.skeleton-card i,.skeleton-card b,.skeleton-card em{display:block;height:14px;background:#eadbca;border-radius:5px;margin:25px 20px 0}.skeleton-card b{width:55%;margin-top:24px}.skeleton-card em{width:30%;margin-top:14px}@keyframes shimmer{to{background-position:-200% 0}}.error-card{padding:1rem;background:#fde8e7;border:1px solid #f3c5c2;border-radius:1rem;color:#a33f35;display:flex;gap:.75rem;align-items:center}.error-card span{font-size:.85rem}.error-card button{margin-left:auto;border:0;border-radius:999px;padding:.5rem .8rem;background:#a33f35;color:#fff;cursor:pointer}.modal-backdrop{position:fixed;inset:0;z-index:100;background:#3e2922a8;display:grid;place-items:center;padding:1rem}.detail-modal{position:relative;max-height:92vh;overflow:auto;width:min(760px,100%);background:#fffdf9;border-radius:1.4rem;box-shadow:0 25px 70px #3e292255}.modal-close{position:absolute;right:1rem;top:1rem;width:2rem;height:2rem;border:0;border-radius:50%;background:#f8eee2;color:#3e2922;font-size:1.3rem;cursor:pointer}.detail-heading{padding:2rem 2rem 1.35rem;background:linear-gradient(135deg,#3e2922,#70483a);color:#fff}.detail-heading .eyebrow{color:#f1c982}.detail-heading h2{font:700 2rem Georgia,serif;margin:0}.detail-heading p{margin:.45rem 0 0;color:#f8e8d7;font-size:.82rem}.detail-content{padding:1.35rem 2rem 2rem}.detail-total{padding:1rem 1.15rem;border-radius:1rem;background:#f8eee2;display:grid;grid-template-columns:1fr auto;align-items:center}.detail-total span,.detail-total small{color:#765f53;font-size:.75rem}.detail-total strong{grid-column:2;grid-row:1/3;color:#b95743;font:700 1.5rem Georgia,serif}.detail-total small{grid-column:1}.detail-section{margin-top:1.35rem}.detail-section h3,.timeline-section h3{font:700 1rem Georgia,serif;margin:0 0 .75rem;color:#3e2922}.detail-product,.info-line{display:flex;justify-content:space-between;gap:1rem;padding:.7rem 0;border-bottom:1px solid #f0e2d2;font-size:.83rem}.detail-product small,.info-line small{display:block;color:#765f53;margin-top:.25rem;font-size:.72rem}.detail-product>b,.info-line>b{color:#b95743;white-space:nowrap}.detail-columns{display:grid;grid-template-columns:1fr 1fr;gap:2rem}.receipt-box{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-top:1.35rem;padding:1rem;border:1px solid #eadbca;border-radius:1rem}.receipt-box>div{display:flex;align-items:center;gap:.7rem}.receipt-icon{display:grid;place-items:center;width:2.3rem;height:2.3rem;border-radius:.7rem;background:#e5f6e9;color:#23733a}.receipt-box strong,.receipt-box small{display:block}.receipt-box small{font-size:.72rem;color:#765f53;margin-top:.2rem}.receipt-box a{color:#b95743;font-size:.78rem;font-weight:800;text-decoration:none}.timeline-section{margin-top:1.7rem}.timeline{display:grid}.timeline-item{position:relative;display:grid;grid-template-columns:1rem 1fr;gap:.75rem;padding-bottom:1.15rem}.timeline-item:not(.last)::after{content:'';position:absolute;left:.42rem;top:.9rem;bottom:0;width:2px;background:#eadbca}.timeline-dot{position:relative;z-index:1;width:.85rem;height:.85rem;border-radius:50%;background:#c99032;border:3px solid #fffdf9;box-shadow:0 0 0 1px #c99032}.timeline-dot.status--success{background:#22a05a;box-shadow:0 0 0 1px #22a05a}.timeline-dot.status--danger{background:#b95743;box-shadow:0 0 0 1px #b95743}.timeline-title{display:flex;justify-content:space-between;gap:1rem}.timeline-title strong{font-size:.82rem}.timeline-title time,.timeline-item p,.timeline-item small{color:#765f53;font-size:.72rem}.timeline-item p{margin:.3rem 0}.timeline-item p b{color:#c99032}.muted{color:#765f53;font-size:.8rem}.detail-loading,.detail-error{padding:2rem;text-align:center;color:#765f53}@media(max-width:700px){.orders-page{padding:2rem .9rem 4rem}.orders-hero{display:block}.hero-action{margin-top:1rem}.summary-row{grid-template-columns:1fr}.summary-card:nth-child(2),.summary-card:nth-child(3){display:none}.order-card__meta{flex-wrap:wrap;gap:.8rem}.detail-button{width:100%;text-align:left;margin:0}.detail-content{padding:1.1rem}.detail-heading{padding:1.6rem 1.1rem 1.2rem}.detail-columns{grid-template-columns:1fr;gap:.3rem}.receipt-box{align-items:flex-start;flex-direction:column}.receipt-box a{margin-left:3rem}.pagination{gap:.4rem}.pagination>button{font-size:0}.pagination>button:first-child:before{content:'‹';font-size:1.1rem}.pagination>button:last-child:before{content:'›';font-size:1.1rem}}
+   `, `
+     .receipt-box--official{border-color:#c9a45c;background:linear-gradient(135deg,#fffdf8,#fff6df)}.receipt-box--official button{border:0;border-radius:999px;background:#b95743;color:#fff;padding:.65rem 1rem;font-weight:700;cursor:pointer}.receipt-modal{position:relative;width:min(92vw,480px);background:#fffdf9;border-radius:1.5rem;padding:2rem;box-shadow:0 25px 70px #3e292250;border:1px solid #eadbca}.receipt-brand{display:flex;gap:.8rem;align-items:center;color:#b95743}.receipt-brand>span{display:grid;place-items:center;width:2.5rem;height:2.5rem;border-radius:1rem;background:#3e2922;color:#e5bd68;font-size:1.4rem}.receipt-brand small,.receipt-meta small{display:block;color:#b95743;font-size:.62rem;font-weight:800;letter-spacing:.12em}.receipt-brand h2{margin:.15rem 0 0;font:700 1.5rem Georgia,serif;color:#3e2922}.receipt-company{display:flex;flex-wrap:wrap;gap:.45rem 1rem;padding:1rem 0;border-bottom:1px dashed #d9c7b4;color:#765f53;font-size:.72rem}.receipt-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;padding:1rem 0}.receipt-meta strong{display:block;margin-top:.25rem;font-size:.78rem;color:#3e2922}.receipt-items{border-top:1px solid #eadbca}.receipt-item{display:flex;justify-content:space-between;gap:1rem;padding:.8rem 0;border-bottom:1px solid #f0e7dd}.receipt-item strong,.receipt-item small{display:block}.receipt-item small{color:#765f53;margin-top:.2rem}.receipt-item b{color:#b95743}.receipt-total{display:flex;justify-content:space-between;align-items:center;padding:1.2rem 0;font-weight:700;color:#3e2922}.receipt-total strong{font:700 1.6rem Georgia,serif;color:#b95743}.receipt-thanks{text-align:center;color:#765f53;font-size:.78rem;margin:.5rem 0 0}@media(max-width:560px){.receipt-modal{padding:1.25rem}.receipt-meta{grid-template-columns:1fr 1fr}.receipt-meta span:last-child{grid-column:1/-1}}
+   `]
 })
-export class ClientePedidosComponent implements OnInit, OnDestroy {
-  private destroy$ = new Subject<void>();
-  private apiUrl = environment.apiUrl;
+export class ClientePedidosComponent implements OnInit {
+  isLoggedIn = false;
+  loading = true;
+  errorMessage = '';
+  pedidos: Pedido[] = [];
+  paginaActual = 1;
+  totalPaginas = 1;
+  totalRegistros = 0;
+  readonly tamanioPagina = 6;
+  selectedOrder: Pedido | null = null;
+  detail: PedidoDetalle | null = null;
+  history: HistorialItem[] = [];
+  detailLoading = false;
+  detailError = '';
+  receipt: ComprobanteDTO | null = null;
+  receiptLoading = false;
+  receiptError = '';
 
-  isLoggedIn = signal(false);
-  cargando = signal(false);
-  pedidos = signal<Pedido[]>([]);
-  filtroActivo = signal<FiltroPedido>('todos');
-
-  readonly filtros: { valor: FiltroPedido; label: string; icono?: string }[] = [
-    { valor: 'todos', label: 'Todos' },
-    { valor: 'pendiente', label: 'Pendientes', icono: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' },
-    { valor: 'proceso', label: 'En proceso', icono: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8 6 4 8 4 12h16c0-4-4-6-8-10z"/><rect x="2" y="12" width="20" height="4" rx="1"/></svg>' },
-    { valor: 'listo', label: 'Listos', icono: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' },
-    { valor: 'cancelado', label: 'Cancelados' },
-  ];
-
-  readonly deliverySteps = [
-    { key: 'pendiente', label: 'Pedido' },
-    { key: 'preparando', label: 'Preparando' },
-    { key: 'camino', label: 'En camino' },
-    { key: 'entregado', label: 'Entregado' },
-  ];
-
-  pedidosFiltrados = computed(() => {
-    const f = this.filtroActivo();
-    const lista = this.pedidos();
-    if (f === 'todos') return lista;
-    return lista.filter(p => this.matchFiltro(p, f));
-  });
-
-  private idVenta(p: Pedido): number { return p.idEstadoVenta ?? 0; }
-  private idEntrega(p: Pedido): number { return p.idEstadoEntrega ?? 0; }
-
-  private matchFiltro(p: Pedido, f: FiltroPedido): boolean {
-    const est = this.detectarEstado(p);
-    switch (f) {
-      case 'pendiente': return est === 'pendiente' || est === 'esperando' || est === 'rechazado';
-      case 'proceso': return est === 'preparacion' || est === 'camino' || est === 'pagado';
-      case 'listo': return est === 'listo-recoger' || est === 'entregado';
-      case 'cancelado': return est === 'cancelado';
-      default: return true;
-    }
-  }
-
-  private detectarEstado(p: Pedido): string {
-    const iv = this.idVenta(p);
-    const ie = this.idEntrega(p);
-    const ep = (p.estadoPago ?? '').toLowerCase();
-    const de = (p.deliveryEstado ?? '').toLowerCase();
-
-    const esCancelado = iv === 6 || ie === 6 || ep.includes('cancel') || de.includes('cancel');
-    if (esCancelado) return 'cancelado';
-
-    const esRechazado = iv === 4 || ep.includes('rechaz');
-    if (esRechazado) return 'rechazado';
-
-    const esEntregado = ie === 5 || de.includes('entregado');
-    if (esEntregado) return 'entregado';
-
-    const esEnCamino = ie === 4 || de.includes('camino');
-    if (esEnCamino) return 'camino';
-
-    const esPreparacion = ie === 2 || ie === 3 || de.includes('asign') || de.includes('acept');
-    if (esPreparacion) return 'preparacion';
-
-    const esPagado = iv === 5 || ep.includes('pagada');
-    if (esPagado) {
-      if (p.tipoEntrega === 'Recojo en tienda') return 'listo-recoger';
-      if (ie === 1 || ie === 0 || de.includes('pendiente')) return 'pagado';
-      return 'listo-recoger';
-    }
-
-    const esEsperando = iv === 2 || ep.includes('esperando') || ep.includes('validaci');
-    if (esEsperando) return 'esperando';
-
-    return 'pendiente';
-  }
-
-  contarPorEstado(f: FiltroPedido): number {
-    return this.pedidos().filter(p => this.matchFiltro(p, f)).length;
-  }
-
-  getEstado(p: Pedido): EstadoInfo {
-    const est = this.detectarEstado(p);
-    switch (est) {
-      case 'cancelado':
-        return { key: 'cancelado', label: 'Cancelado', desc: 'Pedido cancelado', icono: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>', badgeClass: 'badge-cancelado' };
-      case 'rechazado':
-        return { key: 'rechazado', label: 'Rechazado', desc: 'Comprobante rechazado', icono: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>', badgeClass: 'badge-rechazado' };
-      case 'entregado':
-        return { key: 'entregado', label: 'Entregado', desc: 'Recibido con éxito', icono: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>', badgeClass: 'badge-entregado' };
-      case 'camino':
-        return { key: 'camino', label: 'En camino', desc: 'Repartidor en camino', icono: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17h14M5 17l-2-4h16l-2 4M5 17l2-10h10l2 10"/></svg>', badgeClass: 'badge-camino' };
-      case 'preparacion':
-        return { key: 'preparacion', label: 'En preparación', desc: 'Preparando tu pedido', icono: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8 6 4 8 4 12h16c0-4-4-6-8-10z"/><rect x="2" y="12" width="20" height="4" rx="1"/></svg>', badgeClass: 'badge-proceso' };
-      case 'listo-recoger':
-        return { key: 'listo-recoger', label: 'Listo para recoger', desc: 'Puedes pasar por tu pedido', icono: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>', badgeClass: 'badge-listo' };
-      case 'pagado':
-        return { key: 'pagado', label: 'Pagado', desc: 'Pago confirmado, esperando asignación', icono: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>', badgeClass: 'badge-listo' };
-      case 'esperando':
-        return { key: 'esperando', label: 'Esperando validación', desc: 'Revisando comprobante', icono: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', badgeClass: 'badge-espera' };
-      default:
-        return { key: 'pendiente', label: 'Pendiente', desc: 'Pedido registrado', icono: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', badgeClass: 'badge-pendiente' };
-    }
-  }
-
-  getStep(p: Pedido, step: string): 'done' | 'active' | 'pending' {
-    const ie = this.idEntrega(p);
-    const de = (p.deliveryEstado ?? '').toLowerCase();
-    switch (step) {
-      case 'pendiente': return 'done';
-      case 'preparando': return ie >= 2 || de.includes('asign') || de.includes('acept') ? 'done' : ie >= 1 || de.includes('pendiente') ? 'active' : 'pending';
-      case 'camino': return ie >= 4 || de.includes('camino') ? (ie >= 5 || de.includes('entregado') ? 'done' : 'active') : 'pending';
-      case 'entregado': return ie >= 5 || de.includes('entregado') ? 'done' : 'pending';
-      default: return 'pending';
-    }
-  }
-
-  constructor(
-    private auth: AuthService,
-    private http: HttpClient,
-    private router: Router
-  ) {}
+  constructor(private auth: AuthService, private ventas: VentaService) {}
 
   ngOnInit(): void {
-    this.isLoggedIn.set(this.auth.isLoggedIn());
-    if (this.auth.isLoggedIn()) {
-      this.cargarPedidos();
-    }
+    this.isLoggedIn = this.auth.isLoggedIn();
+    if (this.isLoggedIn) this.cargarPedidos();
+    else this.loading = false;
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+  cargarPedidos(): void {
+    const personaId = this.auth.getPersonaId();
+    if (!personaId) { this.loading = false; this.errorMessage = 'No se encontró la información del cliente.'; return; }
+    this.loading = true;
+    this.errorMessage = '';
+    this.ventas.obtenerMisPedidosPaginado(personaId, this.paginaActual, this.tamanioPagina).subscribe({
+      next: response => {
+        this.pedidos = (response?.items || []).sort((a: Pedido, b: Pedido) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+        this.totalRegistros = response?.totalRegistros || 0;
+        this.totalPaginas = Math.max(response?.totalPaginas || 1, 1);
+        this.paginaActual = response?.paginaActual || this.paginaActual;
+        this.loading = false;
+      },
+      error: error => { this.loading = false; this.errorMessage = error?.error?.mensaje || 'Intenta nuevamente en unos segundos.'; }
+    });
   }
 
-  private cargarPedidos(): void {
-    const persona = this.auth.getPersona();
-    if (!persona?.id) return;
-
-    this.cargando.set(true);
-    this.http.get<Pedido[]>(`${this.apiUrl}/Venta/MisPedidos?idPersona=${persona.id}`)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (data) => {
-          const normalized = (data ?? []).map(p => ({
-            ...p,
-            idEstadoVenta: p.idEstadoVenta ?? 0,
-            idEstadoEntrega: p.idEstadoEntrega ?? 0,
-          }));
-          this.pedidos.set(normalized);
-          this.cargando.set(false);
-        },
-        error: () => {
-          this.cargando.set(false);
-          this.pedidos.set([]);
-        }
-      });
+  cambiarPagina(page: number): void {
+    if (page < 1 || page > this.totalPaginas || page === this.paginaActual) return;
+    this.paginaActual = page;
+    this.cargarPedidos();
   }
 
-  setFiltro(f: FiltroPedido): void {
-    this.filtroActivo.set(f);
+  verDetalle(order: Pedido): void {
+    this.selectedOrder = order;
+    this.detail = null;
+    this.history = [];
+    this.detailError = '';
+    this.detailLoading = true;
+    forkJoin({ detail: this.ventas.obtenerDetalle(order.id), history: this.ventas.obtenerHistorial(order.id) }).subscribe({
+      next: result => { this.detail = result.detail as PedidoDetalle; this.history = (result.history || []).sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime()); this.detailLoading = false; },
+      error: error => { this.detailLoading = false; this.detailError = error?.error?.mensaje || 'No se pudo cargar el detalle del pedido.'; }
+    });
   }
 
-  formatFecha(f: string): string {
-    if (!f) return '—';
-    try {
-      const d = new Date(f);
-      return d.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    } catch {
-      return f;
-    }
+  cerrarDetalle(): void { this.selectedOrder = null; this.detail = null; this.cerrarComprobante(); }
+
+  verComprobante(): void {
+    if (!this.detail || this.detail.venta.idEstadoVenta !== 7) return;
+    this.receiptLoading = true;
+    this.receiptError = '';
+    this.ventas.obtenerComprobante(this.detail.venta.id).subscribe({
+      next: receipt => { this.receipt = receipt; this.receiptLoading = false; },
+      error: error => { this.receiptLoading = false; this.receiptError = error.message; }
+    });
   }
+
+  cerrarComprobante(): void { this.receipt = null; }
+
+  get paginas(): number[] {
+    const start = Math.max(1, Math.min(this.paginaActual - 2, this.totalPaginas - 4));
+    return Array.from({ length: Math.min(this.totalPaginas, 5) }, (_, index) => start + index);
+  }
+
+  estadoLabel(order: Pedido): string { return ESTADO_LABEL[order.idEstadoVenta] || order.estadoPago || 'Pendiente'; }
+  estadoLabelById(id: number): string { return ESTADO_LABEL[id] || 'Actualización'; }
+  estadoDescription(order: Pedido): string { return order.idEstadoVenta === 7 ? 'Pedido entregado' : order.deliveryEstado || (order.idEstadoVenta === 5 ? 'Pago confirmado' : 'En revisión'); }
+  statusClass(id: number): string { return [1, 2].includes(id) ? 'status--pending' : [3, 5, 7].includes(id) ? 'status--success' : [4, 6].includes(id) ? 'status--danger' : 'status--neutral'; }
+  formatDate(value: string): string { const date = new Date(value); return Number.isNaN(date.getTime()) ? 'Fecha no disponible' : new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' }).format(date); }
+  trackPedido(_: number, pedido: Pedido): number { return pedido.id; }
 }

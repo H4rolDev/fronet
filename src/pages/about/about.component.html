@@ -1,78 +1,31 @@
-<section id="acerca-de" class="py-5 bg-light">
-  <div class="container text-center">
-
-    <!-- Título con decorado -->
-    <h1 class="mb-3 display-4 fw-bold text-primary position-relative" style="text-shadow: 1px 1px 4px rgba(0,0,0,0.15);">
-      ¿Quiénes somos?
-      <span class="position-absolute start-50 translate-middle-x" style="bottom: -10px; height: 4px; width: 80px; background: #ffc107; border-radius: 2px;"></span>
-    </h1>
-
-    <!-- Frase destacada -->
-    <p class="text-muted fs-5 fst-italic mb-4" style="max-width: 750px; margin: 0 auto;">
-      “Transformamos momentos dulces en recuerdos inolvidables”
-    </p>
-
-    <!-- Logo -->
-    <figure class="mb-4">
-      <img src="assets/logotienda.png" alt="Logo Tortas Yani"
-           class="img-fluid rounded-circle shadow-sm"
-           style="width: 160px; height: 160px; object-fit: cover;">
-    </figure>
-
-    <!-- Descripción -->
-    <div class="mx-auto mb-4" style="max-width: 780px;">
-      <p class="fs-5 text-secondary" style="line-height: 1.9;">
-        En <strong>Tortas Yani</strong>, no solo hacemos tortas: damos vida a ideas y celebraciones. Nuestra pasión por la repostería artesanal nos ha convertido en el lugar ideal para quienes buscan calidad, sabor y creatividad en cada pastel.
-      </p>
-
-      <p class="fs-5 text-secondary" style="line-height: 1.9;">
-        Ofrecemos tortas personalizadas, recetas exclusivas, <strong>workshops para todos los niveles</strong>, y una comunidad pastelera comprometida con el arte en azúcar. Cada diseño nace de la imaginación, la técnica y el cariño con que trabajamos.
-      </p>
-
-      <p class="fs-5 text-secondary mb-4" style="line-height: 1.9;">
-        ¿Buscas la torta ideal para un evento? ¿Quieres aprender y crecer en este mundo delicioso? ¡Estás en el lugar correcto!
-      </p>
+<main class="about-page">
+  <section class="about-hero">
+    <div class="hero-copy">
+      <span class="eyebrow">Nuestra historia</span>
+      <h1>Pasión por el detalle, amor en cada porción</h1>
+      <p class="lead">En Tortas Yani creamos tortas y postres para convertir cada celebración en un recuerdo dulce. Trabajamos con recetas cuidadas, ingredientes seleccionados y diseños hechos para tu momento.</p>
+      <p>Desde Cusco acompañamos cumpleaños, reuniones y fechas especiales con repostería artesanal preparada con dedicación.</p>
+      <a class="primary-action" routerLink="/products">Explorar el catálogo</a>
     </div>
-
-    <!-- Botón de contacto -->
-    <a routerLink="/contact" class="btn btn-warning btn-lg shadow px-5 mb-5">
-      Contáctanos
-    </a>
-
-    <!-- Carrusel visual -->
-    <div class="mx-auto my-5" style="max-width: 850px;">
-      <c-carousel (itemChange)="onItemChange($event)" [interval]="5000" transition="slide">
-        <c-carousel-inner>
-          <c-carousel-item *ngFor="let slide of slides">
-            <div class="position-relative">
-              <img
-                [src]="slide.src"
-                alt="{{slide.title}}"
-                class="d-block w-100 rounded shadow-sm"
-                loading="lazy"
-                style="height: 500px; object-fit: cover; transition: transform 0.6s ease-in-out;"
-              />
-
-              <!-- Superposición de texto -->
-              <div
-                class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-end align-items-start p-4"
-                style="background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent); border-radius: 0.5rem;"
-              >
-                <h4 class="text-light fw-bold mb-1" style="text-shadow: 0 0 6px rgba(0,0,0,0.9); font-size: 1.8rem;">
-                  {{slide.title}}
-                </h4>
-                <p class="text-light" style="font-size: 1rem; max-width: 80%; text-shadow: 0 0 3px rgba(0,0,0,0.6);">
-                  {{slide.subtitle}}
-                </p>
-              </div>
-            </div>
-          </c-carousel-item>
-        </c-carousel-inner>
-
-        <!-- Controles -->
-        <c-carousel-control direction="prev"></c-carousel-control>
-        <c-carousel-control direction="next"></c-carousel-control>
-      </c-carousel>
+    <div class="hero-visual">
+      <img src="assets/portada-tortas.jpg" alt="Torta artesanal de Tortas Yani" />
+      <div class="experience-badge"><strong>Hecho con cariño</strong><span>Para tus momentos especiales</span></div>
     </div>
-  </div>
-</section>
+  </section>
+
+  <section class="philosophy">
+    <div><span class="section-label">Nuestra misión</span><h2>Que cada pedido se sienta personal</h2><p>Escuchamos lo que necesitas y cuidamos cada detalle para que el sabor, la presentación y la atención estén a la altura de tu celebración.</p></div>
+    <div><span class="section-label">Nuestra visión</span><h2>Ser parte de tus mejores recuerdos</h2><p>Seguimos creciendo en Cusco sin perder nuestra esencia: cercanía, creatividad y productos frescos preparados para compartir.</p></div>
+  </section>
+
+  <section class="values">
+    <div class="section-heading"><span class="section-label">Nuestra esencia</span><h2>Lo que encuentras en cada creación</h2></div>
+    <div class="value-grid">
+      <article><span class="value-icon">♡</span><h3>Artesanal</h3><p>Preparaciones cuidadas y decoración hecha con atención a los detalles.</p></article>
+      <article><span class="value-icon">✦</span><h3>Calidad</h3><p>Ingredientes seleccionados para que cada porción tenga un sabor especial.</p></article>
+      <article><span class="value-icon">♥</span><h3>Cercanía</h3><p>Te acompañamos desde la elección de tu torta hasta la entrega de tu pedido.</p></article>
+    </div>
+  </section>
+
+  <section class="about-cta"><h2>¿Ya tienes una celebración en mente?</h2><p>Encuentra una torta para tu ocasión y realiza tu pedido con el flujo local de Tortas Yani.</p><a class="primary-action" routerLink="/products">Ver tortas</a></section>
+</main>

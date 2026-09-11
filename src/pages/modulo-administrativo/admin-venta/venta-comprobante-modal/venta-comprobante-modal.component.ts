@@ -126,7 +126,16 @@ const ESTILOS = `
               <tr>
                 <td>
                   <div style="font-weight:700;font-size:13px;font-family:Georgia,serif">{{ d.torta }}</div>
-                  @if (d.mensaje) { <div style="font-size:11px;color:var(--dim)">{{ d.mensaje }}</div> }
+                  @if (d.mensaje || d.tamanio || d.sabor || d.relleno || d.pisos || d.colorDecoracion) {
+                    <div style="font-size:11px;color:var(--dim);line-height:1.5">
+                      @if (d.tamanio) { Tamaño: {{ d.tamanio }} · }
+                      @if (d.sabor) { Sabor: {{ d.sabor }} · }
+                      @if (d.relleno) { Relleno: {{ d.relleno }} · }
+                      @if (d.pisos) { Pisos: {{ d.pisos }} · }
+                      @if (d.colorDecoracion) { Color: {{ d.colorDecoracion }} · }
+                      @if (d.mensaje) { Mensaje: {{ d.mensaje }} }
+                    </div>
+                  }
                 </td>
                 <td>{{ d.cantidad }}</td>
                 <td class="num" style="font-size:12px;color:var(--mid)">S/. {{ d.precioBase.toFixed(2) }}</td>
@@ -177,10 +186,12 @@ const ESTILOS = `
   </div>
 
   <div class="mf">
-    <button class="btn" style="background:var(--vino);color:#fff" (click)="abrirComprobante.emit(idVenta)">
+   @if (detalle()?.venta?.idEstadoVenta === 7) {
+   <button class="btn" style="background:var(--vino);color:#fff" (click)="abrirComprobante.emit(idVenta)">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
       Imprimir
-    </button>
+   </button>
+   }
     <button class="btn" (click)="cerrar.emit()">Cerrar</button>
   </div>
 </div>
@@ -292,9 +303,10 @@ const ESTILOS_TICKET = `
     } @else if (comp()) {
       <!-- TICKET -->
       <div class="ticket" id="ticket-print">
-        <div class="t-logo">Dulce &amp; Co.</div>
-        <div class="t-sub">RUC: 20123456789</div>
-        <div class="t-sub">Jr. Las Flores 123, Lima</div>
+         <div class="t-logo">{{ comp()!.empresa.nombre }}</div>
+         <div class="t-sub">RUC: {{ comp()!.empresa.ruc }}</div>
+         <div class="t-sub">{{ comp()!.empresa.direccion }}</div>
+         <div class="t-sub">Telf: {{ comp()!.empresa.telefono }}</div>
         <div class="t-sep"></div>
         <div class="t-row bold"><span>{{ comp()!.tipoComprobante }}</span><span>{{ comp()!.serieNumero }}</span></div>
         <div class="t-row"><span>Fecha:</span><span>{{ fmt(comp()!.fecha) }}</span></div>
@@ -321,7 +333,7 @@ const ESTILOS_TICKET = `
         }
         <div class="t-sep"></div>
         <div class="t-center">¡Gracias por su compra!</div>
-        <div class="t-center">Dulce &amp; Co. — Tortas artesanales 🎂</div>
+         <div class="t-center">{{ comp()!.empresa.nombre }} — Tortas artesanales</div>
       </div>
     }
   </div>
@@ -416,9 +428,9 @@ export class VentaComprobanteModalComponent implements OnInit, OnDestroy {
             <div class="sub">Tortas Artesanales Personalizadas</div>
           </div>
           <div class="empresa-info">
-            <div>RUC: 10789234567</div>
-            <div>Av. Los Geranios 456, Lima</div>
-            <div>Telf: 987 654 321</div>
+             <div>RUC: ${c.empresa.ruc}</div>
+             <div>${c.empresa.direccion}</div>
+             <div>Telf: ${c.empresa.telefono}</div>
           </div>
           <div class="seccion">
             <div class="seccion-title">Datos de la Venta</div>
@@ -466,7 +478,7 @@ export class VentaComprobanteModalComponent implements OnInit, OnDestroy {
           </div>
           <div class="footer">
             <p>¡Gracias por su preferencia!</p>
-            <p>Tortas Yane - Deliciosos momentos mereces un dulce finale</p>
+             <p>${c.empresa.nombre} - Deliciosos momentos merecen un dulce final</p>
           </div>
         </div>
         <script>window.onload=()=>{ window.print(); }<\/script>

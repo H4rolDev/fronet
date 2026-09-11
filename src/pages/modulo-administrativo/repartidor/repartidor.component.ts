@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { RepartidorService } from '../../../services/repartidor.service';
 import { AuthService } from '../../../services/auth.service';
@@ -23,12 +24,16 @@ interface PedidoRepartidor {
   puedeAceptar: boolean;
   puedeIniciar: boolean;
   puedeCompletar: boolean;
+  subtotal?: number; total?: number; montoPagado?: number; saldoPendiente?: number;
+  productos?: any[]; latitud?: number | null; longitud?: number | null;
+  fechaAceptacion?: string | null; fechaInicio?: string | null;
+  usuarioAsignacion?: string | null;
 }
 
 @Component({
   selector: 'app-repartidor',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="repartidor-page">
       <header class="page-header">
@@ -93,6 +98,10 @@ interface PedidoRepartidor {
             <span class="stat-num">{{ obtenerPorEstado(5) }}</span>
             <span class="stat-label">Entregados</span>
           </div>
+          <div class="stat-card ganancias">
+            <span class="stat-num">S/. {{ (ganancias().mes || 0).toFixed(2) }}</span>
+            <span class="stat-label">Ganancia del mes</span>
+          </div>
         </div>
 
         <div class="pedidos-grid">
@@ -148,13 +157,23 @@ interface PedidoRepartidor {
                   </div>
                 }
 
-                <div class="info-row costo">
+                 <div class="info-row costo">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="1" x2="12" y2="23"/>
                     <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
                   </svg>
-                  <span>Costo delivery: <strong>S/. {{ p.costoDelivery.toFixed(2) }}</strong></span>
-                </div>
+                   <span>Costo delivery: <strong>S/. {{ (p.costoDelivery || 0).toFixed(2) }}</strong></span>
+                 </div>
+
+                 <div class="payment-banner" [class.has-saldo]="(p.saldoPendiente || 0) > 0">
+                   <span>{{ (p.saldoPendiente || 0) > 0 ? 'Cobrar al cliente' : 'Pedido pagado' }}</span>
+                   <strong>S/. {{ (p.saldoPendiente || 0).toFixed(2) }}</strong>
+                 </div>
+                 <div class="delivery-finanzas"><span>Total <b>S/. {{ (p.total || 0).toFixed(2) }}</b></span><span>Adelanto <b>S/. {{ (p.montoPagado || 0).toFixed(2) }}</b></span></div>
+                 @if (p.productos?.length) {
+                   <div class="products-mini"><strong>Productos</strong>@for (producto of p.productos; track producto.idTorta) {<div><span>{{ producto.cantidad }} x {{ producto.producto }}</span><b>S/. {{ (producto.subtotal || 0).toFixed(2) }}</b></div>}</div>
+                 }
+                 @if (p.latitud != null && p.longitud != null) { <button class="map-button" (click)="abrirMapa(p.latitud!, p.longitud!)">Cómo llegar en Google Maps</button> }
 
                 @if (p.fechaAsignacion) {
                   <div class="info-row fecha">
@@ -164,7 +183,7 @@ interface PedidoRepartidor {
                       <line x1="8" y1="2" x2="8" y2="6"/>
                       <line x1="3" y1="10" x2="21" y2="10"/>
                     </svg>
-                    <span>Asignado: {{ formatFecha(p.fechaAsignacion) }}</span>
+                     <span>Asignado: {{ formatFecha(p.fechaAsignacion) }}</span>
                   </div>
                 }
               </div>
@@ -187,7 +206,7 @@ interface PedidoRepartidor {
                   </button>
                 }
                 @if (p.puedeCompletar) {
-                  <button class="btn-accion btn-completar" (click)="completarEntrega(p.id)">
+                   <button class="btn-accion btn-completar" (click)="abrirCompletar(p)">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M9 12l2 2 4-4"/>
                       <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -199,9 +218,18 @@ interface PedidoRepartidor {
                   <span class="estado-completado">✓ Entregado</span>
                 }
               </div>
-            </div>
-          }
-        </div>
+       </div>
+      }
+
+      @if (!cargando() && historial().length > 0) {
+        <section class="history-section"><div class="section-title"><h3>Historial reciente</h3><span>Entregas completadas y canceladas</span></div>
+          @for (p of historial(); track p.id) { <div class="history-row"><div><strong>Pedido #{{ p.idVenta }}</strong><small>{{ formatFecha(p.fechaEntrega || p.fechaAsignacion || '') }} · {{ p.estado }}</small></div><b>S/. {{ (p.costoDelivery || 0).toFixed(2) }}</b></div> }
+          <div class="history-pager"><button (click)="cargarHistorial(paginaHistorial - 1)" [disabled]="paginaHistorial <= 1">Anterior</button><span>Página {{ paginaHistorial }} de {{ totalPaginas }}</span><button (click)="cargarHistorial(paginaHistorial + 1)" [disabled]="paginaHistorial >= totalPaginas">Siguiente</button></div>
+        </section>
+      }
+    </div>
+
+    @if (showCompleteModal()) { <div class="modal-overlay" (click)="cerrarCompletar()"><div class="modal-content" (click)="$event.stopPropagation()"><h3>Confirmar entrega</h3><p>Verifica el cobro antes de cerrar el pedido.</p><div class="cobro-alert">Cobrar al cliente: <strong>S/. {{ saldoCompletar().toFixed(2) }}</strong></div><label>Monto cobrado<input type="number" min="0" step="0.01" [(ngModel)]="montoCobrado"></label><label>Método<select [(ngModel)]="metodoCobro"><option [ngValue]="1">Efectivo</option><option [ngValue]="2">Yape</option><option [ngValue]="3">Plin</option></select></label><div class="modal-actions"><button (click)="cerrarCompletar()">Cancelar</button><button class="btn-completar" (click)="confirmarCompletar()">Confirmar entrega</button></div></div></div> }
       }
     </div>
   `,
@@ -260,7 +288,12 @@ interface PedidoRepartidor {
     .info-row .ref { color: #888; font-size: 12px; font-style: italic; }
     .info-row.costo { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e5e7eb; }
     .info-row.costo strong { color: #f59e0b; font-size: 15px; }
-    .info-row.fecha { color: #6b7280; font-size: 13px; }
+     .info-row.fecha { color: #6b7280; font-size: 13px; }
+     .payment-banner { display:flex; justify-content:space-between; align-items:center; margin:12px 0; padding:12px; border-radius:10px; background:#ecfdf5; color:#047857; font-size:13px; }.payment-banner.has-saldo { background:#fff7ed; color:#c2410c; }.payment-banner strong { font-size:17px; }
+     .delivery-finanzas { display:flex; justify-content:space-between; padding:10px 0; color:#64748b; font-size:12px; }.delivery-finanzas b { color:#111827; margin-left:5px; }
+     .products-mini { padding:10px 0; border-top:1px dashed #e5e7eb; border-bottom:1px dashed #e5e7eb; margin-bottom:10px; font-size:12px; }.products-mini > strong { display:block; margin-bottom:6px; color:#92400e; }.products-mini div { display:flex; justify-content:space-between; padding:3px 0; }.products-mini b { color:#111827; }.map-button { width:100%; padding:9px; border:1px solid #bfdbfe; border-radius:8px; color:#2563eb; background:#eff6ff; cursor:pointer; }
+     .history-section { margin-top:28px; background:white; border:1px solid #e5e7eb; border-radius:16px; padding:18px; }.section-title { display:flex; justify-content:space-between; align-items:end; margin-bottom:10px; }.section-title h3 { margin:0; }.section-title span { color:#6b7280; font-size:12px; }.history-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-top:1px solid #f1f5f9; }.history-row small { display:block; color:#6b7280; margin-top:3px; }.history-pager { display:flex; justify-content:center; gap:14px; align-items:center; margin-top:12px; font-size:12px; }.history-pager button { border:1px solid #ddd; background:white; border-radius:7px; padding:6px 10px; }.history-pager button:disabled { opacity:.4; }
+     .modal-overlay { position:fixed; inset:0; background:#0008; display:flex; align-items:center; justify-content:center; z-index:10; padding:20px; }.modal-content { background:white; border-radius:18px; padding:22px; width:min(430px,100%); box-shadow:0 18px 60px #0003; }.modal-content h3 { margin-top:0; }.modal-content label { display:block; font-size:12px; font-weight:600; color:#475569; margin:12px 0; }.modal-content input,.modal-content select { display:block; width:100%; margin-top:5px; padding:10px; border:1px solid #dbe1e8; border-radius:8px; box-sizing:border-box; }.cobro-alert { padding:12px; background:#fff7ed; color:#9a3412; border-radius:9px; }.modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }.modal-actions button { border:0; border-radius:8px; padding:10px 14px; cursor:pointer; }
 
     .card-actions { padding: 12px 16px; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; gap: 10px; flex-wrap: wrap; }
     .btn-accion { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; flex: 1; justify-content: center; }
@@ -277,6 +310,14 @@ export class RepartidorComponent implements OnInit {
   pedidos = signal<PedidoRepartidor[]>([]);
   cargando = signal(false);
   idPersona = 0;
+  historial = signal<PedidoRepartidor[]>([]);
+  ganancias = signal<any>({ total: 0, hoy: 0, semana: 0, mes: 0, entregasCompletadas: 0 });
+  paginaHistorial = 1;
+  totalPaginas = 1;
+  showCompleteModal = signal(false);
+  pedidoCompletando = signal<PedidoRepartidor | null>(null);
+  montoCobrado = 0;
+  metodoCobro = 1;
 
   constructor(
     private repartidorService: RepartidorService,
@@ -288,6 +329,8 @@ export class RepartidorComponent implements OnInit {
     this.obtenerIdPersona();
     if (this.idPersona > 0) {
       this.cargarPedidos();
+      this.cargarHistorial();
+      this.cargarGanancias();
     }
   }
 
@@ -307,7 +350,7 @@ export class RepartidorComponent implements OnInit {
     this.cargando.set(true);
     this.repartidorService.obtenerMisPedidos(this.idPersona).subscribe({
       next: (data) => {
-        this.pedidos.set(data);
+        this.pedidos.set((data || []).filter((p: PedidoRepartidor) => p.idEstadoEntrega !== 5 && p.idEstadoEntrega !== 6));
         this.cargando.set(false);
       },
       error: (err) => {
@@ -342,16 +385,16 @@ export class RepartidorComponent implements OnInit {
   }
 
   completarEntrega(id: number): void {
-    if (!confirm('¿Confirmar que el pedido fue entregado?')) return;
-    
-    this.repartidorService.completarEntrega(id).subscribe({
-      next: () => {
-        alert('Entrega completada');
-        this.cargarPedidos();
-      },
-      error: (err) => alert('Error: ' + err.message)
-    });
+    const pedido = this.pedidos().find(p => p.id === id); if (pedido) this.abrirCompletar(pedido);
   }
+
+  saldoCompletar(): number { return this.pedidoCompletando()?.saldoPendiente || 0; }
+  abrirCompletar(pedido: PedidoRepartidor): void { this.pedidoCompletando.set(pedido); this.montoCobrado = pedido.saldoPendiente || 0; this.metodoCobro = 1; this.showCompleteModal.set(true); }
+  cerrarCompletar(): void { this.showCompleteModal.set(false); this.pedidoCompletando.set(null); }
+  confirmarCompletar(): void { const p = this.pedidoCompletando(); if (!p) return; this.repartidorService.completarEntrega(p.id, Number(this.montoCobrado) || 0, this.metodoCobro).subscribe({ next: () => { this.cerrarCompletar(); this.cargarPedidos(); this.cargarHistorial(); this.cargarGanancias(); }, error: (err) => console.error(err) }); }
+  abrirMapa(latitud: number, longitud: number): void { window.open(`https://www.google.com/maps/dir/?api=1&destination=${latitud},${longitud}`, '_blank', 'noopener'); }
+  cargarHistorial(pagina = 1): void { if (!this.idPersona) return; this.repartidorService.obtenerHistorial(this.idPersona, pagina).subscribe({ next: data => { this.historial.set(data?.items || []); this.paginaHistorial = data?.paginaActual || pagina; this.totalPaginas = data?.totalPaginas || 1; } }); }
+  cargarGanancias(): void { if (!this.idPersona) return; this.repartidorService.obtenerGanancias(this.idPersona).subscribe({ next: data => this.ganancias.set(data || this.ganancias()) }); }
 
   obtenerPorEstado(estado: number): number {
     return this.pedidos().filter(p => p.idEstadoEntrega === estado).length;

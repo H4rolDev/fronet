@@ -15,7 +15,7 @@
  *
  * ─── ESTADOS DE VENTA ────────────────────────────────────────────────────────
  *  1 = Pendiente  2 = Esperando Validación  3 = Aprobada
- *  4 = Rechazada  5 = Pagada  6 = Cancelada
+ *  4 = Rechazada  5 = Pagada  6 = Cancelada  7 = Entregado
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,6 +40,7 @@ export interface VentaDetalleDTO {
   pagos: PagoItemDTO[];
   delivery: DeliveryItemDTO | null;
   comprobante: { serie: string; numero: string; idTipoComprobante: number } | null;
+  imagenComprobante?: string | null;
 }
 
 export interface VentaCabeceraDetalle {
@@ -61,6 +62,11 @@ export interface DetalleItemDTO {
   precioFinal: number;
   subTotal: number;
   mensaje?: string;
+  tamanio?: string;
+  sabor?: string;
+  relleno?: string;
+  pisos?: number;
+  colorDecoracion?: string;
 }
 
 export interface PagoItemDTO {
@@ -71,11 +77,38 @@ export interface PagoItemDTO {
 }
 
 export interface DeliveryItemDTO {
+  id?: number;
+  idVenta?: number;
   idPersonalRepartidor?: number;
   nombreRepartidor?: string;
   direccion: string;
   telefono: string;
   costoDelivery: number;
+  latitud?: number | null;
+  longitud?: number | null;
+  fechaAsignacion?: string | null;
+  fechaAceptacion?: string | null;
+  fechaInicio?: string | null;
+  fechaEntrega?: string | null;
+  subtotal?: number;
+  total?: number;
+  montoPagado?: number;
+  saldoPendiente?: number;
+  productos?: DetalleDeliveryDTO[];
+}
+
+export interface DetalleDeliveryDTO {
+  idTorta: number;
+  producto: string;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
+  tamanio?: string;
+  sabor?: string;
+  relleno?: string;
+  pisos?: number;
+  colorDecoracion?: string;
+  mensaje?: string;
 }
 
 /** Comprobante para impresión (GET /Comprobante?idVenta=X) */
@@ -91,6 +124,14 @@ export interface ComprobanteDTO {
   tipoEntrega: string;
   direccion?: string;
   pagos: ComprobantePagoDTO[];
+  empresa: EmpresaComprobanteDTO;
+}
+
+export interface EmpresaComprobanteDTO {
+  nombre: string;
+  ruc: string;
+  direccion: string;
+  telefono: string;
 }
 
 export interface ComprobanteDetalleDTO {
@@ -98,6 +139,12 @@ export interface ComprobanteDetalleDTO {
   cantidad: number;
   precioUnitario: number;
   subTotal: number;
+  tamanio?: string;
+  sabor?: string;
+  relleno?: string;
+  pisos?: number;
+  colorDecoracion?: string;
+  mensaje?: string;
 }
 
 export interface ComprobantePagoDTO {
@@ -128,6 +175,11 @@ export interface RegistrarDetalleDTO {
   precioBase: number;
   precioPersonalizacion: number;
   mensaje: string;
+  tamanio?: string;
+  sabor?: string;
+  relleno?: string;
+  pisos?: number;
+  colorDecoracion?: string;
 }
 
 export interface RegistrarPagoDTO {
@@ -143,6 +195,8 @@ export interface RegistrarEntregaDTO {
   telefono: string;
   nombreContacto?: string;
   costoDelivery: number;
+  latitud?: number | null;
+  longitud?: number | null;
 }
 
 export interface RegistrarComprobanteDTO {
@@ -192,9 +246,9 @@ export interface RepartidorDTO {
 // TIPOS UI-ONLY
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type EstadoVenta = 'pendiente' | 'completado' | 'cancelado';
+export type EstadoVenta = 'pendiente' | 'esperandoValidacion' | 'aprobada' | 'rechazada' | 'pagada' | 'cancelada' | 'entregado';
 export type TipoEntrega = 'recojo' | 'delivery';
-export type FiltroVentas = 'todos' | 'pendiente' | 'completado' | 'cancelado';
+export type FiltroVentas = 'todos' | 'pendiente' | 'esperandoValidacion' | 'pagada' | 'entregado' | 'cancelado';
 
 export interface Notificacion {
   tipo: 'exito' | 'error';
@@ -231,6 +285,7 @@ export const ESTADO_LABEL: Record<number, string> = {
   4: 'Rechazada',
   5: 'Pagada',
   6: 'Cancelada',
+  7: 'Entregado',
 };
 
 export const ENTREGA_LABEL: Record<number, string> = {
@@ -245,4 +300,5 @@ export const ESTADO_CLASE: Record<number, string> = {
   4: 'badge--rechazada',
   5: 'badge--pagada',
   6: 'badge--cancelada',
+  7: 'badge--entregado',
 };

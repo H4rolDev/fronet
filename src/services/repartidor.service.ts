@@ -50,14 +50,31 @@ export class RepartidorService {
     }).pipe(catchError(this.handleError));
   }
 
-  completarEntrega(idDelivery: number): Observable<any> {
+  completarEntrega(idDelivery: number, montoCobrado = 0, idMetodoPago = 1): Observable<any> {
     const usuario = this.obtenerUsuarioActual();
     return this.http.post(`${BASE}/Venta/CompletarEntrega`, null, {
       params: new HttpParams()
         .set('idDelivery', idDelivery.toString())
-        .set('usuario', usuario),
+        .set('usuario', usuario)
+        .set('montoCobrado', montoCobrado.toString())
+        .set('idMetodoPago', idMetodoPago.toString()),
       headers: this.getHeaders()
     }).pipe(catchError(this.handleError));
+  }
+
+  obtenerHistorial(idPersona: number, pagina = 1, tamanioPagina = 6): Observable<any> {
+    const params = new HttpParams()
+      .set('idPersona', idPersona.toString())
+      .set('pagina', pagina.toString())
+      .set('tamanioPagina', tamanioPagina.toString());
+    return this.http.get<any>(`${BASE}/Venta/HistorialRepartidor`, { params, headers: this.getHeaders() })
+      .pipe(catchError(this.handleError));
+  }
+
+  obtenerGanancias(idPersona: number): Observable<any> {
+    const params = new HttpParams().set('idPersona', idPersona.toString());
+    return this.http.get<any>(`${BASE}/Venta/GananciasRepartidor`, { params, headers: this.getHeaders() })
+      .pipe(catchError(this.handleError));
   }
 
   private obtenerUsuarioActual(): string {

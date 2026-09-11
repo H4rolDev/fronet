@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { TortaDetalleDTO, TortaListadoDTO, TortaRequestDTO } from '../models/torta-dto';
+import type { CustomerOption } from './customer-catalog.service';
 import { environment } from '../environments/environment';
 
 // ─── Configuración ────────────────────────────────────────────────────────────
@@ -22,6 +23,10 @@ export class TortaService {
     return this.http
       .get<TortaListadoDTO[]>(`${BASE_URL}/ObtenerCombo`)
       .pipe(catchError(this.manejarError));
+  }
+
+  obtenerOpciones(idTorta: number): Observable<CustomerOption[]> {
+    return this.http.get<CustomerOption[]>(`${BASE_URL}Opcion/torta/${idTorta}`);
   }
 
   // ── GET /ObtenerListadoPorId ───────────────────────────────────────────────
@@ -55,6 +60,8 @@ export class TortaService {
       stockDisponible: datos.stockDisponible,
       precioVenta: datos.precioVenta,
       esPersonalizable: datos.esPersonalizable,
+      relleno: null,
+      colorDecoracion: null,
       imagenUrl: null,
       imagenPublicId: null,
       usuarioCreacion: USUARIO,
@@ -93,6 +100,8 @@ export class TortaService {
       stockDisponible: datos.stockDisponible,
       precioVenta: datos.precioVenta,
       esPersonalizable: datos.esPersonalizable,
+      relleno: detalle.relleno,
+      colorDecoracion: detalle.colorDecoracion,
       imagenUrl: detalle.imagenUrl,
       imagenPublicId: detalle.imagenPublicId,
       usuarioCreacion: detalle.usuarioCreacion,

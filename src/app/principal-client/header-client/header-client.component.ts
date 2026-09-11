@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule, RouterOutlet } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService, PersonaInfo } from '../../../services/auth.service';
+import { CarritoService } from '../../../services/carrito.service';
 
 @Component({
   selector: 'app-header-client',
-  imports: [RouterOutlet, RouterModule, CommonModule, FormsModule],
+  imports: [RouterModule, CommonModule, FormsModule],
   templateUrl: './header-client.component.html',
   styleUrl: './header-client.component.css',
   standalone: true,
@@ -22,7 +23,8 @@ export class HeaderClientComponent implements OnInit {
 
   constructor(
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    private cart: CarritoService
   ) {}
 
   ngOnInit(): void {
@@ -79,4 +81,6 @@ export class HeaderClientComponent implements OnInit {
   get userInitial(): string {
     return this.userName.charAt(0).toUpperCase();
   }
+
+  get cartCount(): number { return this.cart.obtenerCantidadTotal(); }
 }
