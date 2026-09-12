@@ -460,6 +460,36 @@
   border: 1px solid var(--dbd)
 }
 
+.badge--esperando {
+  background: var(--warn-bg);
+  color: var(--warn-txt);
+  border: 1px solid var(--warn-bd)
+}
+
+.badge--aprobada {
+  background: var(--ok-bg);
+  color: var(--ok-txt);
+  border: 1px solid var(--ok-bd)
+}
+
+.badge--rechazada {
+  background: var(--db);
+  color: var(--danger);
+  border: 1px solid var(--dbd)
+}
+
+.badge--pagada {
+  background: var(--info-bg);
+  color: var(--info);
+  border: 1px solid var(--info-bd)
+}
+
+.badge--cancelada {
+  background: var(--db);
+  color: var(--danger);
+  border: 1px solid var(--dbd)
+}
+
 .badge--entregado {
   background: #fff6df;
   color: #8a5b00;
