@@ -354,6 +354,7 @@ const ESTILOS_TICKET = `
 export class VentaComprobanteModalComponent implements OnInit, OnDestroy {
 
   @Input({ required: true }) idVenta!: number;
+  @Input() autoPrint = false;
   @Output() cerrar = new EventEmitter<void>();
 
   cargando = signal<boolean>(false);
@@ -367,7 +368,15 @@ export class VentaComprobanteModalComponent implements OnInit, OnDestroy {
     this.cargando.set(true);
     this.svc.obtenerComprobante(this.idVenta)
       .pipe(takeUntil(this.destroy$), finalize(() => this.cargando.set(false)))
-      .subscribe({ next: c => this.comp.set(c), error: () => {} });
+      .subscribe({
+        next: c => {
+          this.comp.set(c);
+          if (this.autoPrint) {
+            setTimeout(() => this.imprimir(), 300);
+          }
+        },
+        error: () => {}
+      });
   }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 

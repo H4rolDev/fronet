@@ -26,7 +26,7 @@ import { Subject }      from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
 
 import { VentaService, EmitirComprobanteDTO }  from '../../../services/venta.service';
-import { VentaListadoDTO, FiltroVentas, Notificacion, ESTADO_LABEL, ENTREGA_LABEL, ESTADO_CLASE, TipoComprobanteDTO } from '../../../models/venta-dto';
+import { VentaListadoDTO, FiltroVentas, Notificacion, ESTADO_LABEL, ENTREGA_LABEL, ESTADO_CLASE } from '../../../models/venta-dto';
 import { VentaCrearModalComponent } from './venta-crear-modal/venta-crear-modal.component';
 import { VentaComprobanteModalComponent, VentaDetalleModalComponent } from './venta-comprobante-modal/venta-comprobante-modal.component';
 
@@ -59,13 +59,8 @@ export class AdminVentaComponent implements OnInit, OnDestroy {
   mostrarCrear        = signal<boolean>(false);
   mostrarDetalle      = signal<boolean>(false);
   mostrarComprobante  = signal<boolean>(false);
-  mostrarEmitirComprobante = signal<boolean>(false);
   ventaSeleccionada   = signal<VentaListadoDTO | null>(null);
-
-  // Emitir comprobante
-  tiposComprobante    = signal<TipoComprobanteDTO[]>([]);
-  tipoComprobanteSeleccionado = signal<number>(1);
-  emitiendoComprobante = signal<boolean>(false);
+  autoPrintComprobante = signal<boolean>(false);
 
   // Cancelación
   ventaCancelar  = signal<VentaListadoDTO | null>(null);
@@ -161,13 +156,6 @@ ngOnInit(): void  { this.cargar(); }
         },
         error: (e: Error) => this.toast('error', e.message),
       });
-    // Cargar tipos de comprobante
-    this.svc.obtenerTiposComprobante()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: t => this.tiposComprobante.set(t),
-        error: () => this.tiposComprobante.set([{ id: 1, nombre: 'Boleta' }, { id: 2, nombre: 'Factura' }]),
-      });
   }
 
   // ── Filtros ────────────────────────────────────────────────────────────────
@@ -190,15 +178,11 @@ ngOnInit(): void  { this.cargar(); }
   }
   cerrarDetalle(): void { this.mostrarDetalle.set(false); this.ventaSeleccionada.set(null); }
 
-  abrirComprobante(v: VentaListadoDTO): void {
-    this.ventaSeleccionada.set(v);
-    this.mostrarComprobante.set(true);
-  }
   abrirComprobanteDesdeDetalle(idVenta: number): void {
     const v = this.ventas().find(x => x.id === idVenta);
-    if (v) this.abrirComprobante(v);
+    if (v) this.imprimirComprobante(v);
   }
-  cerrarComprobante(): void { this.mostrarComprobante.set(false); this.ventaSeleccionada.set(null); }
+  cerrarComprobante(): void { this.mostrarComprobante.set(false); this.ventaSeleccionada.set(null); this.autoPrintComprobante.set(false); }
 
   onVentaCreada(msg: string): void {
     this.cerrarCrear();
@@ -246,42 +230,53 @@ marcarEntregado(v: VentaListadoDTO): void {
       });
   }
 
-  // ── Emitir Comprobante ──────────────────────────────────────────────────────
-  abrirEmitirComprobante(v: VentaListadoDTO): void {
-    this.ventaSeleccionada.set(v);
-    this.tipoComprobanteSeleccionado.set(this.tiposComprobante()[0]?.id ?? 1);
-    this.mostrarEmitirComprobante.set(true);
-  }
-  cerrarEmitirComprobante(): void { this.mostrarEmitirComprobante.set(false); this.ventaSeleccionada.set(null); }
-
-  confirmarEmitirComprobante(): void {
-    const v = this.ventaSeleccionada();
-    if (!v) return;
-    this.emitiendoComprobante.set(true);
+  // ── Comprobante ───────────────────────────────────────────────────────────
+  imprimirComprobante(v: VentaListadoDTO): void {
+    // Si ya tiene comprobante (Entregado), abrir directo
+    if (v.idEstadoVenta === 7) {
+      this.ventaSeleccionada.set(v);
+      this.autoPrintComprobante.set(true);
+      this.mostrarComprobante.set(true);
+      return;
+    }
+    // Si está Pagada o Aprobada, emitir comprobante primero (Boleta por defecto)
+    this.procesando.set(true);
     const dto: EmitirComprobanteDTO = {
       idVenta: v.id,
-      idTipoComprobante: this.tipoComprobanteSeleccionado(),
+      idTipoComprobante: 1,
       usuario: 'admin',
     };
     this.svc.emitirComprobante(dto)
-      .pipe(takeUntil(this.destroy$), finalize(() => this.emitiendoComprobante.set(false)))
+      .pipe(takeUntil(this.destroy$), finalize(() => this.procesando.set(false)))
       .subscribe({
-        next: res => {
-          this.cerrarEmitirComprobante();
-          this.cargar();
-          this.toast('exito', `Comprobante ${res.comprobante?.serie}-${res.comprobante?.numero} emitido correctamente.`);
+        next: () => {
+          this.toast('exito', 'Comprobante emitido.');
+          // Refrescar listado y abrir modal de impresión
+          this.svc.obtenerListado()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: ventas => {
+                this.ventas.set(ventas);
+                const actualizada = ventas.find(x => x.id === v.id);
+                if (actualizada) {
+                  this.ventaSeleccionada.set(actualizada);
+                  this.autoPrintComprobante.set(true);
+                  this.mostrarComprobante.set(true);
+                }
+              },
+              error: () => {
+                this.ventaSeleccionada.set(v);
+                this.autoPrintComprobante.set(true);
+                this.mostrarComprobante.set(true);
+              },
+            });
         },
         error: (e: Error) => this.toast('error', e.message),
       });
   }
 
-  puedeEmitirComprobante(v: VentaListadoDTO): boolean {
-    // Se puede emitir si está pagada (5), aprobada (3) o entregada (7) y no tiene comprobante
+  puedeComprobante(v: VentaListadoDTO): boolean {
     return [3, 5, 7].includes(v.idEstadoVenta);
-  }
-
-  onOverlayEmitir(e: MouseEvent): void {
-    if ((e.target as HTMLElement).classList.contains('overlay')) this.cerrarEmitirComprobante();
   }
 
   // ── Toast ──────────────────────────────────────────────────────────────────
@@ -307,7 +302,6 @@ marcarEntregado(v: VentaListadoDTO): void {
   }
 
   esCancelable(v: VentaListadoDTO): boolean { return v.idEstadoVenta === 1; }
-  esImprimible(v: VentaListadoDTO): boolean { return v.idEstadoVenta === 7; }
   puedeMarcarEntregado(v: VentaListadoDTO): boolean { return v.idEstadoVenta === 5 || v.idEstadoVenta === 3; }
 
   trackById(_: number, v: VentaListadoDTO): number { return v.id; }
