@@ -281,6 +281,18 @@
         <span class="nav-dot"></span>
       </a>
 
+      <a class="nav-item" *ngIf="tieneAcceso('/admin/pedidos-personalizados')" routerLink="/admin/pedidos-personalizados"
+         routerLinkActive="active" [title]="sidebarCollapsed ? 'Pedidos personalizados' : ''">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h6M8 17h4"/></svg></span>
+        <span class="nav-label">Pedidos personalizados</span><span class="nav-dot"></span>
+      </a>
+
+      <a class="nav-item" *ngIf="tieneAcceso('/admin/configuracion-tortas')" routerLink="/admin/configuracion-tortas"
+         routerLinkActive="active" [title]="sidebarCollapsed ? 'Configuración' : ''">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8"/></svg></span>
+        <span class="nav-label">Configurador y precios</span><span class="nav-dot"></span>
+      </a>
+
       <a class="nav-item" *ngIf="auth.isAdmin()" routerLink="/admin/configuracion-delivery"
          routerLinkActive="active" [title]="sidebarCollapsed ? 'Configurar delivery' : ''">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 000-6l-1.2-.4a6.8 6.8 0 00-.7-1.2l.2-1.3a1.7 1.7 0 00-5.1-2.5l-1.1.7a6.8 6.8 0 00-1.4 0L9 3.6a1.7 1.7 0 00-5.1 2.5l.2 1.3a6.8 6.8 0 00-.7 1.2L2.6 9a1.7 1.7 0 000 6l1.2.4a6.8 6.8 0 00.7 1.2l-.2 1.3a1.7 1.7 0 005.1 2.5l1.1-.7a6.8 6.8 0 001.4 0l1.1.7a1.7 1.7 0 005.1-2.5l-.2-1.3a6.8 6.8 0 00.7-1.2z"/></svg></span>

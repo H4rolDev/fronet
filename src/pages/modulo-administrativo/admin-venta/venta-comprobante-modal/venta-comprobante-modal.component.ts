@@ -122,18 +122,25 @@ const ESTILOS = `
         <table class="lt">
           <thead><tr><th>Torta</th><th>Cant.</th><th class="num">Base</th><th class="num">Personal.</th><th class="num">Total</th></tr></thead>
           <tbody>
-            @for (d of detalle()!.detalles; track d.idTorta) {
+            @for (d of detalle()!.detalles; track $index) {
               <tr>
                 <td>
                   <div style="font-weight:700;font-size:13px;font-family:Georgia,serif">{{ d.torta }}</div>
-                  @if (d.mensaje || d.tamanio || d.sabor || d.relleno || d.pisos || d.colorDecoracion) {
+                   @if (d.mensaje || d.tamanio || d.sabor || d.relleno || d.pisos || d.colorDecoracion || d.decoracion || d.cobertura || d.porciones || d.evento || d.observaciones || d.fechaEntrega || d.imagenReferencia) {
                     <div style="font-size:11px;color:var(--dim);line-height:1.5">
                       @if (d.tamanio) { Tamaño: {{ d.tamanio }} · }
                       @if (d.sabor) { Sabor: {{ d.sabor }} · }
                       @if (d.relleno) { Relleno: {{ d.relleno }} · }
                       @if (d.pisos) { Pisos: {{ d.pisos }} · }
-                      @if (d.colorDecoracion) { Color: {{ d.colorDecoracion }} · }
-                      @if (d.mensaje) { Mensaje: {{ d.mensaje }} }
+                       @if (d.colorDecoracion) { Color: {{ d.colorDecoracion }} · }
+                       @if (d.cobertura) { Cobertura: {{ d.cobertura }} · }
+                       @if (d.decoracion) { Decoración: {{ d.decoracion }} · }
+                       @if (d.porciones) { Porciones: {{ d.porciones }} · }
+                       @if (d.evento) { Evento: {{ d.evento }} · }
+                       @if (d.fechaEntrega) { Fecha solicitada: {{ d.fechaEntrega }} · }
+                       @if (d.mensaje) { Mensaje: {{ d.mensaje }} }
+                       @if (d.observaciones) { Observaciones: {{ d.observaciones }} }
+                       @if (d.imagenReferencia) { <a class="reference-link" [href]="d.imagenReferencia" target="_blank" rel="noopener"><img [src]="d.imagenReferencia" alt="Referencia del cliente" style="width:72px;height:52px;object-fit:cover;border-radius:8px;vertical-align:middle;margin-top:6px"> Ver referencia</a> }
                     </div>
                   }
                 </td>

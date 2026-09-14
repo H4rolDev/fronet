@@ -143,6 +143,16 @@ export const routes: Routes = [
              .then(m => m.AdminDeliveryComponent),
       },
       {
+        path: 'pedidos-personalizados',
+        loadComponent: () => import('../pages/modulo-administrativo/admin-pedidos-personalizados/admin-pedidos-personalizados.component')
+          .then(m => m.AdminPedidosPersonalizadosComponent),
+      },
+      {
+        path: 'configuracion-tortas',
+        loadComponent: () => import('../pages/modulo-administrativo/admin-configuracion-tortas/admin-configuracion-tortas.component')
+          .then(m => m.AdminConfiguracionTortasComponent),
+      },
+      {
         path: 'configuracion-delivery',
         loadComponent: () => import('../pages/modulo-administrativo/admin-configuracion-delivery/admin-configuracion-delivery.component')
           .then(m => m.AdminConfiguracionDeliveryComponent),

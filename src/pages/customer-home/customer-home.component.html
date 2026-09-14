@@ -1,8 +1,60 @@
 <main class="customer-home">
-  <section class="hero" *ngIf="!catalogOnly"><div class="hero-copy"><span class="eyebrow">Tortas hechas para celebrar</span><h1>Un momento dulce empieza aquí.</h1><p>Elige una torta del catálogo y personalízala a tu manera.</p><div class="hero-actions"><a class="primary" href="#destacados">Ver destacados</a><a class="secondary" routerLink="/chat">Hablar con Yani AI</a></div></div><div class="hero-visual"><span class="hero-stamp">Hecho con cariño</span><img src="/assets/logotienda.png" alt="Tortas Yani"></div></section>
-  <section id="destacados" class="catalog" [class.catalog-home]="!catalogOnly"><div class="catalog-head"><div><span class="eyebrow">{{ catalogOnly ? 'Catálogo completo' : 'Selección de la semana' }}</span><h2>{{ catalogOnly ? 'Encuentra tu favorita' : 'Pequeños antojos, grandes momentos' }}</h2><p *ngIf="!catalogOnly" class="section-lead">Descubre nuestras tortas más buscadas y personaliza la que combine con tu celebración.</p></div><input *ngIf="catalogOnly" [(ngModel)]="search" (ngModelChange)="applyFilter()" placeholder="Buscar tortas o postres..."></div>
-    <div class="tabs" *ngIf="catalogOnly"><button *ngFor="let cat of categories" [class.active]="category === cat" (click)="category=cat;applyFilter()">{{ cat }}</button></div><p class="status" *ngIf="loading">Cargando catálogo...</p><p class="status" *ngIf="!loading && !filtered.length">No encontramos productos disponibles.</p>
-    <div class="grid"><article class="card" *ngFor="let product of filtered"><div class="card-image"><img [src]="product.imagen" [alt]="product.nombre"><span class="stock-pill" *ngIf="product.stock">{{ product.stock }} disponibles</span></div><div class="card-body"><span class="category">{{ product.categoria }}</span><h3>{{ product.nombre }}</h3><p>{{ product.descripcion }}</p><footer><strong>S/ {{ product.precio | number:'1.2-2' }}</strong><button type="button" class="primary small" (click)="open(product)" [disabled]="!product.stock">{{ product.stock ? 'Personalizar' : 'Agotado' }}</button></footer></div></article></div><div class="catalog-more" *ngIf="!catalogOnly && products.length > 4"><a class="secondary" routerLink="/products">Ver todo el catálogo →</a></div>
+  <section class="hero">
+    <div>
+      <span class="eyebrow">Repostería artesanal</span>
+      <h1>Diseña una torta que cuente tu historia.</h1>
+      <p>Elige cada detalle, revisa el precio en tiempo real y envía tu pedido con la confianza de que todo quedó registrado.</p>
+      <div class="hero-actions"><a class="primary" routerLink="/products">Explorar tortas</a><a class="secondary" routerLink="/chat">Necesito inspiración</a></div>
+      <div class="hero-notes"><span>✦ Opciones configurables</span><span>✦ Precio transparente</span><span>✦ Hecha para tu momento</span></div>
+    </div>
+    <div class="hero-visual"><img src="/assets/portada-tortas.jpg" alt="Torta artesanal"><span class="hero-stamp">Hecho con cariño</span></div>
+  </section>
+
+  <section class="catalog" [class.catalog-home]="!catalogOnly">
+    <div class="catalog-head">
+      <div><span class="eyebrow">{{ catalogOnly ? 'Catálogo completo' : 'Selección de la semana' }}</span><h2>{{ catalogOnly ? 'Encuentra tu favorita' : 'Pequeños antojos, grandes momentos' }}</h2><p *ngIf="!catalogOnly" class="section-lead">Selecciona una torta y abre su configurador para decidir hasta el último detalle.</p></div>
+      <input *ngIf="catalogOnly" [(ngModel)]="search" (ngModelChange)="applyFilter()" placeholder="Buscar tortas o postres...">
+    </div>
+    <div class="tabs" *ngIf="catalogOnly"><button *ngFor="let item of categories" [class.active]="category === item" (click)="category=item; applyFilter()">{{ item }}</button></div>
+    <div class="grid" *ngIf="!loading; else loadingState">
+      <article class="card" *ngFor="let product of filtered">
+        <div class="card-image"><img [src]="product.imagen" [alt]="product.nombre"><span class="stock-pill" *ngIf="product.stock">{{ product.stock }} disponibles</span></div>
+        <div class="card-body"><span class="category">{{ product.categoria }}</span><h3>{{ product.nombre }}</h3><p>{{ product.descripcion }}</p><footer><strong>S/ {{ product.precio | number:'1.2-2' }}</strong><button type="button" class="primary small" (click)="open(product)" [disabled]="!product.stock">{{ product.stock ? (product.personalizable ? 'Personalizar' : 'Agregar') : 'Agotado' }}</button></footer></div>
+      </article>
+    </div>
+    <ng-template #loadingState><div class="catalog-loading"><span></span><span></span><span></span></div></ng-template>
+    <div class="catalog-empty" *ngIf="!loading && !filtered.length">No encontramos tortas con esa búsqueda.</div>
+    <div class="catalog-more" *ngIf="!catalogOnly && products.length > 4"><a class="secondary" routerLink="/products">Ver todo el catálogo →</a></div>
   </section>
 </main>
-<div class="overlay" *ngIf="selected" (click)="selected=null"><section class="modal" *ngIf="selected as product" (click)="$event.stopPropagation()"><button type="button" class="close" (click)="selected=null" aria-label="Cerrar">×</button><div class="modal-product"><img [src]="product.imagen" [alt]="product.nombre"><div><span class="eyebrow">Personaliza tu pedido</span><h2>{{ product.nombre }}</h2><p>{{ product.descripcion }}</p></div></div><div class="modal-fields"><label>Tamaño<select [(ngModel)]="size"><option *ngFor="let option of sizes" [value]="option">{{ option }}</option></select></label><label>Sabor<select [(ngModel)]="flavor"><option *ngFor="let option of flavors" [value]="option">{{ option }}</option></select></label><label>Relleno<select [(ngModel)]="filling"><option *ngFor="let option of fillings" [value]="option">{{ option }}</option></select></label><label>Pisos<input type="number" min="1" max="5" [(ngModel)]="floors"></label><label>Color de decoración<select [(ngModel)]="color"><option *ngFor="let option of colors" [value]="option">{{ option }}</option></select></label><label>Mensaje<input [(ngModel)]="message" maxlength="60" placeholder="Feliz cumpleaños..."></label><label>Cantidad<input type="number" min="1" max="20" [(ngModel)]="quantity"></label></div><div class="modal-foot"><div><span>Precio unitario</span><strong>S/ {{ price() | number:'1.2-2' }}</strong></div><button type="button" class="primary" (click)="add()">Agregar al carrito</button></div></section></div>
+
+<div class="overlay" *ngIf="selected" (click)="selected=null">
+  <section class="modal" *ngIf="selected as product" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Configurar torta">
+    <button type="button" class="close" (click)="selected=null" aria-label="Cerrar">×</button>
+    <div class="modal-product"><img [src]="product.imagen" [alt]="product.nombre"><div><span class="eyebrow">Tu diseño, tus reglas</span><h2>{{ product.nombre }}</h2><p>{{ product.descripcion }}</p></div></div>
+
+    <div class="configurator-intro"><span class="configurator-step">01</span><div><strong>Construye tu torta</strong><small>Las opciones y precios son configuradas por nuestra pastelería.</small></div><span class="live-price">S/ {{ price() | number:'1.2-2' }}</span></div>
+    <div class="price-breakdown"><span>Precio base <b>S/ {{ product.precio | number:'1.2-2' }}</b></span><span>Personalización <b [class.included]="!customizationPrice()">{{ customizationPrice() ? '+ S/ ' + (customizationPrice() | number:'1.2-2') : 'Incluida' }}</b></span><strong>Total estimado <em>S/ {{ price() | number:'1.2-2' }}</em></strong></div>
+    <div class="loading-options" *ngIf="optionsLoading"><span></span> Cargando opciones disponibles...</div>
+
+    <div class="modal-fields" *ngIf="!optionsLoading && product.personalizable">
+      <label *ngIf="sizes.length">Tamaño<select [(ngModel)]="size"><option *ngFor="let option of sizes" [value]="option">{{ option }}</option></select></label>
+      <label *ngIf="portions.length">Porciones<select [(ngModel)]="servings"><option *ngFor="let option of portions" [ngValue]="parsePortions(option)">{{ option }}</option></select></label>
+      <label *ngIf="flavors.length">Sabor del bizcocho<select [(ngModel)]="flavor"><option *ngFor="let option of flavors" [value]="option">{{ option }}</option></select></label>
+      <label *ngIf="fillings.length">Relleno<select [(ngModel)]="filling"><option *ngFor="let option of fillings" [value]="option">{{ option }}</option></select></label>
+      <label>Pisos<input type="number" min="1" max="5" [(ngModel)]="floors"></label>
+      <label *ngIf="frostings.length">Cobertura<select [(ngModel)]="frosting"><option *ngFor="let option of frostings" [value]="option">{{ option }}</option></select></label>
+      <label *ngIf="colors.length">Color de decoración<select [(ngModel)]="color"><option *ngFor="let option of colors" [value]="option">{{ option }}</option></select></label>
+      <label *ngIf="decorations.length">Estilo de decoración<select [(ngModel)]="decoration"><option *ngFor="let option of decorations" [value]="option">{{ option }}</option></select></label>
+      <label *ngIf="eventTypes.length">Tipo de celebración<select [(ngModel)]="eventType"><option value="">Seleccionar (opcional)</option><option *ngFor="let option of eventTypes" [value]="option">{{ option }}</option></select></label>
+      <label>Fecha deseada<input type="date" [(ngModel)]="deliveryDate"></label>
+      <label class="field-wide">Mensaje sobre la torta<input [(ngModel)]="message" maxlength="100" placeholder="Feliz cumpleaños, Valentina..."></label>
+      <label class="field-wide">Detalles adicionales<textarea [(ngModel)]="notes" maxlength="500" rows="3" placeholder="Colores, personajes, alergias o indicaciones especiales..."></textarea></label>
+      <label class="field-wide reference-upload">Imagen de referencia<input type="file" accept="image/*" (change)="onReferenceImage($event)"><small *ngIf="referenceImageName">{{ referenceImageName }} seleccionada</small></label>
+      <label>Cantidad<input type="number" min="1" max="20" [(ngModel)]="quantity"></label>
+    </div>
+    <div class="standard-note" *ngIf="!product.personalizable">Esta torta se vende tal como aparece en el catálogo.</div>
+    <p class="form-error" *ngIf="customizationError">{{ customizationError }}</p>
+    <div class="modal-foot"><div><span>Precio unitario</span><strong>S/ {{ price() | number:'1.2-2' }}</strong><small>Precio calculado según tus opciones</small></div><button type="button" class="primary" (click)="add()" [disabled]="optionsLoading">Agregar al carrito</button></div>
+  </section>
+</div>

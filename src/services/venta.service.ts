@@ -66,6 +66,12 @@ export class VentaService {
       .pipe(catchError(this.err));
   }
 
+  subirImagenReferencia(imagenBase64: string): Observable<{ url: string }> {
+    return this.http
+      .post<{ url: string }>(`${BASE}/Venta/SubirImagenReferencia`, { imagenBase64 }, { headers: this.getHeaders() })
+      .pipe(catchError(this.err));
+  }
+
   // ── 2. Listado de ventas ───────────────────────────────────────────────────
   obtenerListado(): Observable<VentaListadoDTO[]> {
     return this.http

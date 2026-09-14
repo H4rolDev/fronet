@@ -44,6 +44,7 @@ export class TortaModalComponent implements OnInit, OnDestroy {
   errorApi        = signal<string | null>(null);
   opciones = signal<TortaOpcion[]>([]);
   nuevaOpcion = { tipo: 'sabor' as TortaOpcion['tipo'], valor: '', precioExtra: 0, maximo: null as number | null };
+  opcionEditandoId = 0;
 
   /** Combo de categorías para el <select> */
   categorias = signal<CategoriaTortaListadoDTO[]>([]);
@@ -294,15 +295,35 @@ export class TortaModalComponent implements OnInit, OnDestroy {
     const valor = this.nuevaOpcion.valor.trim();
     if (!this.esEditar || !this.inputData.id || !valor) return;
     this.opcionesService.guardar({
-      id: 0, idTorta: this.inputData.id, tipo: this.nuevaOpcion.tipo,
+      id: this.opcionEditandoId, idTorta: this.inputData.id, tipo: this.nuevaOpcion.tipo,
       valor, precioExtra: Number(this.nuevaOpcion.precioExtra) || 0,
       maximo: this.nuevaOpcion.maximo, activo: true, orden: this.opciones().length,
-    }).subscribe({ next: option => { this.opciones.update(items => [...items, option]); this.nuevaOpcion.valor = ''; this.nuevaOpcion.precioExtra = 0; } });
+    }).subscribe({ next: option => {
+      this.opciones.update(items => this.opcionEditandoId ? items.map(item => item.id === option.id ? option : item) : [...items, option]);
+      this.limpiarEdicionOpcion();
+    }, error: (err: Error) => this.errorApi.set(err.message || 'No se pudo guardar la opción.') });
+  }
+
+  editarOpcion(option: TortaOpcion): void {
+    this.opcionEditandoId = option.id;
+    this.nuevaOpcion = { tipo: option.tipo, valor: option.valor, precioExtra: option.precioExtra, maximo: option.maximo ?? null };
+  }
+
+  limpiarEdicionOpcion(): void {
+    this.opcionEditandoId = 0;
+    this.nuevaOpcion = { tipo: 'sabor', valor: '', precioExtra: 0, maximo: null };
   }
 
   eliminarOpcion(option: TortaOpcion): void {
     if (!option.id) return;
     this.opcionesService.eliminar(option.id).subscribe({ next: () => this.opciones.update(items => items.filter(item => item.id !== option.id)) });
+  }
+
+  toggleOpcion(option: TortaOpcion): void {
+    this.opcionesService.guardar({ ...option, activo: !option.activo }).subscribe({
+      next: updated => this.opciones.update(items => items.map(item => item.id === updated.id ? updated : item)),
+      error: (err: Error) => this.errorApi.set(err.message || 'No se pudo actualizar la opción.')
+    });
   }
 
   onCerrar(): void { this.cerrar.emit(); }

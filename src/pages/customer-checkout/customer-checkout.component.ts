@@ -33,6 +33,7 @@ export class CustomerCheckoutComponent implements OnInit, AfterViewInit, OnDestr
   coordinates: { lat: number; lng: number } | null = null;
   sending = false;
   success = false;
+  customOrderSubmitted = false;
   error = '';
   receiptBase64 = '';
   receiptPreview = '';
@@ -151,14 +152,18 @@ export class CustomerCheckoutComponent implements OnInit, AfterViewInit, OnDestr
     this.sending = true;
     this.error = '';
     try {
-      const image = this.receiptBase64 ? await firstValueFrom(this.venta.subirImagen(this.receiptBase64)) : null;
+       this.customOrderSubmitted = items.some(item => Boolean(item.configuracion || item.imagenReferencia || item.mensaje || item.tamanio || item.sabor || item.relleno || item.pisos || item.decoracion));
+       const image = this.receiptBase64 ? await firstValueFrom(this.venta.subirImagen(this.receiptBase64)) : null;
+       const referenceImages = await Promise.all(items.map(async item => item.imagenReferencia
+         ? (await firstValueFrom(this.venta.subirImagenReferencia(item.imagenReferencia))).url
+         : undefined));
       const dto: RegistrarVentaDTO = {
         idPersona: persona.id,
         idTipoEntrega: this.delivery ? 2 : 1,
         usuario: this.auth.getUser()?.username || 'cliente',
         imagenComprobante: image?.url || undefined,
         numeroOperacion: this.operation.trim() || undefined,
-        detalles: items.map(item => ({
+         detalles: items.map((item, index) => ({
           idTorta: item.id,
           cantidad: item.cantidad,
           precioBase: item.precioBase ?? item.precio,
@@ -168,7 +173,14 @@ export class CustomerCheckoutComponent implements OnInit, AfterViewInit, OnDestr
           sabor: item.sabor,
           relleno: item.relleno,
           pisos: item.pisos,
-          colorDecoracion: item.colorDecoracion
+          colorDecoracion: item.colorDecoracion,
+          decoracion: item.decoracion,
+          cobertura: item.configuracion?.['cobertura'] as string | undefined,
+          porciones: item.porciones,
+          evento: item.configuracion?.['evento'] as string | undefined,
+          fechaEntrega: item.fechaEntrega?.trim() || undefined,
+          observaciones: item.observaciones,
+          imagenReferencia: referenceImages[index]
         })),
         pagos: [{ idMetodoPago: this.paymentId, monto: this.isCash ? this.total : this.depositAmount!, numeroOperacion: this.operation.trim() }],
         entrega: this.delivery ? {

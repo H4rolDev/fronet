@@ -18,9 +18,13 @@ export interface CustomerProduct {
 export interface CustomerOption {
   id: number;
   idTorta: number;
-  tipo: 'sabor' | 'tamanio' | 'relleno' | 'color' | 'pisos';
+  tipo: 'sabor' | 'tamanio' | 'relleno' | 'color' | 'pisos' | 'cobertura' | 'decoracion' | 'porciones' | 'evento';
   valor: string;
   precioExtra: number;
+  modoPrecio?: 'fijo' | 'incremental';
+  precioPorUnidad?: number;
+  obligatorio?: boolean;
+  minimo?: number | null;
   maximo?: number | null;
   orden: number;
 }
@@ -48,7 +52,7 @@ export class CustomerCatalogService {
       stock: Number(item.stockDisponible || 0),
       imagen: item.imagenUrl || '/assets/logotienda.png',
       categoria: item.nombreCategoriaTorta || 'Tortas',
-      personalizable: item.esPersonalizable !== false,
+      personalizable: item.esPersonalizable === true,
       tamanios: item.cantidades ? item.cantidades.split(',').map(x => x.trim()).filter(Boolean) : ['Mediana']
     };
   }

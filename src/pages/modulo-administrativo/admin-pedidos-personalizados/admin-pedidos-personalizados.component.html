@@ -1,0 +1,61 @@
+<main class="custom-orders">
+  <header class="orders-hero">
+    <div><span class="kicker">Producción especial</span><h1>Pedidos personalizados</h1><p>Organiza cada diseño y dale a tu equipo una vista clara para producirlo.</p></div>
+    <div class="hero-badge"><strong>{{ pedidos().length }}</strong><span>pedidos<br>recibidos</span></div>
+  </header>
+
+  <section class="stats">
+    <button [class.active]="filtro() === 'todos'" (click)="cambiarFiltro('todos')"><span>✦</span><strong>{{ pedidos().length }}</strong><small>Total diseños</small></button>
+    <button [class.active]="filtro() === 'pendientes'" (click)="cambiarFiltro('pendientes')"><span>◷</span><strong>{{ pendientes() }}</strong><small>Por revisar</small></button>
+    <button [class.active]="filtro() === 'fecha'" (click)="cambiarFiltro('fecha')"><span>◆</span><strong>{{ conFecha() }}</strong><small>Con fecha solicitada</small></button>
+  </section>
+
+  <section class="filters" aria-label="Filtros de pedidos">
+    <label class="search-field"><span>⌕</span><input #search type="search" [value]="busqueda()" (input)="actualizarBusqueda(search.value)" placeholder="Buscar por nombre del cliente"></label>
+    <label><span>Desde</span><input type="date" [ngModel]="fechaDesde()" (ngModelChange)="fechaDesde.set($event); pagina.set(1)"></label>
+    <label><span>Hasta</span><input type="date" [ngModel]="fechaHasta()" (ngModelChange)="fechaHasta.set($event); pagina.set(1)"></label>
+    <label class="page-size"><span>Registros por página</span><select [ngModel]="tamanioPagina()" (ngModelChange)="cambiarTamanioPagina($event)"><option *ngFor="let size of tamaniosPagina" [ngValue]="size">{{ size }}</option></select></label>
+    <button class="clear-filter" type="button" (click)="limpiarFiltros()">Limpiar filtros</button>
+  </section>
+
+  <section class="orders-panel">
+    <div class="panel-head"><div><span class="kicker">Cola de producción</span><h2>Diseños recibidos</h2></div><span class="panel-count">{{ filtrados().length }} resultados</span></div>
+    <div class="skeleton" *ngIf="cargando()"><i></i><i></i><i></i></div>
+    <div class="empty-state" *ngIf="!cargando() && !paginados().length"><span>⌁</span><h3>No encontramos pedidos</h3><p>Prueba cambiando el nombre o el rango de fechas.</p><button type="button" class="clear-filter" (click)="limpiarFiltros()">Ver todos los pedidos</button></div>
+    <div class="orders-grid" *ngIf="!cargando() && paginados().length">
+      <article class="order-card" *ngFor="let item of paginados()" (click)="abrir(item.id)">
+        <div class="order-top"><span class="order-number">PEDIDO #{{ item.id }}</span><span class="badge" [ngClass]="ESTADO_CLASE[item.idEstadoVenta]">{{ ESTADO_LABEL[item.idEstadoVenta] }}</span></div>
+        <div class="order-main"><div class="cake-avatar">✦</div><div><h3>{{ item.clienteNombre || 'Cliente' }}</h3><p>{{ item.clienteTelefono || 'Sin teléfono registrado' }}</p><p>{{ item.cantidadPersonalizadas || 1 }} torta(s) configurada(s)</p></div></div>
+        <div class="order-meta"><span><small>Fecha del pedido</small><strong>{{ fmt(item.fechaVenta) }}</strong></span><span *ngIf="item.fechaEntregaSolicitada"><small>Entrega solicitada</small><strong>{{ fmt(item.fechaEntregaSolicitada) }}</strong></span></div>
+        <button class="view-button" type="button" (click)="$event.stopPropagation(); abrir(item.id)">Ver configuración completa <b>→</b></button>
+      </article>
+    </div>
+    <nav class="pagination" *ngIf="!cargando() && paginas() > 1" aria-label="Paginación de pedidos">
+      <button type="button" (click)="irAPagina(pagina() - 1)" [disabled]="pagina() === 1">Anterior</button>
+      <button type="button" *ngFor="let page of paginasVisibles()" [class.current]="page === pagina()" (click)="irAPagina(page)">{{ page }}</button>
+      <button type="button" (click)="irAPagina(pagina() + 1)" [disabled]="pagina() === paginas()">Siguiente</button>
+    </nav>
+  </section>
+</main>
+
+<div class="detail-backdrop" *ngIf="detalleId()" (click)="cerrar()">
+  <section class="detail-panel" *ngIf="detalle() as order" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+    <header class="detail-header"><div><span class="kicker">Ficha de producción</span><h2>Pedido #{{ order.venta.id }}</h2><p>{{ order.cliente?.nombre || 'Cliente' }} · {{ fmt(order.venta.fechaVenta) }}</p></div><button type="button" class="close-button" (click)="cerrar()">×</button></header>
+    <div class="detail-body">
+      <div class="detail-summary"><div><small>Estado</small><strong class="badge" [ngClass]="ESTADO_CLASE[order.venta.idEstadoVenta]">{{ ESTADO_LABEL[order.venta.idEstadoVenta] }}</strong></div><div><small>Entrega</small><strong>{{ order.venta.idTipoEntrega === 2 ? 'Delivery' : 'Recojo en tienda' }}</strong></div><div><small>Total</small><strong class="detail-total">S/ {{ order.venta.total | number:'1.2-2' }}</strong></div></div>
+      <section class="detail-section"><div class="section-title"><span>01</span><div><h3>Configuración solicitada</h3><p>Indicaciones enviadas por el cliente</p></div></div>
+        <article class="cake-detail" *ngFor="let item of order.detalles"><div class="cake-detail-heading"><div class="cake-avatar">✦</div><div><h4>{{ item.torta }}</h4><span>{{ item.cantidad }} unidad(es) · S/ {{ item.subTotal | number:'1.2-2' }}</span></div></div><div class="config-grid" *ngIf="configuracion(item).length"><div *ngFor="let option of configuracion(item)"><small>{{ option.label }}</small><strong>{{ option.value }}</strong></div></div><p class="customer-note" *ngIf="item.mensaje"><b>Mensaje:</b> {{ item.mensaje }}</p><p class="customer-note" *ngIf="item.observaciones"><b>Observaciones:</b> {{ item.observaciones }}</p></article>
+      </section>
+      <section class="detail-section" *ngIf="imagenes(order).length"><div class="section-title"><span>02</span><div><h3>Referencias visuales</h3><p>Imágenes compartidas por el cliente</p></div></div><div class="image-gallery"><button type="button" *ngFor="let item of imagenes(order)" (click)="imagenActiva.set(item.imagenReferencia || null)"><img [src]="item.imagenReferencia" alt="Referencia para {{ item.torta }}"><span>{{ item.torta }} <b>Ver imagen</b></span></button></div></section>
+      <section class="detail-section contact-section"><div class="section-title"><span>03</span><div><h3>Datos del cliente</h3><p>Información para coordinar el pedido</p></div></div><div class="contact-grid"><div><small>Nombre</small><strong>{{ order.cliente?.nombre || 'No registrado' }}</strong></div><div><small>Documento</small><strong>{{ order.cliente?.documento || 'No registrado' }}</strong></div><div *ngIf="order.delivery"><small>Teléfono</small><strong>{{ order.delivery.telefono }}</strong></div><div *ngIf="order.delivery"><small>Dirección</small><strong>{{ order.delivery.direccion }}</strong></div></div></section>
+    </div>
+    <footer class="detail-footer"><span>Revisa cada indicación antes de enviar a producción.</span><button type="button" (click)="cerrar()">Cerrar ficha</button></footer>
+  </section>
+  <section class="detail-panel detail-error-panel" *ngIf="!detalleCargando() && detalleError()" (click)="$event.stopPropagation()" role="alert">
+    <div class="detail-error-icon">!</div><h2>No pudimos abrir la configuración</h2><p>{{ detalleError() }}</p>
+    <div class="detail-error-actions"><button type="button" class="secondary-action" (click)="cerrar()">Cerrar</button><button type="button" class="retry-action" (click)="reintentarDetalle()">Intentar nuevamente</button></div>
+  </section>
+  <div class="detail-loading" *ngIf="detalleCargando()"><div class="loading-orbit">✦</div><p>Cargando configuración...</p></div>
+</div>
+
+<div class="image-lightbox" *ngIf="imagenActiva()" (click)="imagenActiva.set(null)"><button type="button" (click)="imagenActiva.set(null)">×</button><img [src]="imagenActiva()" alt="Referencia ampliada"></div>

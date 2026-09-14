@@ -30,6 +30,11 @@ export interface VentaListadoDTO {
   idEstadoVenta: number;
   idTipoEntrega: number;
   usuarioCreacion?: string;
+  tienePersonalizacion?: boolean;
+  cantidadPersonalizadas?: number;
+  fechaEntregaSolicitada?: string | null;
+  clienteNombre?: string;
+  clienteTelefono?: string | null;
 }
 
 /** Detalle completo de una venta (GET /Detalle?idVenta=X) */
@@ -67,6 +72,13 @@ export interface DetalleItemDTO {
   relleno?: string;
   pisos?: number;
   colorDecoracion?: string;
+  decoracion?: string;
+  cobertura?: string;
+  porciones?: number;
+  evento?: string;
+  fechaEntrega?: string;
+  observaciones?: string;
+  imagenReferencia?: string;
 }
 
 export interface PagoItemDTO {
@@ -108,6 +120,13 @@ export interface DetalleDeliveryDTO {
   relleno?: string;
   pisos?: number;
   colorDecoracion?: string;
+  decoracion?: string;
+  cobertura?: string;
+  porciones?: number;
+  evento?: string;
+  fechaEntrega?: string;
+  observaciones?: string;
+  imagenReferencia?: string;
   mensaje?: string;
 }
 
@@ -145,6 +164,13 @@ export interface ComprobanteDetalleDTO {
   pisos?: number;
   colorDecoracion?: string;
   mensaje?: string;
+  decoracion?: string;
+  cobertura?: string;
+  porciones?: number;
+  evento?: string;
+  fechaEntrega?: string;
+  observaciones?: string;
+  imagenReferencia?: string;
 }
 
 export interface ComprobantePagoDTO {
@@ -180,6 +206,13 @@ export interface RegistrarDetalleDTO {
   relleno?: string;
   pisos?: number;
   colorDecoracion?: string;
+  decoracion?: string;
+  cobertura?: string;
+  porciones?: number;
+  evento?: string;
+  fechaEntrega?: string;
+  observaciones?: string;
+  imagenReferencia?: string;
 }
 
 export interface RegistrarPagoDTO {

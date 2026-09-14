@@ -8,6 +8,6 @@ export class CustomerCartComponent implements OnInit {
   items: ItemCarrito[] = [];
   constructor(public cart: CarritoService) {}
   ngOnInit(): void { this.cart.carrito$.subscribe(items => this.items = items); }
-  change(item: ItemCarrito, amount: number): void { this.cart.actualizarCantidad(item.id, item.cantidad + amount, item.stock); }
-  remove(item: ItemCarrito): void { this.cart.eliminarProducto(item.id); }
+  change(item: ItemCarrito, amount: number): void { this.cart.actualizarCantidad(item.lineId, item.cantidad + amount, item.stock); }
+  remove(item: ItemCarrito): void { this.cart.eliminarProducto(item.lineId); }
 }

@@ -3,6 +3,8 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 export interface ItemCarrito {
+  /** Stable identity for a product variant, not only the base cake id. */
+  lineId: string;
   id: number;
   nombre: string;
   precio: number;
@@ -17,6 +19,12 @@ export interface ItemCarrito {
   sabor?: string;
   relleno?: string;
   colorDecoracion?: string;
+  decoracion?: string;
+  observaciones?: string;
+  imagenReferencia?: string;
+  porciones?: number;
+  fechaEntrega?: string;
+  configuracion?: Record<string, string | number | string[] | null>;
 }
 
 @Injectable({
@@ -29,7 +37,10 @@ export class CarritoService {
   carrito$ = this.carritoSubject.asObservable();
 
   private cargar(): ItemCarrito[] {
-    try { return JSON.parse(localStorage.getItem('cart') || '[]'); }
+    try {
+      const items = JSON.parse(localStorage.getItem('cart') || '[]');
+      return Array.isArray(items) ? items.map(item => ({ ...item, lineId: item.lineId ?? String(item.id) })) : [];
+    }
     catch { return []; }
   }
 
@@ -38,16 +49,17 @@ export class CarritoService {
     this.carritoSubject.next([...this.carrito]);
   }
 
-  agregarProducto(producto: { id: number; nombre: string; precio: number; stock: number; imagen?: string; precioBase?: number; precioPersonalizacion?: number }, cantidad: number = 1) {
+  agregarProducto(producto: { id: number; nombre: string; precio: number; stock: number; imagen?: string; precioBase?: number; precioPersonalizacion?: number; lineId?: string; configuracion?: ItemCarrito['configuracion'] }, cantidad: number = 1) {
     if (cantidad <= 0) return;
-    const cantidadEnCarrito = this.carrito.filter(item => item.id === producto.id).reduce((sum, item) => sum + item.cantidad, 0);
+    const lineId = producto.lineId ?? String(producto.id);
+    const cantidadEnCarrito = this.carrito.filter(item => item.lineId === lineId).reduce((sum, item) => sum + item.cantidad, 0);
     if (cantidadEnCarrito + cantidad > producto.stock) {
       alert(`Stock máximo disponible: ${producto.stock}`);
       cantidad = Math.max(0, producto.stock - cantidadEnCarrito);
     }
     if (cantidad === 0) return;
     
-    const existente = this.carrito.find(item => item.id === producto.id);
+    const existente = this.carrito.find(item => item.lineId === lineId);
     
     if (existente) {
       const nuevaCantidad = existente.cantidad + cantidad;
@@ -59,6 +71,7 @@ export class CarritoService {
       }
     } else {
       this.carrito.push({
+        lineId,
         id: producto.id,
         nombre: producto.nombre,
         precio: producto.precio,
@@ -66,23 +79,24 @@ export class CarritoService {
         precioPersonalizacion: producto.precioPersonalizacion ?? 0,
         cantidad: cantidad,
         stock: producto.stock,
-        imagen: producto.imagen
+        imagen: producto.imagen,
+        configuracion: producto.configuracion
       });
     }
     
     this.publicar();
   }
 
-  actualizarPersonalizacion(id: number, datos: Partial<ItemCarrito>): void {
-    const item = this.carrito.find(i => i.id === id);
+  actualizarPersonalizacion(key: string | number, datos: Partial<ItemCarrito>): void {
+    const item = this.buscar(key);
     if (item) { Object.assign(item, datos); this.publicar(); }
   }
 
-  actualizarCantidad(id: number, cantidad: number, stock: number) {
-    const item = this.carrito.find(i => i.id === id);
+  actualizarCantidad(key: string | number, cantidad: number, stock: number) {
+    const item = this.buscar(key);
     if (item) {
       if (cantidad <= 0) {
-        this.eliminarProducto(id);
+        this.eliminarProducto(key);
         return;
       }
       if (cantidad > stock) {
@@ -94,8 +108,8 @@ export class CarritoService {
     }
   }
 
-  eliminarProducto(id: number) {
-    this.carrito = this.carrito.filter(item => item.id !== id);
+  eliminarProducto(key: string | number) {
+    this.carrito = this.carrito.filter(item => item.lineId !== String(key) && item.id !== key);
     this.publicar();
   }
 
@@ -118,5 +132,9 @@ export class CarritoService {
 
   obtenerCantidadTotal(): number {
     return this.carrito.reduce((total, item) => total + item.cantidad, 0);
+  }
+
+  private buscar(key: string | number): ItemCarrito | undefined {
+    return this.carrito.find(item => item.lineId === String(key) || item.id === key);
   }
 }

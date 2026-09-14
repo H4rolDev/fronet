@@ -6,9 +6,13 @@ import { environment } from '../environments/environment';
 export interface TortaOpcion {
   id: number;
   idTorta: number;
-  tipo: 'sabor' | 'tamanio' | 'relleno' | 'color' | 'pisos';
+  tipo: 'sabor' | 'tamanio' | 'relleno' | 'color' | 'pisos' | 'cobertura' | 'decoracion' | 'porciones' | 'evento';
   valor: string;
   precioExtra: number;
+  modoPrecio?: 'fijo' | 'incremental';
+  precioPorUnidad?: number;
+  obligatorio?: boolean;
+  minimo?: number | null;
   activo: boolean;
   maximo?: number | null;
   orden: number;
