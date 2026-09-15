@@ -146,9 +146,8 @@ export class CustomerHomeComponent implements OnInit {
          this.eventTypes = values('evento').map(o => o.valor);
          const floorOptions = values('pisos');
          const configuredMax = floorOptions.map(option => option.maximo).filter((value): value is number => Number(value) > 0);
-         const numericValues = floorOptions.map(option => Number(option.valor.match(/\d+(?:\.\d+)?/)?.[0])).filter(value => Number.isFinite(value));
           this.floorsConfigured = floorOptions.length > 0;
-          this.maxFloors = configuredMax.length ? Math.max(...configuredMax) : numericValues.length ? Math.max(...numericValues) : 4;
+          this.maxFloors = configuredMax.length ? Math.max(...configuredMax) : 4;
          this.size = this.sizes[0] || '';
         this.flavor = this.flavors[0] || '';
         this.filling = this.fillings[0] || '';
