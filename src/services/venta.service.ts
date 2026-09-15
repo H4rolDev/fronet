@@ -221,6 +221,22 @@ obtenerComboDrivers(): Observable<RepartidorDTO[]> {
       .pipe(catchError(this.err));
   }
 
+  obtenerRecojos(): Observable<any[]> {
+    return this.http.get<any[]>(`${BASE}/Venta/ListadoRecojos`, { headers: this.getHeaders() })
+      .pipe(catchError(this.err));
+  }
+
+  completarRecojo(dto: { idVenta: number; codigoEntrega: string; documentoCliente: string; montoCobrado: number; idMetodoPago: number; usuario: string }): Observable<any> {
+    return this.http.post<any>(`${BASE}/Venta/CompletarRecojo`, dto, { headers: this.getHeaders() })
+      .pipe(catchError(this.err));
+  }
+
+  validarCodigoDelivery(idDelivery: number, codigo: string, documento: string): Observable<any> {
+    const params = new HttpParams().set('idDelivery', idDelivery).set('codigo', codigo).set('documento', documento);
+    return this.http.post<any>(`${BASE}/Venta/ValidarCodigoDelivery`, null, { params, headers: this.getHeaders() })
+      .pipe(catchError(this.err));
+  }
+
   // ── Validación de Pagos ─────────────────────────────────────────────────────
   obtenerPendientesValidacion(): Observable<any[]> {
     return this.http

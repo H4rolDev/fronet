@@ -25,6 +25,7 @@ export const routes: Routes = [
       { path: 'cart', loadComponent: () => import('../pages/customer-cart/customer-cart.component').then(m => m.CustomerCartComponent) },
       { path: 'checkout', loadComponent: () => import('../pages/customer-checkout/customer-checkout.component').then(m => m.CustomerCheckoutComponent) },
       { path: 'chat', loadComponent: () => import('../pages/customer-chat/customer-chat.component').then(m => m.CustomerChatComponent) },
+      { path: 'personalizado', loadComponent: () => import('../pages/custom-request/custom-request.component').then(m => m.CustomRequestComponent) },
       { path: 'pagoyape', loadComponent: () => import('../pages/pagoyape/pagoyape.component').then(m => m.PagoyapeComponent) },
 
       { path: 'password', loadComponent: () => import('../widgets/form-password/form-password').then(m => m.PasswordComponent) },
@@ -141,6 +142,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../pages/modulo-administrativo/admin-delivery/admin-delivery.component')
              .then(m => m.AdminDeliveryComponent),
+      },
+      {
+        path: 'recojo-tienda',
+        loadComponent: () => import('../pages/modulo-administrativo/admin-recojo/admin-recojo.component')
+          .then(m => m.AdminRecojoComponent),
       },
       {
         path: 'pedidos-personalizados',

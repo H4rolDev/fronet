@@ -43,6 +43,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     '/admin/categoria-torta':    'Categoría Torta',
     '/admin/venta':       'Venta de Tortas',
     '/admin/delivery':           'Delivery',
+    '/admin/recojo-tienda':      'Recojo en tienda',
     '/admin/configuracion-delivery': 'Configuración de delivery',
     '/admin/personal':           'Personal',
     '/admin/clientes':           'Clientes',

@@ -34,6 +34,7 @@ interface DeliveryItem {
   usuarioAsignacion?: string | null;
   idEstadoVenta: number;
   estadoVenta: string;
+  codigoEntrega?: string;
   puedeGestionar: boolean;
 }
 
@@ -329,9 +330,11 @@ interface EstadoEntrega {
            <div class="modal-header"><h3>Confirmar entrega</h3><button class="modal-cerrar" (click)="cerrarCompletar()">✕</button></div>
            <div class="modal-body">
              <p>Confirma el cobro pendiente antes de cerrar este pedido.</p>
-             <div class="cobro-alert">Saldo a cobrar: <strong>S/. {{ saldoCompletar().toFixed(2) }}</strong></div>
+              <div class="cobro-alert">Código: <strong>{{ deliveryCompletando()?.codigoEntrega }}</strong><br>Saldo digital a cobrar: <strong>S/. {{ saldoCompletar().toFixed(2) }}</strong></div>
+              <div class="form-group"><label class="lbl">Código de entrega *</label><input class="inp" maxlength="6" [(ngModel)]="codigoEntrega" /></div>
+              <div class="form-group"><label class="lbl">DNI del cliente *</label><input class="inp" [(ngModel)]="documentoEntrega" /></div>
              <div class="form-group"><label class="lbl">Monto cobrado</label><input class="inp" type="number" min="0" step="0.01" [(ngModel)]="montoCobrado" /></div>
-             <div class="form-group"><label class="lbl">Método de pago</label><select class="sel" [(ngModel)]="metodoCobro"><option [ngValue]="1">Efectivo</option><option [ngValue]="2">Yape</option><option [ngValue]="3">Plin</option></select></div>
+              <div class="form-group"><label class="lbl">Método de pago</label><select class="sel" [(ngModel)]="metodoCobro"><option [ngValue]="2">Yape</option><option [ngValue]="3">Plin</option></select></div>
            </div>
            <div class="modal-footer"><button class="btn-sec" (click)="cerrarCompletar()">Cancelar</button><button class="btn-primary" (click)="confirmarCompletar()">Confirmar entrega</button></div>
          </div>
@@ -470,6 +473,8 @@ export class AdminDeliveryComponent implements OnInit {
   deliveryCompletando = signal<DeliveryItem | null>(null);
   montoCobrado = 0;
   metodoCobro = 1;
+  codigoEntrega = '';
+  documentoEntrega = '';
 
   constructor(private svc: VentaService) {}
 
@@ -521,7 +526,9 @@ export class AdminDeliveryComponent implements OnInit {
   abrirCompletar(delivery: DeliveryItem): void {
     this.deliveryCompletando.set(delivery);
     this.montoCobrado = delivery.saldoPendiente || 0;
-    this.metodoCobro = 1;
+    this.metodoCobro = 2;
+    this.codigoEntrega = '';
+    this.documentoEntrega = '';
     this.showCompleteModal.set(true);
   }
 
@@ -530,9 +537,13 @@ export class AdminDeliveryComponent implements OnInit {
   confirmarCompletar(): void {
     const delivery = this.deliveryCompletando();
     if (!delivery) return;
-    this.svc.completarEntrega(delivery.id, Number(this.montoCobrado) || 0, this.metodoCobro).subscribe({
-      next: () => { this.cerrarCompletar(); this.cargarDeliveries(); },
-      error: (e) => { console.error('Error completando entrega:', e); alert(e.message || 'Error al completar la entrega'); }
+    if (!this.codigoEntrega.trim() || !this.documentoEntrega.trim()) { alert('Ingresa el código y DNI del cliente.'); return; }
+    this.svc.validarCodigoDelivery(delivery.id, this.codigoEntrega.trim(), this.documentoEntrega.trim()).subscribe({
+      next: () => this.svc.completarEntrega(delivery.id, Number(this.montoCobrado) || 0, this.metodoCobro).subscribe({
+        next: () => { this.cerrarCompletar(); this.cargarDeliveries(); },
+        error: (e) => alert(e.message || 'Error al completar la entrega')
+      }),
+      error: (e) => { console.error('Error validando código:', e); alert(e.message || 'Código o DNI inválido'); }
     });
   }
 

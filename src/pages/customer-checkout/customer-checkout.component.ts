@@ -26,6 +26,7 @@ export class CustomerCheckoutComponent implements OnInit, AfterViewInit, OnDestr
   contact = '';
   operation = '';
   depositAmount: number | null = null;
+  cashAmount = 0;
   paymentId = 0;
   payments: MetodoPagoDTO[] = [];
   deliveryCost = 0;
@@ -34,6 +35,8 @@ export class CustomerCheckoutComponent implements OnInit, AfterViewInit, OnDestr
   sending = false;
   success = false;
   customOrderSubmitted = false;
+  generatedCode = '';
+  showDeliveryNotice = false;
   error = '';
   receiptBase64 = '';
   receiptPreview = '';
@@ -145,10 +148,12 @@ export class CustomerCheckoutComponent implements OnInit, AfterViewInit, OnDestr
     if (this.delivery && !this.coordinates) { this.error = 'Selecciona tu ubicación en el mapa para calcular el delivery.'; return; }
     if (this.delivery && this.isCash) { this.error = 'Para delivery solo se aceptan Yape o Plin con comprobante.'; return; }
     if (this.requiresProof && (!this.receiptBase64 || !this.operation.trim())) { this.error = 'Sube el comprobante e ingresa el número de operación.'; return; }
-    if (!this.isCash && (!this.depositAmount || this.depositAmount <= this.minimumDeposit || this.depositAmount > this.total)) {
-      this.error = `El depósito debe ser mayor al 50% y no superar S/ ${this.total.toFixed(2)}.`;
+    if (!this.isCash && (!this.depositAmount || this.depositAmount <= 0 || this.depositAmount > this.total)) {
+      this.error = `El depósito debe ser mayor a S/ 0.00 y no superar S/ ${this.total.toFixed(2)}.`;
       return;
     }
+    if (!this.delivery && this.isCash) this.cashAmount = this.total;
+    if (this.delivery) this.cashAmount = 0;
     this.sending = true;
     this.error = '';
     try {
@@ -157,7 +162,13 @@ export class CustomerCheckoutComponent implements OnInit, AfterViewInit, OnDestr
        const referenceImages = await Promise.all(items.map(async item => item.imagenReferencia
          ? (await firstValueFrom(this.venta.subirImagenReferencia(item.imagenReferencia))).url
          : undefined));
-      const dto: RegistrarVentaDTO = {
+       const pagos = this.isCash
+         ? [{ idMetodoPago: this.paymentId, monto: this.total, numeroOperacion: '' }]
+         : [
+             { idMetodoPago: this.paymentId, monto: Number(this.depositAmount || 0), numeroOperacion: this.operation.trim() },
+             ...(this.cashAmount > 0 ? [{ idMetodoPago: this.cashPaymentId, monto: Number(this.cashAmount.toFixed(2)), numeroOperacion: '' }] : [])
+           ];
+       const dto: RegistrarVentaDTO = {
         idPersona: persona.id,
         idTipoEntrega: this.delivery ? 2 : 1,
         usuario: this.auth.getUser()?.username || 'cliente',
@@ -182,7 +193,7 @@ export class CustomerCheckoutComponent implements OnInit, AfterViewInit, OnDestr
           observaciones: item.observaciones,
           imagenReferencia: referenceImages[index]
         })),
-        pagos: [{ idMetodoPago: this.paymentId, monto: this.isCash ? this.total : this.depositAmount!, numeroOperacion: this.operation.trim() }],
+         pagos,
         entrega: this.delivery ? {
           idPersonalRepartidor: 0,
           direccion: this.address.trim(),
@@ -194,13 +205,18 @@ export class CustomerCheckoutComponent implements OnInit, AfterViewInit, OnDestr
           longitud: this.coordinates?.lng
         } : null
       };
-      await firstValueFrom(this.venta.registrar(dto));
+      const id = await firstValueFrom(this.venta.registrar(dto));
+      const detail = await firstValueFrom(this.venta.obtenerDetalle(id));
+      this.generatedCode = detail.venta.codigoEntrega || '';
       this.cart.limpiarCarrito();
       this.success = true;
+      this.showDeliveryNotice = true;
     } catch (err: any) {
       this.error = err?.message || 'No se pudo registrar el pedido.';
     } finally { this.sending = false; }
   }
+
+  get cashPaymentId(): number { return this.payments.find(method => method.nombre.toLowerCase().includes('efectivo'))?.id || 1; }
 
   private initializeMap(): void {
     if (!this.delivery || !this.configuration || this.map || typeof document === 'undefined') return;

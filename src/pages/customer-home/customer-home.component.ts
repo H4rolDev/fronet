@@ -20,6 +20,9 @@ export class CustomerHomeComponent implements OnInit {
   search = '';
   loading = true;
   catalogOnly = false;
+  pageSize = 6;
+  currentPage = 1;
+  sortBy = 'featured';
   selected: CustomerProduct | null = null;
 
   options: CustomerOption[] = [];
@@ -27,6 +30,8 @@ export class CustomerHomeComponent implements OnInit {
   customizationError = '';
   size = '';
   floors = 1;
+  maxFloors = 4;
+  floorsConfigured = false;
   quantity = 1;
   message = '';
   filling = '';
@@ -71,9 +76,34 @@ export class CustomerHomeComponent implements OnInit {
 
   applyFilter(): void {
     const query = this.search.toLowerCase().trim();
-    const source = this.catalogOnly ? this.products : this.products.slice(0, 4);
-    this.filtered = source.filter(p => (this.category === 'Todas' || p.categoria === this.category) &&
+    this.filtered = this.products.filter(p => (this.category === 'Todas' || p.categoria === this.category) &&
       (!query || p.nombre.toLowerCase().includes(query) || p.descripcion.toLowerCase().includes(query)));
+    this.filtered = [...this.filtered].sort((a, b) => {
+      if (this.sortBy === 'price-asc') return a.precio - b.precio;
+      if (this.sortBy === 'price-desc') return b.precio - a.precio;
+      if (this.sortBy === 'name') return a.nombre.localeCompare(b.nombre);
+      return 0;
+    });
+    this.currentPage = 1;
+  }
+
+  visibleProducts(): CustomerProduct[] {
+    if (!this.catalogOnly) return this.filtered.slice(0, 4);
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filtered.slice(start, start + this.pageSize);
+  }
+
+  totalPages(): number {
+    return Math.max(1, Math.ceil(this.filtered.length / this.pageSize));
+  }
+
+  pages(): number[] {
+    return Array.from({ length: this.totalPages() }, (_, index) => index + 1);
+  }
+
+  goToPage(page: number): void {
+    this.currentPage = Math.min(Math.max(page, 1), this.totalPages());
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   open(product: CustomerProduct): void {
@@ -95,8 +125,10 @@ export class CustomerHomeComponent implements OnInit {
     this.flavor = '';
     this.color = '';
     this.decoration = '';
-    this.frosting = '';
-    this.servings = null;
+         this.frosting = '';
+         this.servings = null;
+         this.maxFloors = 4;
+         this.floorsConfigured = false;
 
     this.catalog.obtenerOpciones(product.id).subscribe({
       next: options => {
@@ -111,8 +143,13 @@ export class CustomerHomeComponent implements OnInit {
         this.decorations = values('decoracion').map(o => o.valor);
         this.frostings = values('cobertura').map(o => o.valor);
         this.portions = values('porciones').map(o => o.valor);
-        this.eventTypes = values('evento').map(o => o.valor);
-        this.size = this.sizes[0] || '';
+         this.eventTypes = values('evento').map(o => o.valor);
+         const floorOptions = values('pisos');
+         const configuredMax = floorOptions.map(option => option.maximo).filter((value): value is number => Number(value) > 0);
+         const numericValues = floorOptions.map(option => Number(option.valor.match(/\d+(?:\.\d+)?/)?.[0])).filter(value => Number.isFinite(value));
+          this.floorsConfigured = floorOptions.length > 0;
+          this.maxFloors = configuredMax.length ? Math.max(...configuredMax) : numericValues.length ? Math.max(...numericValues) : 4;
+         this.size = this.sizes[0] || '';
         this.flavor = this.flavors[0] || '';
         this.filling = this.fillings[0] || '';
         this.color = this.colors[0] || '';
@@ -127,13 +164,17 @@ export class CustomerHomeComponent implements OnInit {
     });
   }
 
+  clampFloors(): void {
+    this.floors = Math.min(this.maxFloors, Math.max(1, Number(this.floors) || 1));
+  }
+
   price(): number {
     const selectedValues: Record<string, string> = {
       tamanio: this.size, sabor: this.flavor, relleno: this.filling, color: this.color,
       decoracion: this.decoration, cobertura: this.frosting, porciones: this.servings ? String(this.servings) : '',
       pisos: String(this.floors), evento: this.eventType
     };
-    const extra = Object.entries(selectedValues).reduce((sum, [tipo, valor]) => {
+    let extra = Object.entries(selectedValues).reduce((sum, [tipo, valor]) => {
       if (!valor) return sum;
       const exact = this.options.find(option => option.tipo === tipo && this.optionMatches(option.valor, valor, tipo));
       const option = exact || this.options.find(item => item.tipo === tipo && item.modoPrecio === 'incremental');
@@ -144,6 +185,7 @@ export class CustomerHomeComponent implements OnInit {
       }
       return sum + Number(option.precioExtra || 0);
     }, 0);
+    if (!this.floorsConfigured) extra += Math.max(0, this.floors - 1) * 20;
     return Number(((this.selected?.precio || 0) + extra).toFixed(2));
   }
 
@@ -158,6 +200,7 @@ export class CustomerHomeComponent implements OnInit {
 
   add(): void {
     if (!this.selected || this.selected.stock < 1 || this.optionsLoading || this.customizationError) return;
+    this.clampFloors();
     this.customizationError = '';
     if (!this.selected.personalizable) {
       this.cart.agregarProducto({ id: this.selected.id, nombre: this.selected.nombre, precio: this.selected.precio, stock: this.selected.stock, imagen: this.selected.imagen }, this.quantity);

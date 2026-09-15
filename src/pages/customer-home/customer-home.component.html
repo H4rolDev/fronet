@@ -1,10 +1,10 @@
-<main class="customer-home">
-  <section class="hero">
+<main class="customer-home" [class.catalog-page]="catalogOnly">
+  <section class="hero" *ngIf="!catalogOnly">
     <div>
       <span class="eyebrow">Repostería artesanal</span>
       <h1>Diseña una torta que cuente tu historia.</h1>
       <p>Elige cada detalle, revisa el precio en tiempo real y envía tu pedido con la confianza de que todo quedó registrado.</p>
-      <div class="hero-actions"><a class="primary" routerLink="/products">Explorar tortas</a><a class="secondary" routerLink="/chat">Necesito inspiración</a></div>
+       <div class="hero-actions"><a class="primary" routerLink="/products">Explorar tortas</a><a class="secondary" routerLink="/personalizado">Diseñar mi torta</a><a class="secondary" routerLink="/chat">Necesito inspiración</a></div>
       <div class="hero-notes"><span>✦ Opciones configurables</span><span>✦ Precio transparente</span><span>✦ Hecha para tu momento</span></div>
     </div>
     <div class="hero-visual"><img src="/assets/portada-tortas.jpg" alt="Torta artesanal"><span class="hero-stamp">Hecho con cariño</span></div>
@@ -12,18 +12,21 @@
 
   <section class="catalog" [class.catalog-home]="!catalogOnly">
     <div class="catalog-head">
-      <div><span class="eyebrow">{{ catalogOnly ? 'Catálogo completo' : 'Selección de la semana' }}</span><h2>{{ catalogOnly ? 'Encuentra tu favorita' : 'Pequeños antojos, grandes momentos' }}</h2><p *ngIf="!catalogOnly" class="section-lead">Selecciona una torta y abre su configurador para decidir hasta el último detalle.</p></div>
-      <input *ngIf="catalogOnly" [(ngModel)]="search" (ngModelChange)="applyFilter()" placeholder="Buscar tortas o postres...">
+      <div><span class="eyebrow">{{ catalogOnly ? 'La vitrina completa' : 'Selección de la semana' }}</span><h2>{{ catalogOnly ? 'Todo lo dulce, en un solo lugar' : 'Pequeños antojos, grandes momentos' }}</h2><p *ngIf="!catalogOnly" class="section-lead">Selecciona una torta y abre su configurador para decidir hasta el último detalle.</p><p *ngIf="catalogOnly" class="section-lead">Explora nuestra colección artesanal, compara opciones y encuentra el sabor ideal para celebrar.</p></div>
+      <div class="catalog-search" *ngIf="catalogOnly"><label for="product-search">Buscar</label><input id="product-search" [(ngModel)]="search" (ngModelChange)="applyFilter()" placeholder="Torta, sabor o postre..."></div>
     </div>
-    <div class="tabs" *ngIf="catalogOnly"><button *ngFor="let item of categories" [class.active]="category === item" (click)="category=item; applyFilter()">{{ item }}</button></div>
+    <div class="catalog-perks" *ngIf="catalogOnly"><span><b>✦</b> Ingredientes seleccionados</span><span><b>✦</b> Preparado por pedido</span><span><b>✦</b> Personaliza tus favoritos</span></div>
+    <div class="catalog-toolbar" *ngIf="catalogOnly"><div class="tabs"><button *ngFor="let item of categories" [class.active]="category === item" (click)="category=item; applyFilter()">{{ item }}</button></div><label>Ordenar<select [(ngModel)]="sortBy" (ngModelChange)="applyFilter()"><option value="featured">Recomendados</option><option value="price-asc">Menor precio</option><option value="price-desc">Mayor precio</option><option value="name">Nombre A-Z</option></select></label></div>
+    <div class="catalog-result" *ngIf="catalogOnly"><strong>{{ filtered.length }}</strong> productos encontrados <span *ngIf="totalPages() > 1">· Página {{ currentPage }} de {{ totalPages() }}</span></div>
     <div class="grid" *ngIf="!loading; else loadingState">
-      <article class="card" *ngFor="let product of filtered">
+      <article class="card" *ngFor="let product of visibleProducts()">
         <div class="card-image"><img [src]="product.imagen" [alt]="product.nombre"><span class="stock-pill" *ngIf="product.stock">{{ product.stock }} disponibles</span></div>
         <div class="card-body"><span class="category">{{ product.categoria }}</span><h3>{{ product.nombre }}</h3><p>{{ product.descripcion }}</p><footer><strong>S/ {{ product.precio | number:'1.2-2' }}</strong><button type="button" class="primary small" (click)="open(product)" [disabled]="!product.stock">{{ product.stock ? (product.personalizable ? 'Personalizar' : 'Agregar') : 'Agotado' }}</button></footer></div>
       </article>
     </div>
     <ng-template #loadingState><div class="catalog-loading"><span></span><span></span><span></span></div></ng-template>
     <div class="catalog-empty" *ngIf="!loading && !filtered.length">No encontramos tortas con esa búsqueda.</div>
+    <div class="pagination" *ngIf="catalogOnly && !loading && filtered.length"><button type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">Anterior</button><button type="button" *ngFor="let page of pages()" [class.active]="page === currentPage" (click)="goToPage(page)">{{ page }}</button><button type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages()">Siguiente</button></div>
     <div class="catalog-more" *ngIf="!catalogOnly && products.length > 4"><a class="secondary" routerLink="/products">Ver todo el catálogo →</a></div>
   </section>
 </main>
@@ -42,7 +45,7 @@
       <label *ngIf="portions.length">Porciones<select [(ngModel)]="servings"><option *ngFor="let option of portions" [ngValue]="parsePortions(option)">{{ option }}</option></select></label>
       <label *ngIf="flavors.length">Sabor del bizcocho<select [(ngModel)]="flavor"><option *ngFor="let option of flavors" [value]="option">{{ option }}</option></select></label>
       <label *ngIf="fillings.length">Relleno<select [(ngModel)]="filling"><option *ngFor="let option of fillings" [value]="option">{{ option }}</option></select></label>
-      <label>Pisos<input type="number" min="1" max="5" [(ngModel)]="floors"></label>
+       <label>Pisos<input type="number" min="1" [max]="maxFloors" [(ngModel)]="floors" (ngModelChange)="clampFloors()"><small>Máximo permitido: {{ maxFloors }} piso(s)</small><small *ngIf="!floorsConfigured">+ S/ 20 por piso adicional</small></label>
       <label *ngIf="frostings.length">Cobertura<select [(ngModel)]="frosting"><option *ngFor="let option of frostings" [value]="option">{{ option }}</option></select></label>
       <label *ngIf="colors.length">Color de decoración<select [(ngModel)]="color"><option *ngFor="let option of colors" [value]="option">{{ option }}</option></select></label>
       <label *ngIf="decorations.length">Estilo de decoración<select [(ngModel)]="decoration"><option *ngFor="let option of decorations" [value]="option">{{ option }}</option></select></label>

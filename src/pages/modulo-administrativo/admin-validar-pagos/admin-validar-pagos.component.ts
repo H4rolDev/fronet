@@ -501,26 +501,14 @@ export class AdminValidarPagosComponent implements OnInit {
   }
 
   getBadgeClass(estado: number): string {
-    switch (estado) {
-      case 4: return 'badge--warning';
-      case 5: return 'badge--approved';
-      case 2: return 'badge--success';
-      case 6: return 'badge--danger';
-      case 3: return 'badge--info';
-      default: return '';
-    }
+    if (estado === 2) return 'badge--warning';
+    if (estado === 3 || estado === 5 || estado === 7) return 'badge--approved';
+    if (estado === 4 || estado === 6) return 'badge--danger';
+    return 'badge--info';
   }
 
   getEstadoTexto(estado: number): string {
-    switch (estado) {
-      case 1: return 'Pendiente';
-      case 4: return 'Esperando Validación';
-      case 2: return 'Pagado';
-      case 5: return 'Aprobado';
-      case 6: return 'Rechazado';
-      case 3: return 'Cancelado';
-      default: return 'Desconocido';
-    }
+    return ({ 1: 'Pendiente de pago', 2: 'Pago por validar', 3: 'Pago parcial validado', 4: 'Rechazado', 5: 'Pagado', 6: 'Cancelado', 7: 'Entregado' } as Record<number, string>)[estado] || 'Desconocido';
   }
 
   get todasVentas() {

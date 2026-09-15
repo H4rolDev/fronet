@@ -14,6 +14,7 @@ export interface CustomerChatResponse {
   message: string;
   intent: string;
   products: CustomerChatProduct[];
+  hasCustomRequestOption?: boolean;
   addToCart?: { productId: number; productName: string; quantity: number; unitPrice: number; subtotal: number };
 }
 

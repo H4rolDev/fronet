@@ -22,7 +22,8 @@ const MODULOS_POR_ROL: Record<RolEnum, ModuloPermiso[]> = {
     { ruta: '/admin/movimiento-torta', titulo: 'Movimiento de Tortas', icono: 'delivery' },
     { ruta: '/admin/tipo-movimiento', titulo: 'Tipos de Movimientos', icono: 'list' },
     { ruta: '/admin/venta', titulo: 'Venta de Tortas', icono: 'cart' },
-    { ruta: '/admin/delivery', titulo: 'Delivery', icono: 'shipping' },
+      { ruta: '/admin/delivery', titulo: 'Delivery', icono: 'shipping' },
+      { ruta: '/admin/recojo-tienda', titulo: 'Recojo en tienda', icono: 'store' },
     { ruta: '/admin/validar-pagos', titulo: 'Validar Pagos', icono: 'payment' },
     { ruta: '/admin/validar-entradas', titulo: 'Validar Entradas', icono: 'input' },
     { ruta: '/admin/personal', titulo: 'Personal', icono: 'people' },
@@ -33,7 +34,8 @@ const MODULOS_POR_ROL: Record<RolEnum, ModuloPermiso[]> = {
   [RolEnum.Atencion]: [
     { ruta: '/admin/dashboard', titulo: 'Dashboard', icono: 'dashboard' },
     { ruta: '/admin/venta', titulo: 'Venta de Tortas', icono: 'cart' },
-    { ruta: '/admin/delivery', titulo: 'Delivery', icono: 'shipping' },
+      { ruta: '/admin/delivery', titulo: 'Delivery', icono: 'shipping' },
+      { ruta: '/admin/recojo-tienda', titulo: 'Recojo en tienda', icono: 'store' },
     { ruta: '/admin/validar-pagos', titulo: 'Validar Pagos', icono: 'payment' },
     { ruta: '/admin/clientes', titulo: 'Clientes', icono: 'person' },
     { ruta: '/admin/reportes', titulo: 'Reportes', icono: 'chart' }

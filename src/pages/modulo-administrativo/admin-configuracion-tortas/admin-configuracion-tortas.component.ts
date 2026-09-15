@@ -82,7 +82,7 @@ export class AdminConfiguracionTortasComponent implements OnInit {
   }
 
   toggle(option: TortaOpcion): void {
-    this.options.guardar({ ...option, activo: !option.activo }).subscribe({
+    this.options.cambiarActivo(option.id, !option.activo).subscribe({
       next: updated => { this.opciones.update(items => items.map(item => item.id === updated.id ? updated : item)); this.mensaje.set(updated.activo ? 'Opción visible para el cliente.' : 'Opción ocultada para el cliente.'); },
       error: () => this.error.set('No se pudo cambiar la visibilidad. Verifica que tu sesión siga activa.')
     });

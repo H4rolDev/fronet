@@ -46,6 +46,7 @@ export interface VentaDetalleDTO {
   delivery: DeliveryItemDTO | null;
   comprobante: { serie: string; numero: string; idTipoComprobante: number } | null;
   imagenComprobante?: string | null;
+  codigoEntrega?: string | null;
 }
 
 export interface VentaCabeceraDetalle {
@@ -56,6 +57,9 @@ export interface VentaCabeceraDetalle {
   total: number;
   usuario: string;
   observacion?: string;
+  montoPagado?: number;
+  saldoPendiente?: number;
+  codigoEntrega?: string | null;
 }
 
 export interface DetalleItemDTO {
@@ -314,7 +318,7 @@ export interface FilaPago {
 export const ESTADO_LABEL: Record<number, string> = {
   1: 'Pendiente',
   2: 'Esperando Validación',
-  3: 'Aprobada',
+  3: 'Pago parcial validado',
   4: 'Rechazada',
   5: 'Pagada',
   6: 'Cancelada',

@@ -24,5 +24,6 @@ export class TortaOpcionesService {
   constructor(private http: HttpClient) {}
   obtenerAdmin(idTorta: number): Observable<TortaOpcion[]> { return this.http.get<TortaOpcion[]>(`${this.url}/admin/torta/${idTorta}`); }
   guardar(opcion: TortaOpcion): Observable<TortaOpcion> { return this.http.post<TortaOpcion>(`${this.url}/upsert`, opcion); }
+  cambiarActivo(id: number, activo: boolean): Observable<TortaOpcion> { return this.http.post<TortaOpcion>(`${this.url}/${id}/estado`, { activo }); }
   eliminar(id: number): Observable<unknown> { return this.http.delete(`${this.url}/${id}`); }
 }

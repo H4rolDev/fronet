@@ -33,6 +33,7 @@
       <a class="nl" routerLink="/ubicanos" routerLinkActive="nl--active">Ubícanos</a>
       <a class="nl" routerLink="/products" routerLinkActive="nl--active">Productos</a>
       <a class="nl" routerLink="/chat" routerLinkActive="nl--active">Yani AI</a>
+      <a class="nl nl--custom" routerLink="/personalizado" routerLinkActive="nl--active">Diseñar mi torta</a>
     </nav>
 
     <!-- Acciones -->
@@ -96,6 +97,7 @@
     <a class="mn-link" routerLink="/sobre-nosotros" routerLinkActive="mn-link--active" (click)="menuMobileOpen=false">ℹ️ Sobre nosotros</a>
     <a class="mn-link" routerLink="/ubicanos" routerLinkActive="mn-link--active" (click)="menuMobileOpen=false">📍 Ubícanos</a>
     <a class="mn-link" routerLink="/contact"  routerLinkActive="mn-link--active" (click)="menuMobileOpen=false">📞 Contacto</a>
+    <a class="mn-link mn-link--cta" routerLink="/personalizado" routerLinkActive="mn-link--active" (click)="menuMobileOpen=false">✨ Diseñar mi torta</a>
     <div class="mn-divider"></div>
     <a *ngIf="!isLoggedIn()" class="mn-link mn-link--cta" routerLink="/iniciar" (click)="menuMobileOpen=false">🔑 Iniciar Sesión</a>
     <ng-container *ngIf="isLoggedIn()">

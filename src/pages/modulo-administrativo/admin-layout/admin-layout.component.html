@@ -225,6 +225,13 @@
         <span class="nav-dot"></span>
       </a>
 
+      <a class="nav-item" *ngIf="tieneAcceso('/admin/recojo-tienda')" routerLink="/admin/recojo-tienda"
+          routerLinkActive="active" [title]="sidebarCollapsed ? 'Recojo en tienda' : ''">
+        <span class="nav-icon"><span style="font-size:18px">⌂</span></span>
+        <span class="nav-label">Recojo en tienda</span>
+        <span class="nav-dot"></span>
+      </a>
+
       <a class="nav-item" *ngIf="tieneAcceso('/admin/repartidor')" routerLink="/admin/repartidor"
           routerLinkActive="active"
           [title]="sidebarCollapsed ? 'Repartidor' : ''">
