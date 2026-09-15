@@ -200,8 +200,14 @@ export class CustomerHomeComponent implements OnInit {
 
   add(): void {
     if (!this.selected || this.selected.stock < 1 || this.optionsLoading || this.customizationError) return;
-    this.clampFloors();
     this.customizationError = '';
+    const requestedFloors = Number(this.floors);
+    if (!Number.isInteger(requestedFloors) || requestedFloors < 1 || requestedFloors > this.maxFloors) {
+      this.customizationError = `No puedes agregar más de ${this.maxFloors} pisos para esta torta.`;
+      this.floors = Math.min(this.maxFloors, Math.max(1, requestedFloors || 1));
+      return;
+    }
+    this.floors = requestedFloors;
     if (!this.selected.personalizable) {
       this.cart.agregarProducto({ id: this.selected.id, nombre: this.selected.nombre, precio: this.selected.precio, stock: this.selected.stock, imagen: this.selected.imagen }, this.quantity);
       this.selected = null;
@@ -229,7 +235,8 @@ export class CustomerHomeComponent implements OnInit {
       precioPersonalizacion: customizationPrice,
       stock: this.selected.stock,
       imagen: this.selected.imagen,
-      configuracion
+      configuracion,
+      maxPisos: this.maxFloors
     }, this.quantity);
     this.cart.actualizarPersonalizacion(lineId, {
       tamanio: this.size,

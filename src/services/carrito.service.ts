@@ -49,8 +49,13 @@ export class CarritoService {
     this.carritoSubject.next([...this.carrito]);
   }
 
-  agregarProducto(producto: { id: number; nombre: string; precio: number; stock: number; imagen?: string; precioBase?: number; precioPersonalizacion?: number; lineId?: string; configuracion?: ItemCarrito['configuracion'] }, cantidad: number = 1) {
+  agregarProducto(producto: { id: number; nombre: string; precio: number; stock: number; imagen?: string; precioBase?: number; precioPersonalizacion?: number; lineId?: string; configuracion?: ItemCarrito['configuracion']; maxPisos?: number }, cantidad: number = 1) {
     if (cantidad <= 0) return;
+    const pisos = Number(producto.configuracion?.['pisos']);
+    if (Number.isFinite(pisos) && producto.maxPisos != null && pisos > producto.maxPisos) {
+      alert(`Esta torta permite como máximo ${producto.maxPisos} pisos.`);
+      return;
+    }
     const lineId = producto.lineId ?? String(producto.id);
     const cantidadEnCarrito = this.carrito.filter(item => item.lineId === lineId).reduce((sum, item) => sum + item.cantidad, 0);
     if (cantidadEnCarrito + cantidad > producto.stock) {
