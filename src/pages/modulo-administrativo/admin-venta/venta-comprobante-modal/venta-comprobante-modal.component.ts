@@ -154,6 +154,15 @@ const ESTILOS = `
         </table>
       </div>
 
+      @if (detalle()!.insumos?.length) {
+        <div class="sec">
+          <div class="sec-hdr"><span class="sec-t">Insumos utilizados</span><span class="sec-sub">Consumo de esta venta</span></div>
+          <table class="lt"><thead><tr><th>Insumo</th><th class="num">Cantidad</th></tr></thead><tbody>
+            @for (insumo of detalle()!.insumos; track insumo.idInsumo) { <tr><td>{{ insumo.nombreInsumo }}</td><td class="num">{{ insumo.cantidad }}</td></tr> }
+          </tbody></table>
+        </div>
+      }
+
       <!-- Pagos -->
       <div class="sec">
         <div class="sec-hdr"><span class="sec-t">Pagos</span></div>

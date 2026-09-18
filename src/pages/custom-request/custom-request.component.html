@@ -1,11 +1,111 @@
 <main class="custom-page">
-  <section class="custom-hero"><div><span class="eyebrow">Diseño a tu medida</span><h1>Haz realidad tu pastel ideal</h1><p>Cuéntanos tu idea, adjunta una referencia y te enviaremos una cotización personalizada.</p></div><div class="hero-mark">✦</div></section>
-  <div class="login-note" *ngIf="!auth.isLoggedIn()"><strong>¿Tienes una cuenta?</strong> <a routerLink="/iniciar">Inicia sesión</a> para consultar tus solicitudes desde tu perfil. También puedes continuar como invitado.</div>
-  <section class="custom-grid" *ngIf="!sent"><form class="request-card" (ngSubmit)="submit()"><div class="section-head"><span>01</span><div><h2>Cuéntanos tu idea</h2><p>Mientras más detalles compartas, mejor podremos ayudarte.</p></div></div>
-    <div class="guest-fields" *ngIf="!auth.isLoggedIn()"><p class="guest-title">Datos para enviarte la cotización</p><div class="three"><label>Nombre *<input name="nombreCliente" [(ngModel)]="form.nombreCliente" required placeholder="Tu nombre"></label><label>Correo *<input type="email" name="emailCliente" [(ngModel)]="form.emailCliente" required placeholder="tu@correo.com"></label><label>Teléfono *<input name="telefonoCliente" [(ngModel)]="form.telefonoCliente" required placeholder="999 999 999"></label></div></div>
-    <label>Descripción del diseño *<textarea name="descripcion" [(ngModel)]="form.descripcion" required placeholder="Ej. Pastel de dos pisos con temática espacial..."></textarea></label><div class="two"><label>Evento<input name="evento" [(ngModel)]="form.evento" placeholder="Cumpleaños, boda..."></label><label>Fecha que lo necesitas *<input type="date" name="fecha" [(ngModel)]="form.fechaEntregaSolicitada" [min]="minDate" required></label></div><div class="three"><label>Sabor<input name="sabor" [(ngModel)]="form.sabor" placeholder="Chocolate"></label><label>Relleno<input name="relleno" [(ngModel)]="form.relleno" placeholder="Manjar"></label><label>Porciones<input type="number" name="porciones" [(ngModel)]="form.porciones" (ngModelChange)="refreshEstimate()" min="6" placeholder="20"></label></div><div class="three"><label>Pisos<select name="pisos" [(ngModel)]="form.pisos" (ngModelChange)="refreshEstimate()"><option [ngValue]="1">1 piso</option><option [ngValue]="2">2 pisos</option><option [ngValue]="3">3 pisos</option><option [ngValue]="4">4 pisos</option></select></label><label>Cobertura<select name="cobertura" [(ngModel)]="form.cobertura" (ngModelChange)="refreshEstimate()"><option value="">Aún no lo sé</option><option>Buttercream</option><option>Fondant</option><option>Modelado</option></select></label><label>Colores<input name="colores" [(ngModel)]="form.colores" placeholder="Rosa y dorado"></label></div><label>Mensaje decorativo<input name="texto" [(ngModel)]="form.textoDecorativo" placeholder="Feliz cumpleaños, Ana"></label><label class="upload"><span class="upload-icon">⌁</span><span><strong>Imagen de referencia</strong><small>{{ imageName || 'JPG, PNG o WEBP · máximo 4 MB' }}</small></span><input type="file" accept="image/*" (change)="image($event)"></label><div class="estimate" *ngIf="estimate"><span>Estimado referencial</span><strong>S/ {{ estimate.minimo | number:'1.0-0' }} - {{ estimate.maximo | number:'1.0-0' }}</strong><small>El precio final se confirma luego de revisar tu diseño.</small></div><p class="error" *ngIf="error">{{ error }}</p><button class="primary" [disabled]="submitting">{{ submitting ? 'Enviando...' : 'Enviar solicitud para revisión' }} <b>→</b></button>
-  </form><aside class="info-card"><span class="eyebrow">¿Cómo funciona?</span><h2>Estamos contigo en cada paso</h2><div class="step"><b>1</b><span><strong>Nos cuentas tu idea</strong><small>Con o sin cuenta, recibimos tu diseño.</small></span></div><div class="step"><b>2</b><span><strong>Lo revisamos</strong><small>Validamos disponibilidad y dificultad.</small></span></div><div class="step"><b>3</b><span><strong>Te cotizamos</strong><small>Recibes precio, fecha y condiciones.</small></span></div></aside></section>
-  <section class="sent-card" *ngIf="sent && selected"><div class="success-mark">✓</div><span class="eyebrow">Solicitud recibida</span><h2>Ya tenemos tu idea</h2><p>Tu solicitud es <strong>{{ selected.solicitud.codigo }}</strong>. Guarda este código y el token para consultar tu cotización.</p><div class="sent-estimate">Estimado referencial <strong>S/ {{ selected.solicitud.estimadoMinimo | number:'1.0-0' }} - {{ selected.solicitud.estimadoMaximo | number:'1.0-0' }}</strong><small *ngIf="!auth.isLoggedIn()">Token de seguimiento: {{ selected.solicitud.tokenAcceso }}</small></div><button class="primary" (click)="reset()">Enviar otro diseño</button></section>
-  <section class="tracking" *ngIf="auth.isLoggedIn() && requests.length"><div class="section-head"><span>02</span><div><h2>Mis solicitudes</h2><p>Consulta el estado y las cotizaciones de cada diseño.</p></div></div><div class="request-list"><button class="request-row" *ngFor="let item of requests" (click)="open(item)"><span class="cake-dot">✦</span><span><strong>{{ item.codigo }}</strong><small>{{ item.descripcion }}</small></span><span class="state" [class]="statusClass(item.estado)">{{ item.estado }}</span><b>→</b></button></div></section>
+  <section class="custom-hero">
+    <div>
+      <span class="eyebrow">Diseño a tu medida</span>
+      <h1>Haz realidad tu pastel ideal</h1>
+      <p>Cuéntanos tu idea, adjunta una referencia y te enviaremos una cotización personalizada.</p>
+    </div>
+    <div class="hero-mark">✦</div>
+  </section>
+
+  <div class="login-note" *ngIf="!auth.isLoggedIn()">
+    <strong>¿Tienes una cuenta?</strong>
+    <a routerLink="/iniciar">Inicia sesión</a> para consultar tus solicitudes desde tu perfil. También puedes continuar como invitado.
+  </div>
+
+  <section class="custom-grid" *ngIf="!sent">
+    <form class="request-card" (ngSubmit)="submit()" *ngIf="!showSummary; else summary">
+      <div class="section-head">
+        <span>01</span>
+        <div><h2>Cuéntanos tu idea</h2><p>Mientras más detalles compartas, mejor podremos ayudarte.</p></div>
+      </div>
+
+      <div class="guest-fields" *ngIf="!auth.isLoggedIn()">
+        <p class="guest-title">Datos para enviarte la cotización</p>
+        <div class="three">
+          <label>Nombre *<input name="nombreCliente" [(ngModel)]="form.nombreCliente" required placeholder="Tu nombre"></label>
+          <label>Correo *<input type="email" name="emailCliente" [(ngModel)]="form.emailCliente" required placeholder="tu@correo.com"></label>
+          <label>Teléfono *<input name="telefonoCliente" [(ngModel)]="form.telefonoCliente" required placeholder="999 999 999"></label>
+        </div>
+      </div>
+
+      <label>Descripción del diseño *<textarea name="descripcion" [(ngModel)]="form.descripcion" required placeholder="Ej. Pastel de dos pisos con temática espacial..."></textarea></label>
+      <div class="two">
+        <label>Evento<input name="evento" [(ngModel)]="form.evento" placeholder="Cumpleaños, boda..."></label>
+        <label>Fecha que lo necesitas *<input type="date" name="fecha" [(ngModel)]="form.fechaEntregaSolicitada" [min]="minDate" required></label>
+      </div>
+      <div class="three">
+        <label>Sabor<input name="sabor" [(ngModel)]="form.sabor" placeholder="Chocolate"></label>
+        <label>Relleno<input name="relleno" [(ngModel)]="form.relleno" placeholder="Manjar"></label>
+        <label>Porciones<input type="number" name="porciones" [(ngModel)]="form.porciones" (ngModelChange)="refreshEstimate()" min="6" placeholder="20"></label>
+      </div>
+      <div class="three">
+        <label>Pisos<select name="pisos" [(ngModel)]="form.pisos" (ngModelChange)="refreshEstimate()"><option [ngValue]="1">1 piso</option><option [ngValue]="2">2 pisos</option><option [ngValue]="3">3 pisos</option><option [ngValue]="4">4 pisos</option></select></label>
+        <label>Cobertura<select name="cobertura" [(ngModel)]="form.cobertura" (ngModelChange)="refreshEstimate()"><option value="">Aún no lo sé</option><option>Buttercream</option><option>Fondant</option><option>Modelado</option></select></label>
+        <label>Colores<input name="colores" [(ngModel)]="form.colores" placeholder="Rosa y dorado"></label>
+      </div>
+      <label>Mensaje decorativo<input name="texto" [(ngModel)]="form.textoDecorativo" placeholder="Feliz cumpleaños, Ana"></label>
+
+      <div class="upload" [class.uploading]="imageUploading" [class.has-image]="imagePreview">
+        <div class="upload-copy">
+          <span class="upload-icon">⌁</span>
+          <span><strong>Imagen de referencia</strong><small>{{ imageName || 'JPG, PNG o WEBP · máximo 4 MB' }}</small></span>
+        </div>
+        <img *ngIf="imagePreview" class="image-preview" [src]="imagePreview" alt="Vista previa de la referencia seleccionada">
+        <span class="upload-status" *ngIf="imageUploading">Cargando imagen...</span>
+        <button type="button" class="remove-image" *ngIf="imagePreview && !imageUploading" (click)="resetImage()">Quitar</button>
+        <label class="file-picker">Elegir imagen<input type="file" accept="image/*" (change)="image($event)"></label>
+      </div>
+      <p class="helper">La imagen es opcional. Te ayuda a explicar mejor el estilo que deseas.</p>
+
+      <div class="estimate" *ngIf="estimate">
+        <span>Estimado referencial</span>
+        <strong>S/ {{ estimate.minimo | number:'1.0-0' }} - {{ estimate.maximo | number:'1.0-0' }}</strong>
+        <small>{{ estimate.mensaje || 'El precio final se confirma tras revisar el diseño.' }}</small>
+      </div>
+      <p class="error" *ngIf="error">{{ error }}</p>
+      <button class="primary full-button" type="submit" [disabled]="submitting || imageUploading">Revisar mi solicitud <span>→</span></button>
+      <p class="privacy-note">Antes de enviarla podrás revisar todos los datos y corregir cualquier detalle.</p>
+    </form>
+
+    <ng-template #summary>
+      <section class="request-card summary-card">
+        <div class="section-head">
+          <span>02</span>
+          <div><h2>Revisa tu solicitud</h2><p>Confirma que todo esté correcto antes de enviarnos tu idea.</p></div>
+        </div>
+        <div class="summary-banner"><span>✦</span><div><strong>Todo listo para enviar</strong><small>Revisaremos tu diseño y te contactaremos con una cotización personalizada.</small></div></div>
+        <div class="summary-section" *ngIf="!auth.isLoggedIn()"><h3>Datos de contacto</h3><div class="summary-facts"><span><small>Nombre</small><b>{{ form.nombreCliente || 'No indicado' }}</b></span><span><small>Correo</small><b>{{ form.emailCliente || 'No indicado' }}</b></span><span><small>Teléfono</small><b>{{ form.telefonoCliente || 'No indicado' }}</b></span></div></div>
+        <div class="summary-section"><h3>Detalles del diseño</h3><div class="summary-facts"><span><small>Evento</small><b>{{ form.evento || 'No indicado' }}</b></span><span><small>Fecha solicitada</small><b>{{ form.fechaEntregaSolicitada | date:'longDate' }}</b></span><span><small>Porciones</small><b>{{ form.porciones || 'Por definir' }}</b></span><span><small>Pisos</small><b>{{ form.pisos || 1 }}</b></span><span><small>Sabor</small><b>{{ form.sabor || 'Por definir' }}</b></span><span><small>Relleno</small><b>{{ form.relleno || 'Por definir' }}</b></span><span><small>Cobertura</small><b>{{ form.cobertura || 'Por definir' }}</b></span><span><small>Colores</small><b>{{ form.colores || 'Por definir' }}</b></span></div></div>
+        <div class="summary-row" *ngIf="form.textoDecorativo"><small>Mensaje decorativo</small><strong>“{{ form.textoDecorativo }}”</strong></div>
+        <div class="summary-row"><small>Descripción</small><p>{{ form.descripcion }}</p></div>
+        <div class="summary-image" *ngIf="imagePreview"><img [src]="imagePreview" alt="Vista previa de la referencia"><span>{{ imageName }}</span></div>
+        <div class="summary-estimate" *ngIf="estimate"><span>Estimado referencial</span><strong>S/ {{ estimate.minimo | number:'1.0-0' }} - {{ estimate.maximo | number:'1.0-0' }}</strong><small>El precio final se confirma después de la revisión del equipo.</small></div>
+        <p class="error" *ngIf="error">{{ error }}</p>
+        <div class="summary-actions"><button type="button" class="secondary" (click)="editRequest()" [disabled]="submitting">← Editar solicitud</button><button type="button" class="primary" (click)="confirmSubmit()" [disabled]="submitting">{{ submitting ? 'Enviando...' : 'Enviar para cotización' }} <span>→</span></button></div>
+        <p class="privacy-note">Al enviarla, nuestro equipo revisará disponibilidad, complejidad y fecha antes de confirmar el precio.</p>
+      </section>
+    </ng-template>
+
+    <aside class="info-card">
+      <span class="eyebrow">¿Cómo funciona?</span>
+      <h2>Estamos contigo en cada paso</h2>
+      <div class="step"><b>1</b><span><strong>Nos cuentas tu idea</strong><small>Describe el estilo, sabor y ocasión.</small></span></div>
+      <div class="step"><b>2</b><span><strong>Revisas el resumen</strong><small>Podrás editar cualquier dato antes de enviar.</small></span></div>
+      <div class="step"><b>3</b><span><strong>Te cotizamos</strong><small>Validamos disponibilidad, precio y fecha.</small></span></div>
+      <div class="trust-note"><strong>Información clara</strong><span>El estimado mostrado es referencial. No se genera ningún cobro al enviar la solicitud.</span></div>
+    </aside>
+  </section>
+
+  <section class="sent-card" *ngIf="sent && selected">
+    <div class="success-mark">✓</div><span class="eyebrow">Solicitud recibida</span><h2>Ya tenemos tu idea</h2>
+    <p>Tu solicitud es <strong>{{ selected.solicitud.codigo }}</strong>. Guarda este código y el token para consultar tu cotización.</p>
+    <div class="sent-estimate">Estimado referencial <strong>S/ {{ selected.solicitud.estimadoMinimo | number:'1.0-0' }} - {{ selected.solicitud.estimadoMaximo | number:'1.0-0' }}</strong><small *ngIf="!auth.isLoggedIn()">Token de seguimiento: {{ selected.solicitud.tokenAcceso }}</small></div>
+    <p class="success-note">Te informaremos cuando nuestro equipo revise el diseño y tenga lista la cotización.</p>
+    <button class="primary" (click)="reset()">Enviar otro diseño</button>
+  </section>
+
+  <section class="tracking" *ngIf="auth.isLoggedIn() && requests.length"><div class="section-head"><span>03</span><div><h2>Mis solicitudes</h2><p>Consulta el estado y las cotizaciones de cada diseño.</p></div></div><div class="request-list"><button class="request-row" *ngFor="let item of requests" (click)="open(item)"><span class="cake-dot">✦</span><span><strong>{{ item.codigo }}</strong><small>{{ item.descripcion }}</small></span><span class="state" [class]="statusClass(item.estado)">{{ item.estado }}</span><b>→</b></button></div></section>
+
   <div class="modal" *ngIf="selected && !sent" (click)="selected = undefined"><section (click)="$event.stopPropagation()"><button class="close" (click)="selected = undefined">×</button><span class="eyebrow">Seguimiento {{ selected.solicitud.codigo }}</span><h2>{{ selected.solicitud.estado }}</h2><p>{{ selected.solicitud.descripcion }}</p><div class="quote" *ngIf="selected.cotizacion as quote"><span>Cotización final · v{{ quote.version }}</span><strong>S/ {{ quote.precioFinal | number:'1.2-2' }}</strong><small>Entrega: {{ quote.fechaEntrega | date:'longDate' }} · Válida hasta {{ quote.fechaVencimiento | date:'mediumDate' }}</small><button class="primary" *ngIf="selected.solicitud.estado === 'Cotizada'" (click)="acceptQuote()">Aceptar cotización</button></div><div class="timeline"><div *ngFor="let event of selected.historial"><b></b><span><strong>{{ event.estadoNuevo }}</strong><small>{{ event.comentario }}</small><em>{{ event.fechaCreacion | date:'medium' }}</em></span></div></div></section></div>
 </main>

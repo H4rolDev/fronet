@@ -1,6 +1,6 @@
 import { AdminCategoriaTortaComponent } from './../pages/modulo-administrativo/admin-categoria-torta/admin-categoria-torta.component';
 import { Routes } from '@angular/router';
-import { adminGuard } from '../guards/auth.guard';
+import { adminGuard, authGuard } from '../guards/auth.guard';
 import { repartidorGuard } from '../guards/repartidor.guard';
 import { PrincipalClientComponent } from './principal-client/principal-client.component';
 
@@ -23,7 +23,7 @@ export const routes: Routes = [
 
       { path: 'pagar', redirectTo: 'checkout', pathMatch: 'full' },
       { path: 'cart', loadComponent: () => import('../pages/customer-cart/customer-cart.component').then(m => m.CustomerCartComponent) },
-      { path: 'checkout', loadComponent: () => import('../pages/customer-checkout/customer-checkout.component').then(m => m.CustomerCheckoutComponent) },
+      { path: 'checkout', canActivate: [authGuard], loadComponent: () => import('../pages/customer-checkout/customer-checkout.component').then(m => m.CustomerCheckoutComponent) },
       { path: 'chat', loadComponent: () => import('../pages/customer-chat/customer-chat.component').then(m => m.CustomerChatComponent) },
       { path: 'personalizado', loadComponent: () => import('../pages/custom-request/custom-request.component').then(m => m.CustomRequestComponent) },
       { path: 'pagoyape', loadComponent: () => import('../pages/pagoyape/pagoyape.component').then(m => m.PagoyapeComponent) },

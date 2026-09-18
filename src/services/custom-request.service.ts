@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, forkJoin } from 'rxjs';
 import { environment } from '../environments/environment';
 
 export interface CustomRequest {
-  id: number; codigo: string; tokenAcceso?: string; descripcion: string; imagenReferencia?: string; evento?: string;
+  id: number; codigo: string; idPersona?: number; idVenta?: number; nombreCliente?: string; emailCliente?: string; telefonoCliente?: string;
+  tokenAcceso?: string; descripcion: string; imagenReferencia?: string; evento?: string;
   sabor?: string; relleno?: string; tamano?: string; porciones?: number; pisos: number;
   cobertura?: string; colores?: string; textoDecorativo?: string; fechaEntregaSolicitada?: string;
   estimadoMinimo?: number; estimadoMaximo?: number; estado: string; fechaCreacion: string;
@@ -28,4 +29,7 @@ export class CustomRequestService {
   adminList(state = ''): Observable<CustomRequest[]> { return this.http.get<CustomRequest[]>(`${this.url}/admin/listado`, { params: state ? { estado: state } : {} }); }
   quote(id: number, data: any): Observable<CustomRequestDetail> { return this.http.post<CustomRequestDetail>(`${this.url}/${id}/cotizar`, data); }
   state(id: number, estado: string, comentario?: string): Observable<CustomRequestDetail> { return this.http.post<CustomRequestDetail>(`${this.url}/${id}/estado`, { estado, comentario }); }
+  whatsappSent(id: number): Observable<CustomRequestDetail> { return this.http.post<CustomRequestDetail>(`${this.url}/${id}/whatsapp-enviado`, {}); }
+  sell(id: number, data: any): Observable<{ ventaId: number; detalle: CustomRequestDetail }> { return this.http.post<{ ventaId: number; detalle: CustomRequestDetail }>(`${this.url}/${id}/vender`, data); }
+  catalogs(): Observable<{ tortas: any[]; metodosPago: any[]; insumos: any[] }> { return forkJoin({ tortas: this.http.get<any[]>(`${environment.apiUrl}/Torta/ObtenerCombo`), metodosPago: this.http.get<any[]>(`${environment.apiUrl}/Venta/ObtenerComboMetodoPago`), insumos: this.http.get<any[]>(`${environment.apiUrl}/Insumo/ObtenerCombo`) }); }
 }

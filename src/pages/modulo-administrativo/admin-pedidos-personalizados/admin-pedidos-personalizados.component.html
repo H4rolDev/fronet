@@ -1,7 +1,104 @@
 <main class="requests-admin">
-  <header class="admin-hero"><div><span>Atención al cliente · diseños especiales</span><h1>Solicitudes personalizadas</h1><p>Revisa cada idea, cotiza con claridad y mantén informado al cliente.</p></div><strong>{{ items.length }}<small>solicitudes</small></strong></header>
-  <section class="admin-stats"><button [class.active]="!filter" (click)="filter='';load()"><b>✦</b><strong>{{ items.length }}</strong><small>Total recibidas</small></button><button [class.active]="filter==='Pendiente'" (click)="filter='Pendiente';load()"><b>◷</b><strong>{{ pending }}</strong><small>Requieren atención</small></button><button [class.active]="filter==='Cotizada'" (click)="filter='Cotizada';load()"><b>◈</b><strong>{{ quoted }}</strong><small>Esperando respuesta</small></button></section>
-  <div class="toolbar"><span>Cola de solicitudes</span><button (click)="load()">Actualizar ↻</button></div><p class="error" *ngIf="error">{{ error }}</p>
-  <section class="request-table"><div class="table-head"><span>Solicitud</span><span>Diseño</span><span>Entrega</span><span>Estado</span><span></span></div><button class="table-row" *ngFor="let item of items" (click)="open(item)"><span class="request-code"><b>✦</b><strong>{{ item.codigo }}</strong><small>{{ item.fechaCreacion | date:'mediumDate' }}</small></span><span><strong>{{ item.evento || 'Diseño personalizado' }}</strong><small>{{ item.descripcion }}</small></span><span>{{ item.fechaEntregaSolicitada ? (item.fechaEntregaSolicitada | date:'mediumDate') : 'Por definir' }}</span><span class="state" [class]="statusClass(item.estado)">{{ item.estado }}</span><span class="arrow">→</span></button><div class="empty" *ngIf="!loading && !items.length">No hay solicitudes con este filtro.</div></section>
+  <header class="admin-hero">
+    <div><span>Atención al cliente · diseños especiales</span><h1>Solicitudes personalizadas</h1><p>Revisa cada idea, cotiza con claridad y mantén informado al cliente.</p></div>
+    <strong>{{ items.length }}<small>solicitudes</small></strong>
+  </header>
+  <section class="admin-stats">
+    <button [class.active]="!filter" (click)="filter='';load()"><b>✦</b><strong>{{ items.length }}</strong><small>Total recibidas</small></button>
+    <button [class.active]="filter==='Pendiente'" (click)="filter='Pendiente';load()"><b>◷</b><strong>{{ pending }}</strong><small>Requieren atención</small></button>
+    <button [class.active]="filter==='Cotizada'" (click)="filter='Cotizada';load()"><b>◈</b><strong>{{ quoted }}</strong><small>Esperando respuesta</small></button>
+  </section>
+  <div class="toolbar"><span>Cola de solicitudes</span><button (click)="load()">Actualizar ↻</button></div>
+  <p class="error" *ngIf="error">{{ error }}</p>
+  <p class="notice" *ngIf="notice">{{ notice }}</p>
+  <section class="request-table">
+    <div class="table-head"><span>Solicitud</span><span>Diseño</span><span>Entrega</span><span>Estado</span><span></span></div>
+    <button class="table-row" *ngFor="let item of items" (click)="open(item)">
+      <span class="request-code"><b>✦</b><strong>{{ item.codigo }}</strong><small>{{ item.fechaCreacion | date:'mediumDate' }}</small></span>
+      <span><strong>{{ item.evento || 'Diseño personalizado' }}</strong><small>{{ item.descripcion }}</small></span>
+      <span>{{ item.fechaEntregaSolicitada ? (item.fechaEntregaSolicitada | date:'mediumDate') : 'Por definir' }}</span>
+      <span class="state" [class]="statusClass(item.estado)">{{ item.estado }}</span><span class="arrow">→</span>
+    </button>
+    <div class="empty" *ngIf="!loading && !items.length">No hay solicitudes con este filtro.</div>
+  </section>
 </main>
-<div class="modal" *ngIf="selected" (click)="close()"><section class="detail" (click)="$event.stopPropagation()"><button class="close" (click)="close()">×</button><header><span>Ficha {{ selected.solicitud.codigo }}</span><h2>{{ selected.solicitud.evento || 'Diseño personalizado' }}</h2><p>{{ selected.solicitud.descripcion }}</p></header><div class="detail-grid"><div><label>Estado</label><strong class="state" [class]="statusClass(selected.solicitud.estado)">{{ selected.solicitud.estado }}</strong></div><div><label>Fecha solicitada</label><strong>{{ selected.solicitud.fechaEntregaSolicitada | date:'longDate' }}</strong></div><div><label>Estimado automático</label><strong>S/ {{ selected.solicitud.estimadoMinimo | number:'1.0-0' }} - {{ selected.solicitud.estimadoMaximo | number:'1.0-0' }}</strong></div></div><img class="reference" *ngIf="selected.solicitud.imagenReferencia" [src]="selected.solicitud.imagenReferencia" alt="Referencia del cliente"><div class="facts"><span *ngIf="selected.solicitud.sabor"><small>Sabor</small><b>{{ selected.solicitud.sabor }}</b></span><span *ngIf="selected.solicitud.relleno"><small>Relleno</small><b>{{ selected.solicitud.relleno }}</b></span><span *ngIf="selected.solicitud.porciones"><small>Porciones</small><b>{{ selected.solicitud.porciones }}</b></span><span><small>Pisos</small><b>{{ selected.solicitud.pisos }}</b></span><span *ngIf="selected.solicitud.cobertura"><small>Cobertura</small><b>{{ selected.solicitud.cobertura }}</b></span></div><div class="quote-box"><div><span>Cotización final</span><small>El cliente verá estos datos en su cuenta.</small></div><div class="quote-fields"><label>Precio final<input type="number" [(ngModel)]="quote.precioFinal" min="1"></label><label>Adelanto<input type="number" [(ngModel)]="quote.adelanto" min="0"></label><label>Delivery<input type="number" [(ngModel)]="quote.costoDelivery" min="0"></label><label>Fecha de entrega<input type="date" [(ngModel)]="quote.fechaEntrega"></label><label>Vigencia<input type="number" [(ngModel)]="quote.vigenciaHoras" min="1"></label></div><textarea [(ngModel)]="quote.observaciones" placeholder="Condiciones o indicaciones para el cliente..."></textarea><button class="quote-button" (click)="sendQuote()" [disabled]="saving">{{ saving ? 'Enviando...' : 'Enviar cotización al cliente →' }}</button></div><div class="actions"><button (click)="changeState('En revisión')">Marcar en revisión</button><button (click)="changeState('Falta información')">Pedir información</button><button class="reject" (click)="changeState('Rechazada')">Rechazar solicitud</button></div><p class="notice" *ngIf="notice">✓ {{ notice }}</p><section class="history"><h3>Historial informado al cliente</h3><div *ngFor="let event of selected.historial"><b>{{ event.estadoNuevo }}</b><span>{{ event.comentario }}</span><small>{{ event.fechaCreacion | date:'medium' }}</small></div></section></section></div>
+
+<div class="modal" *ngIf="selected" (click)="close()">
+  <section class="detail" (click)="$event.stopPropagation()">
+    <button class="close" (click)="close()">×</button>
+    <header><span>Ficha {{ selected.solicitud.codigo }}</span><h2>{{ selected.solicitud.evento || 'Diseño personalizado' }}</h2><p>{{ selected.solicitud.descripcion }}</p></header>
+
+    <div class="detail-grid">
+      <div><label>Estado</label><strong class="state" [class]="statusClass(selected.solicitud.estado)">{{ selected.solicitud.estado }}</strong></div>
+      <div><label>Fecha solicitada</label><strong>{{ selected.solicitud.fechaEntregaSolicitada | date:'longDate' }}</strong></div>
+      <div><label>Estimado automático</label><strong>S/ {{ selected.solicitud.estimadoMinimo | number:'1.0-0' }} - {{ selected.solicitud.estimadoMaximo | number:'1.0-0' }}</strong></div>
+    </div>
+
+    <div class="customer-contact">
+      <span><small>Cliente</small><b>{{ selected.solicitud.nombreCliente || 'No registrado' }}</b></span>
+      <span><small>Correo</small><b>{{ selected.solicitud.emailCliente || 'No indicado' }}</b></span>
+      <span><small>Teléfono registrado</small><b>{{ selected.solicitud.telefonoCliente || 'No indicado' }}</b></span>
+    </div>
+
+    <img class="reference" *ngIf="selected.solicitud.imagenReferencia" [src]="selected.solicitud.imagenReferencia" alt="Referencia del cliente">
+    <div class="facts">
+      <span *ngIf="selected.solicitud.sabor"><small>Sabor</small><b>{{ selected.solicitud.sabor }}</b></span>
+      <span *ngIf="selected.solicitud.relleno"><small>Relleno</small><b>{{ selected.solicitud.relleno }}</b></span>
+      <span *ngIf="selected.solicitud.porciones"><small>Porciones</small><b>{{ selected.solicitud.porciones }}</b></span>
+      <span><small>Pisos</small><b>{{ selected.solicitud.pisos }}</b></span>
+      <span *ngIf="selected.solicitud.cobertura"><small>Cobertura</small><b>{{ selected.solicitud.cobertura }}</b></span>
+      <span *ngIf="selected.solicitud.colores"><small>Colores</small><b>{{ selected.solicitud.colores }}</b></span>
+    </div>
+
+    <div class="quote-box">
+      <div><span>Cotización final</span><small>El cliente verá estos datos en su seguimiento.</small></div>
+      <div class="quote-fields">
+        <label>Precio final<input type="number" [(ngModel)]="quote.precioFinal" min="1"></label>
+        <label>Adelanto<input type="number" [(ngModel)]="quote.adelanto" min="0"></label>
+        <label>Delivery<input type="number" [(ngModel)]="quote.costoDelivery" min="0"></label>
+        <label>Fecha de entrega<input type="date" [(ngModel)]="quote.fechaEntrega"></label>
+        <label>Hora<input type="time" [(ngModel)]="quote.horaEntrega"></label>
+        <label>Vigencia (horas)<input type="number" [(ngModel)]="quote.vigenciaHoras" min="1" max="168"></label>
+        <label class="wide">Observaciones<textarea [(ngModel)]="quote.observaciones" rows="2" placeholder="Indicaciones para el cliente"></textarea></label>
+      </div>
+      <button class="primary" (click)="sendQuote()" [disabled]="saving">{{ saving ? 'Guardando...' : 'Guardar y enviar cotización' }} →</button>
+    </div>
+
+    <p class="error" *ngIf="error">{{ error }}</p>
+    <div class="whatsapp-box">
+      <div><span>Enviar por WhatsApp</span><small>Úsalo para clientes invitados o para compartir la cotización directamente.</small></div>
+      <label>Número de WhatsApp<input type="tel" [(ngModel)]="whatsappNumber" placeholder="999 999 999"></label>
+      <button class="whatsapp-button" *ngIf="selected.solicitud.estado !== 'WhatsApp enviado' && selected.solicitud.estado !== 'Vendida'" (click)="sendWhatsApp()">Abrir WhatsApp con todos los detalles ↗</button>
+      <small *ngIf="selected.solicitud.estado === 'WhatsApp enviado'">El envío por WhatsApp ya fue registrado para esta solicitud.</small>
+    </div>
+
+    <div class="sale-box" *ngIf="selected.solicitud.estado === 'Cotizada' || selected.solicitud.estado === 'WhatsApp enviado' || selected.solicitud.estado === 'Aceptada'">
+      <div><span>Convertir en venta</span><small>Completa estos datos para que la venta aparezca correctamente en Ventas de Tortas.</small></div>
+      <div class="quote-fields">
+        <label>Torta de catálogo<select [(ngModel)]="sale.idTorta"><option [ngValue]="0">Seleccionar torta</option><option *ngFor="let torta of tortas" [ngValue]="torta.id">{{ torta.nombre }} · S/ {{ torta.precioVenta | number:'1.2-2' }} · Stock {{ torta.stockDisponible }}</option></select></label>
+        <label>Tipo de entrega<select [(ngModel)]="sale.idTipoEntrega"><option [ngValue]="1">Recojo en tienda</option><option [ngValue]="2">Delivery</option></select></label>
+        <label>Método de pago<select [(ngModel)]="sale.idMetodoPago"><option [ngValue]="0">Seleccionar método</option><option *ngFor="let metodo of metodosPago" [ngValue]="metodo.id">{{ metodo.nombre }}</option></select></label>
+        <label>Monto pagado<input type="number" [(ngModel)]="sale.montoPagado" min="0" step="0.01"></label>
+        <label *ngIf="sale.idTipoEntrega === 2">Dirección<input [(ngModel)]="sale.direccion" placeholder="Dirección de entrega"></label>
+        <label *ngIf="sale.idTipoEntrega === 2">Teléfono<input [(ngModel)]="sale.telefono" placeholder="999 999 999"></label>
+        <label *ngIf="sale.idTipoEntrega === 2">Referencia<input [(ngModel)]="sale.referencia" placeholder="Referencia"></label>
+        <label class="wide">Observaciones de venta<textarea [(ngModel)]="sale.observaciones" rows="2"></textarea></label>
+      </div>
+      <div class="ingredient-head"><div><span>Insumos utilizados</span><small>Registra lo que realmente se consumió en la elaboración.</small></div><button type="button" (click)="addIngredient()">+ Agregar insumo</button></div>
+      <div class="ingredient-row" *ngFor="let ingredient of saleIngredients; let i = index">
+        <div class="ingredient-select"><select [(ngModel)]="ingredient.idInsumo"><option [ngValue]="0">Seleccionar insumo</option><option *ngFor="let insumo of insumos" [ngValue]="insumo.id">{{ insumo.nombre }} · {{ insumo.abreviatura || insumo.unidad }}</option></select><small *ngIf="ingredientInfo(ingredient.idInsumo) as info">Disponible: <b>{{ info.stockActual | number:'1.2-3' }} {{ info.unidad }}</b> · Unidad: {{ info.nombreUnidadMedida || info.unidad }}</small></div>
+        <label class="ingredient-quantity"><span>Cantidad usada</span><input type="number" [(ngModel)]="ingredient.cantidad" [max]="ingredientInfo(ingredient.idInsumo)?.stockActual || null" min="0.001" step="0.001" placeholder="0.000"></label>
+        <button type="button" (click)="removeIngredient(i)">Quitar</button>
+      </div>
+      <button class="sale-button" (click)="sellRequest()" [disabled]="selling">{{ selling ? 'Creando venta...' : 'Crear venta y marcar Vendida' }} →</button>
+    </div>
+
+    <div class="state-actions">
+      <button *ngIf="selected.solicitud.estado === 'Pendiente'" (click)="changeState('En revisión')">Marcar en revisión</button>
+      <button *ngIf="selected.solicitud.estado === 'Pendiente' || selected.solicitud.estado === 'En revisión'" (click)="changeState('Falta información')">Solicitar información</button>
+      <button *ngIf="selected.solicitud.estado === 'Falta información'" (click)="changeState('En revisión')">Retomar revisión</button>
+      <button *ngIf="selected.solicitud.estado === 'Pendiente' || selected.solicitud.estado === 'En revisión' || selected.solicitud.estado === 'Falta información' || selected.solicitud.estado === 'Cotizada' || selected.solicitud.estado === 'WhatsApp enviado'" (click)="changeState('Rechazada')">Rechazar</button>
+    </div>
+    <div class="timeline" *ngIf="selected.historial?.length"><div *ngFor="let event of selected.historial"><b></b><span><strong>{{ event.estadoNuevo }}</strong><small>{{ event.comentario }}</small><em>{{ event.fechaCreacion | date:'medium' }}</em></span></div></div>
+  </section>
+</div>

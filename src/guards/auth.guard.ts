@@ -124,13 +124,14 @@ export const adminGuard: CanActivateFn = async (route, state) => {
   return true;
 };
 
-export const authGuard: CanActivateFn = () => {
+export const authGuard: CanActivateFn = (_route, state) => {
   const router = inject(Router);
   const raw = localStorage.getItem('user');
 
   if (!raw) {
-    router.navigate(['/iniciar']);
-    return false;
+    return router.createUrlTree(['/iniciar'], {
+      queryParams: { returnUrl: state.url },
+    });
   }
 
   return true;

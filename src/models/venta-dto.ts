@@ -42,6 +42,7 @@ export interface VentaDetalleDTO {
   venta: VentaCabeceraDetalle;
   cliente: { id: number; nombre: string; documento: string } | null;
   detalles: DetalleItemDTO[];
+  insumos?: { idInsumo: number; nombreInsumo: string; cantidad: number }[];
   pagos: PagoItemDTO[];
   delivery: DeliveryItemDTO | null;
   comprobante: { serie: string; numero: string; idTipoComprobante: number } | null;

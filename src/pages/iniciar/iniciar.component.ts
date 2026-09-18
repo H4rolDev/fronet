@@ -5,7 +5,7 @@ import {
   Validators,
   ReactiveFormsModule,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -31,6 +31,7 @@ export class IniciarComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private auth: AuthService,
     private router: Router,
+    private route: ActivatedRoute,
   ) {
     this.loginForm = this.fb.group({
       username: ['', Validators.required],
@@ -56,6 +57,10 @@ export class IniciarComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    if (this.route.snapshot.queryParamMap.get('returnUrl')) {
+      this.message = 'Para realizar una compra, necesitas iniciar sesión.';
+    }
+
     const user = localStorage.getItem('user');
     if (user) {
       this.redirectByRole(JSON.parse(user));
@@ -96,6 +101,12 @@ export class IniciarComponent implements OnInit, OnDestroy {
   }
 
   redirectByRole(userData: any) {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')) {
+      this.router.navigateByUrl(returnUrl).then(() => window.location.reload());
+      return;
+    }
+
     const roles: string[] = userData.roles ?? [];
 
     let ruta = '/cuenta';
